@@ -1,4 +1,4 @@
-#include <kernel/pit.h>
+#include <kernel/hardware/pit.h>
 #include <stdio.h>
 
 #define PIT_HZ 1193182

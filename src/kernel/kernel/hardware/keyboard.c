@@ -1,6 +1,6 @@
-#include <kernel/keyboard.h>
+#include <kernel/hardware/keyboard.h>
 #include <stdio.h>
-#include <kernel/pic.h>
+#include <kernel/hardware/pic.h>
 #include <kernel/tty.h>
 
 #define SCAN_CODE_PORT 0x60

@@ -30,16 +30,15 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
  
 KERNEL_OBJS=\
 $(ARCHDIR)/boot.o \
-kernel/gdt.o \
-kernel/interrupts.o \
+kernel/hardware/gdt.o \
+kernel/hardware/interrupts.o \
 kernel/kernel.o \
-kernel/keyboard.o \
-kernel/keyboard_scancodes.o \
+kernel/hardware/keyboard.o \
+kernel/hardware/keyboard_scancodes.o \
 kernel/kmalloc.o \
-kernel/multiprocessing.o \
 kernel/paging.o \
-kernel/pic.o \
-kernel/pit.o \
+kernel/hardware/pic.o \
+kernel/hardware/pit.o \
 kernel/tty.o \
 # $(KERNEL_ARCH_OBJS)
  

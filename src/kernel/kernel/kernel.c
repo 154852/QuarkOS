@@ -1,10 +1,10 @@
-#include <kernel/pic.h>
-#include <kernel/pit.h>
-#include <kernel/interrupts.h>
-#include <kernel/keyboard.h>
+#include <kernel/hardware/pic.h>
+#include <kernel/hardware/pit.h>
+#include <kernel/hardware/interrupts.h>
+#include <kernel/hardware/keyboard.h>
 #include <kernel/kmalloc.h>
 #include <kernel/paging.h>
-#include <kernel/gdt.h>
+#include <kernel/hardware/gdt.h>
 // #include <kernel/multiprocessing.h>
 #include <stdio.h>
 

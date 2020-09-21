@@ -1,7 +1,7 @@
 #include <stdint2.h>
 #include <stdbool.h>
-#include <kernel/interrupts.h>
-#include <kernel/keyboard_scancodes.h>
+#include <kernel/hardware/interrupts.h>
+#include <kernel/hardware/keyboard_scancodes.h>
 
 #ifndef _KERNEL_KEYBOARD_H
 #define _KERNEL_KEYBOARD_H

@@ -1,4 +1,4 @@
-#include <kernel/gdt.h>
+#include <kernel/hardware/gdt.h>
 
 static GDTEntry gdt_entries[5];
 static GDTPointer gdt_pointer;

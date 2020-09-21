@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <kernel/interrupts.h>
-#include <kernel/pic.h>
+#include <kernel/hardware/interrupts.h>
+#include <kernel/hardware/pic.h>
 
 void interrupt_handler(struct interrupt_frame* frame) {
     debugf("Interrupt\n");
