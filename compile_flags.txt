@@ -1,0 +1,4 @@
+-I
+src/kernel/include
+-I
+src/libc/include
