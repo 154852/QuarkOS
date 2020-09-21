@@ -59,7 +59,7 @@ $(ARCHDIR)/crtend.o \
 $(ARCHDIR)/crtn.o \
  
 .PHONY: all clean install install-headers install-kernel
-.SUFFIXES: .o .c .S
+.SUFFIXES: .o .c .S .cpp
  
 all: quarkos.kernel
  
@@ -72,6 +72,9 @@ $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
  
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
+
+.cpp.o:
+	$(CC) -MD -c $< -o $@ -std=c++11 $(CFLAGS) $(CPPFLAGS)
  
 .S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)

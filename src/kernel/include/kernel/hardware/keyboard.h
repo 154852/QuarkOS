@@ -6,6 +6,10 @@
 #ifndef _KERNEL_KEYBOARD_H
 #define _KERNEL_KEYBOARD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	bool is_shifted;
 	bool is_caps_locked;
@@ -15,5 +19,9 @@ static KeyboardState global_keyboard_state = { false };
 
 char scan_code_to_char(const ScanCode* scancode, KeyboardState* state);
 __attribute__((interrupt)) void keyboard_interrupt(struct interrupt_frame* frame);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

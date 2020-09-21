@@ -3,6 +3,10 @@
 #ifndef _KERNEL_PAGING_H
 #define _KERNEL_PAGING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     u32 present : 1;
     u32 rw : 1;
@@ -47,5 +51,9 @@ typedef struct {
 // } PageDirectory;
 
 void init_paging();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

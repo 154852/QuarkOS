@@ -3,6 +3,10 @@
 #ifndef _KERNEL_GDT_H
 #define _KERNEL_GDT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct __attribute__((packed)) {
     u16 limit_low;
     u16 base_low;
@@ -18,5 +22,9 @@ typedef struct __attribute__((packed)) {
 } GDTPointer;
 
 void init_gdt();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

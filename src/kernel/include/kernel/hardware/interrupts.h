@@ -3,6 +3,10 @@
 #ifndef _KERNEL_INTERRUPTS_H
 #define _KERNEL_INTERRUPTS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct interrupt_frame {
     u16 ip;
     u16 cs;
@@ -28,5 +32,9 @@ typedef struct __attribute__ ((__packed__)) {
 } DescriptorTablePointer;
 
 void interrupts_initialise(generic_interrupt_handler handlers[256]);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

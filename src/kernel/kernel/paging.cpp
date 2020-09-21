@@ -136,8 +136,8 @@ void init_paging() {
     memset(kernel_directory, 0, sizeof(PageDirectory));
     current_directory = kernel_directory;
 
-    void* i = 0;
-    while (i < kmalloc_placement_address()) {
+    u32 i = 0;
+    while ((void*) i < kmalloc_placement_address()) {
         alloc_frame(get_page((u32) i, 1, kernel_directory), 0, 0);
         i += 0x1000;
     }

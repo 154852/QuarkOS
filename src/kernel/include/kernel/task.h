@@ -3,6 +3,10 @@
 #ifndef _KERNEL_TASK_H
 #define _KERNEL_TASK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	Ring0 = 0,
 	Ring3 = 3
@@ -22,5 +26,9 @@ typedef struct {
 } Task;
 
 void create_task(Task* task, void(*f)(), const char* name, RingLevel ring);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
