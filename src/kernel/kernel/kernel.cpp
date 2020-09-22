@@ -3,9 +3,8 @@
 #include <kernel/hardware/interrupts.h>
 #include <kernel/hardware/keyboard.h>
 #include <kernel/kmalloc.h>
-#include <kernel/paging.h>
+#include <kernel/paging.hpp>
 #include <kernel/hardware/gdt.h>
-// #include <kernel/multiprocessing.h>
 #include <stdio.h>
 
 #include <kernel/tty.h>
@@ -31,6 +30,10 @@ __attribute__((interrupt)) void page_fault(struct interrupt_frame* frame, unsign
     while (1) {};
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void* specific_interrupt_handlers[256];
 void kernel_main(void) {
     terminal_initialize();
@@ -43,20 +46,21 @@ void kernel_main(void) {
     init_gdt();
 
     memset(specific_interrupt_handlers, 0, sizeof(specific_interrupt_handlers));
-    specific_interrupt_handlers[14] = page_fault;
-    specific_interrupt_handlers[0x20] = clock;
-    specific_interrupt_handlers[0x21] = keyboard_interrupt;
+    specific_interrupt_handlers[14] = (void*) page_fault;
+    specific_interrupt_handlers[0x20] = (void*) clock;
+    specific_interrupt_handlers[0x21] = (void*) keyboard_interrupt;
     interrupts_initialise((generic_interrupt_handler*) specific_interrupt_handlers);
 
     pit_set_reload_value(PIT_CHANNEL_0, 100);
 
-    init_paging();
+    MemoryManagement::init_paging();
 
-    // u32 value = *((u32*) 0);
-    // debugf("Val: %i\n", value);
-    
     asm("sti");
     for(;;) {
         asm("hlt");
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

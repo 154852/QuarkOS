@@ -7,11 +7,11 @@
 extern "C" {
 #endif
 
-void* kmalloc(u32 size, int align, u32* physical);
-void* kmalloc_a(u32 size);
-void* kmalloc_p(u32 size, u32* physical);
-void* kmalloc_ap(u32 size, u32* physical);
-void* kmalloc_placement_address();
+u32 kmalloc(u32 size, int align, u32* physical);
+u32 kmalloc_a(u32 size);
+u32 kmalloc_p(u32 size, u32* physical);
+u32 kmalloc_ap(u32 size, u32* physical);
+u32 kmalloc_placement_address();
 
 #ifdef __cplusplus
 }
