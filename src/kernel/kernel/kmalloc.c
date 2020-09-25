@@ -11,9 +11,7 @@ u32 kmalloc(u32 size, int align, u32* physical) {
         placement_address += 0x1000;
     }
 
-    if (physical) {
-        *physical = placement_address;
-    }
+    if (physical) *physical = placement_address;
 
     u32 tmp = placement_address;
     placement_address += size;

@@ -3,9 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define KB 1024
-#define MB (KB * 1024)
-#define PAGE_SIZE (4 * KB)
+#define min(a, b) (a < b? a:b)
 
 #define FREE_PAGE_COUNT ((16 * MB) - ((4 * MB) + 1024) + PAGE_SIZE - 1) / PAGE_SIZE
 

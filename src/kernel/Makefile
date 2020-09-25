@@ -37,6 +37,7 @@ kernel/hardware/keyboard.o \
 kernel/hardware/keyboard_scancodes.o \
 kernel/kmalloc.o \
 kernel/paging.o \
+kernel/multiprocess.o \
 kernel/hardware/pic.o \
 kernel/hardware/pit.o \
 kernel/tty.o \

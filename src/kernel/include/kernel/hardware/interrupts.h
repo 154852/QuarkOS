@@ -8,11 +8,24 @@ extern "C" {
 #endif
 
 struct interrupt_frame {
-    u16 ip;
+    u16 gs;
+    u16 fs;
+    u16 es;
+    u16 ds;
+    u32 edi;
+    u32 esi;
+    u32 ebp;
+    u32 esp;
+    u32 ebx;
+    u32 edx;
+    u32 ecx;
+    u32 eax;
+    u32 eip;
     u16 cs;
-    u16 flags;
-    u16 sp;
-    u16 ss;
+    u16 __csPadding;
+    u32 eflags;
+    u32 esp_if_crossRing;
+    u16 ss_if_crossRing;
 };
 
 typedef struct  __attribute__ ((__packed__)) {

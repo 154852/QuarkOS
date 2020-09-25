@@ -87,7 +87,10 @@ int debugf(const char* restrict format, ...) {
 		} else if (*format == 'i') {
 			format++;
 			int c = (int) va_arg(parameters, int /* char promotes to int */);
-			while (c) {
+			if (c == 0) {
+				char zero = '0';
+				print(&zero, sizeof(char));
+			} else while (c) {
 				char result = (c % 10) + '0';
 				print(&result, sizeof(char));
 				c /= 10;

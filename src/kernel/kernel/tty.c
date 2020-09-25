@@ -71,3 +71,7 @@ void terminal_char_back() {
 		terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
 	} else terminal_row--;
 }
+
+void terminal_reset() {
+	terminal_initialize();
+}

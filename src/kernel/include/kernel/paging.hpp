@@ -4,8 +4,9 @@
 #ifndef _KERNEL_PAGING_H
 #define _KERNEL_PAGING_H
 
-typedef u32 physical_addr_t;
-typedef u32 linear_addr_t;
+#define KB 1024
+#define MB (KB * 1024)
+#define PAGE_SIZE (4 * KB)
 
 #ifdef __cplusplus
 extern "C" {

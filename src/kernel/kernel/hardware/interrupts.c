@@ -4,6 +4,7 @@
 
 void interrupt_handler(struct interrupt_frame* frame) {
     debugf("Interrupt\n");
+    while (1) {}
 }
 
 static Descriptor s_idt[256];

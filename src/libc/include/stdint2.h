@@ -16,6 +16,9 @@ typedef unsigned short u16;
 typedef short i16;
 typedef unsigned char u8;
 typedef char i8;
+
+typedef u32 physical_addr_t;
+typedef u32 linear_addr_t;
  
 #ifdef __cplusplus
 }

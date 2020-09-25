@@ -38,7 +38,7 @@ SECTIONS
 		*(.bss)
 	}
 
-	kernel_end = .;
+	kernel_end = .; /* Should also be the stack top? */
 
 	/* The compiler may produce other sections, put them in the proper place in
 	   in this file, if you'd like to include them in the final kernel. */
