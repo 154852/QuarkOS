@@ -1,4 +1,4 @@
-#include <kernel/kmalloc.h>
+#include <kernel/kmalloc.hpp>
 
 extern u32 kernel_end;
 u32 placement_address = 0;

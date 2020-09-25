@@ -4,10 +4,6 @@
 #ifndef _KERNEL_KEYBOARD_SCANCODES_H
 #define _KERNEL_KEYBOARD_SCANCODES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
 	KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9,
 	KEY_KEYPAD_0, KEY_KEYPAD_1, KEY_KEYPAD_2, KEY_KEYPAD_3, KEY_KEYPAD_4, KEY_KEYPAD_5, KEY_KEYPAD_6, KEY_KEYPAD_7, KEY_KEYPAD_8, KEY_KEYPAD_9,
@@ -31,9 +27,5 @@ typedef struct {
 } ScanCode;
 
 const ScanCode* scan_code(unsigned char code);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -1,15 +1,14 @@
-#include "kernel/vga.h"
-#include <kernel/hardware/pic.h>
-#include <kernel/hardware/pit.h>
-#include <kernel/hardware/interrupts.h>
-#include <kernel/hardware/keyboard.h>
-#include <kernel/kmalloc.h>
+#include <kernel/vga.hpp>
+#include <kernel/hardware/pic.hpp>
+#include <kernel/hardware/pit.hpp>
+#include <kernel/hardware/interrupts.hpp>
+#include <kernel/hardware/keyboard.hpp>
+#include <kernel/kmalloc.hpp>
 #include <kernel/paging.hpp>
-#include <kernel/hardware/gdt.h>
+#include <kernel/hardware/gdt.hpp>
 #include <kernel/multiprocess.hpp>
 #include <stdio.h>
-
-#include <kernel/tty.h>
+#include <kernel/tty.hpp>
 #include <stdint2.h>
 #include <string.h>
 
@@ -60,14 +59,14 @@ asm(
         "iret\n"
 );
 
-__attribute__((interrupt)) void page_fault(struct interrupt_frame* frame, unsigned long code) {
+__attribute__((interrupt)) void page_fault(struct interrupt_frame*, unsigned long) {
     asm("cli");
     printf("Page Fault\n");
     debugf("Page Fault\n");
     while (1) {};
 }
 
-__attribute__((interrupt)) void double_fault(struct interrupt_frame* frame, unsigned long code) {
+__attribute__((interrupt)) void double_fault(struct interrupt_frame*, unsigned long) {
     asm("cli");
     printf("Double Fault\n");
     debugf("Double Fault\n");
@@ -82,9 +81,10 @@ extern "C" {
 
 void proc_b() {
     u32 counter = 0;
+    char B = 'B';
     while (1) {
         if (counter % TEST_OUT_WAIT == 0) {
-            printf("B");
+            terminal_write(&B, 1);
             counter = 0;
         }
         counter++;
@@ -93,9 +93,10 @@ void proc_b() {
 
 void proc_a() {
     u32 counter = 0;
+    char A = 'A';
     while (1) {
         if (counter % TEST_OUT_WAIT == 0) {
-            printf("A");
+            terminal_write(&A, 1);
             counter = 0;
         }
         counter++;

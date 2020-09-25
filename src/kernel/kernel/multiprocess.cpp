@@ -1,5 +1,5 @@
 #include <string.h>
-#include <kernel/kmalloc.h>
+#include <kernel/kmalloc.hpp>
 #include <kernel/multiprocess.hpp>
 
 static ThreadControlBlock* current_process = 0;
@@ -20,7 +20,7 @@ ThreadControlBlock* create_process(void* entry, const char* name) {
     block->frame.cs = 0x08;
     block->frame.ds = 0x10;
     block->frame.ss_if_crossRing = 0x10;
-    block->frame.eip = (u64) entry;
+    block->frame.eip = (u32) entry;
     block->frame.eflags |= 0x0200; // enable interrupts
 
     block->next = current_process->next;

@@ -2,10 +2,6 @@
 #define ARCH_I386_VGA_H
  
 #include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
  
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -33,9 +29,5 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
 	return (uint16_t) uc | (uint16_t) color << 8;
 }
-
-#ifdef __cplusplus
-}
-#endif
  
 #endif

@@ -1,4 +1,4 @@
-#include <kernel/hardware/keyboard_scancodes.h>
+#include <kernel/hardware/keyboard_scancodes.hpp>
 
 #define key_unknown { KEY_UNKNOWN_ACTION, KEY_UNKNOWN }
 static const ScanCode scan_codes[] = {

@@ -1,5 +1,5 @@
 #include <kernel/paging.hpp>
-#include <kernel/kmalloc.h>
+#include <kernel/kmalloc.hpp>
 #include <string.h>
 #include <stdio.h>
 
@@ -86,7 +86,7 @@ namespace MemoryManagement {
 	}
 
     void allocate_physical_pages(physical_addr_t* addresses, size_t count) {
-		int j = 0;
+		size_t j = 0;
 		for (int i = FREE_PAGE_COUNT - 1; i >= 0; i--) {
 			if (free_pages[i]) {
 				addresses[j++] = free_pages[i];

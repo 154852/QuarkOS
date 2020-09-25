@@ -1,10 +1,12 @@
-#include <kernel/hardware/keyboard.h>
+#include <kernel/hardware/keyboard.hpp>
 #include <stdio.h>
-#include <kernel/hardware/pic.h>
-#include <kernel/tty.h>
+#include <kernel/hardware/pic.hpp>
+#include <kernel/tty.hpp>
 
 #define SCAN_CODE_PORT 0x60
 #define INTERRUPT_ID 0x01
+
+static KeyboardState global_keyboard_state = { false, false };
 
 char scan_code_to_char(const ScanCode* code, KeyboardState* state) {
     if (!code) return 0;
@@ -63,7 +65,7 @@ char scan_code_to_char(const ScanCode* code, KeyboardState* state) {
     return 0;
 }
 
-__attribute__((interrupt)) void keyboard_interrupt(struct interrupt_frame* frame) {
+__attribute__((interrupt)) void keyboard_interrupt(struct interrupt_frame*) {
     pic_send_EOI(INTERRUPT_ID);
     
     const ScanCode* code = scan_code(inb(SCAN_CODE_PORT));

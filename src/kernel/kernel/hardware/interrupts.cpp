@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <kernel/hardware/interrupts.h>
-#include <kernel/hardware/pic.h>
+#include <kernel/hardware/interrupts.hpp>
+#include <kernel/hardware/pic.hpp>
 
-void interrupt_handler(struct interrupt_frame* frame) {
+void interrupt_handler(struct interrupt_frame*) {
     debugf("Interrupt\n");
     while (1) {}
 }
@@ -12,7 +12,7 @@ static DescriptorTablePointer s_idtr;
 
 void interrupts_initialise(generic_interrupt_handler handlers[256]) {
     for (int i = 0; i < 256; i++) {
-        void* ISR = handlers[i]? handlers[i]:interrupt_handler;
+        u32 ISR = (u32) (handlers[i]? handlers[i]:interrupt_handler);
 
         s_idt[i].offset_1 = (u32) ISR & 0xFFFF;
         s_idt[i].selector = 0x0008;

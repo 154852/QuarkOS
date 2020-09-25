@@ -8,10 +8,6 @@
 #define MB (KB * 1024)
 #define PAGE_SIZE (4 * KB)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 namespace MemoryManagement {
     struct PageDirectoryEntryFlags {
         u32 present : 1;
@@ -85,9 +81,5 @@ namespace MemoryManagement {
 
     void allocate_physical_pages(physical_addr_t* addresses, size_t count);
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
