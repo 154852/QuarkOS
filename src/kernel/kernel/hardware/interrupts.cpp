@@ -2,17 +2,17 @@
 #include <kernel/hardware/interrupts.hpp>
 #include <kernel/hardware/pic.hpp>
 
-void interrupt_handler(struct interrupt_frame*) {
+void IRQ::interrupt_handler(InterruptFrame*) {
     debugf("Interrupt\n");
     while (1) {}
 }
 
-static Descriptor s_idt[256];
-static DescriptorTablePointer s_idtr;
+static IRQ::Descriptor s_idt[256];
+static IRQ::DescriptorTablePointer s_idtr;
 
-void interrupts_initialise(generic_interrupt_handler handlers[256]) {
+void IRQ::interrupts_initialise(IRQ::GenericInterruptHandler handlers[256]) {
     for (int i = 0; i < 256; i++) {
-        u32 ISR = (u32) (handlers[i]? handlers[i]:interrupt_handler);
+        u32 ISR = (u32) (handlers[i]? handlers[i]:IRQ::interrupt_handler);
 
         s_idt[i].offset_1 = (u32) ISR & 0xFFFF;
         s_idt[i].selector = 0x0008;

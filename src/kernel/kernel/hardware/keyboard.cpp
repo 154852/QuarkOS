@@ -6,9 +6,9 @@
 #define SCAN_CODE_PORT 0x60
 #define INTERRUPT_ID 0x01
 
-static KeyboardState global_keyboard_state = { false, false };
+static Keyboard::KeyboardState global_keyboard_state = { false, false };
 
-char scan_code_to_char(const ScanCode* code, KeyboardState* state) {
+char Keyboard::scan_code_to_char(const Keyboard::ScanCode* code, Keyboard::KeyboardState* state) {
     if (!code) return 0;
     if (code->name == KEY_UNKNOWN) return 0;
 
@@ -65,8 +65,8 @@ char scan_code_to_char(const ScanCode* code, KeyboardState* state) {
     return 0;
 }
 
-__attribute__((interrupt)) void keyboard_interrupt(struct interrupt_frame*) {
-    pic_send_EOI(INTERRUPT_ID);
+__attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::InterruptFrame*) {
+    PIC::send_EOI(INTERRUPT_ID);
     
     const ScanCode* code = scan_code(inb(SCAN_CODE_PORT));
 

@@ -3,20 +3,23 @@
 #ifndef _KERNEL_GDT_H
 #define _KERNEL_GDT_H
 
-typedef struct __attribute__((packed)) {
-    u16 limit_low;
-    u16 base_low;
-    u8 base_middle;
-    u8 access;
-    u8 granularity;
-    u8 base_high;
-} GDTEntry;
+namespace GDT {
+    struct __attribute__((packed)) GDTEntry {
+        u16 limit_low;
+        u16 base_low;
+        u8 base_middle;
+        u8 access;
+        u8 granularity;
+        u8 base_high;
+    };
 
-typedef struct __attribute__((packed)) {
-    u16 limit;
-    u32 base;
-} GDTPointer;
+    struct __attribute__((packed)) GDTPointer {
+        u16 limit;
+        u32 base;
+    };
 
-void init_gdt();
+    void set_gate(i32 idx, u32 base, u32 limit, u8 access, u8 granularity);
+    void initialise();
+}
 
 #endif

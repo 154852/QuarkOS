@@ -12,7 +12,7 @@
 #include <stdint2.h>
 #include <string.h>
 
-#define CLOCK_SPEED 10
+#define CLOCK_SPEED 1
 
 extern "C" u32 clock_exception_state_dump;
 asm(
@@ -23,12 +23,12 @@ asm(
 
 unsigned int count = CLOCK_SPEED;
 extern "C" void clock() {
-    pic_send_EOI(0);
+    PIC::send_EOI(0);
     
     count--;
     if (!count) {
         count = CLOCK_SPEED;
-        switch_process(reinterpret_cast<interrupt_frame*>(clock_exception_state_dump));
+        switch_process(reinterpret_cast<IRQ::InterruptFrame*>(clock_exception_state_dump));
     }
 }
 
@@ -84,6 +84,7 @@ void proc_b() {
     char B = 'B';
     while (1) {
         if (counter % TEST_OUT_WAIT == 0) {
+            terminal_reset();
             terminal_write(&B, 1);
             counter = 0;
         }
@@ -96,6 +97,7 @@ void proc_a() {
     char A = 'A';
     while (1) {
         if (counter % TEST_OUT_WAIT == 0) {
+            terminal_reset();
             terminal_write(&A, 1);
             counter = 0;
         }
@@ -123,16 +125,16 @@ QUICK_INTERRUPT(coprocessor_error);
 
 
 void* specific_interrupt_handlers[256];
-void kernel_main(void) {
+extern "C" void kernel_main(void) {
     debugf("Starting QuarkOS\n");
     terminal_initialize();
 
-    pic_remap(0x20, 0x28);
-    pic_IRQ_clear_mask(2); // Required
-    pic_IRQ_clear_mask(1); // Keyboard
-    pic_IRQ_clear_mask(0); // Clock
+    PIC::remap(0x20, 0x28);
+    PIC::irq_clear_mask(2); // Required
+    PIC::irq_clear_mask(1); // Keyboard
+    PIC::irq_clear_mask(0); // Clock
 
-    init_gdt();
+    GDT::initialise();
 
     memset(specific_interrupt_handlers, 0, sizeof(specific_interrupt_handlers));
     specific_interrupt_handlers[0x00] = (void*) division_error;
@@ -154,10 +156,10 @@ void kernel_main(void) {
     specific_interrupt_handlers[0x10] = (void*) coprocessor_error;
 
     specific_interrupt_handlers[0x20] = (void*) clock_exception;
-    specific_interrupt_handlers[0x21] = (void*) keyboard_interrupt;
-    interrupts_initialise((generic_interrupt_handler*) specific_interrupt_handlers);
+    specific_interrupt_handlers[0x21] = (void*) Keyboard::keyboard_interrupt;
+    IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
 
-    pit_set_reload_value(PIT_CHANNEL_0, 100);
+    PIT::set_reload_value(PIT_CHANNEL_0, 100);
 
     MemoryManagement::init_paging();
 
@@ -167,9 +169,7 @@ void kernel_main(void) {
     create_process((void*) proc_b, "Process B");
 
     asm("sti");
-    for(;;) {
-        asm("hlt");
-    }
+    for(;;) { asm("hlt"); }
 }
 
 #ifdef __cplusplus

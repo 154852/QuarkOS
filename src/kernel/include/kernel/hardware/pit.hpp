@@ -7,7 +7,9 @@
 #define PIT_CHANNEL_1 1
 #define PIT_CHANNEL_2 2
 
-void pit_set_reload_value(unsigned char channel, unsigned short reload_value);
-unsigned short pit_get_reload_value_for(unsigned int hz);
+namespace PIT {
+	void set_reload_value(unsigned char channel, unsigned short reload_value);
+	unsigned short get_reload_value_for(unsigned int hz);
+}
 
 #endif

@@ -4,12 +4,12 @@
 
 static ThreadControlBlock* current_process = 0;
 
-void switch_process(interrupt_frame* frame) {
-    memcpy(&current_process->frame, frame, sizeof(interrupt_frame));
+void switch_process(IRQ::InterruptFrame* frame) {
+    memcpy(&current_process->frame, frame, sizeof(IRQ::InterruptFrame));
     do {
         current_process = current_process->next;
     } while (current_process->kernel);
-    memcpy(frame, &current_process->frame, sizeof(interrupt_frame));
+    memcpy(frame, &current_process->frame, sizeof(IRQ::InterruptFrame));
 }
 
 ThreadControlBlock* create_process(void* entry, const char* name) {

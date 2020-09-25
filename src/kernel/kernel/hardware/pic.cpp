@@ -25,12 +25,12 @@
 #define PIC_READ_IRR                0x0a    /* OCW3 irq ready next CMD read */
 #define PIC_READ_ISR                0x0b    /* OCW3 irq service next CMD read */
 
-void pic_send_EOI(unsigned char irq) {
+void PIC::send_EOI(unsigned char irq) {
 	if (irq >= 8) outb(PIC2_COMMAND, PIC_EOI);
 	outb(PIC1_COMMAND, PIC_EOI);
 }
 
-void pic_remap(unsigned char offset1, unsigned char offset2) { 
+void PIC::remap(unsigned char offset1, unsigned char offset2) { 
 	outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);  // starts the initialization sequence (in cascade mode)
 	io_wait();
 	outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
@@ -54,7 +54,7 @@ void pic_remap(unsigned char offset1, unsigned char offset2) {
 	outb(PIC2_DATA, 0xFF);
 }
 
-void pic_IRQ_set_mask(unsigned char IRQline) {
+void PIC::irq_set_mask(unsigned char IRQline) {
     uint16_t port;
     uint8_t value;
  
@@ -68,7 +68,7 @@ void pic_IRQ_set_mask(unsigned char IRQline) {
     outb(port, value);        
 }
  
-void pic_IRQ_clear_mask(unsigned char IRQline) {
+void PIC::irq_clear_mask(unsigned char IRQline) {
     uint16_t port;
     uint8_t value;
  
@@ -92,11 +92,11 @@ static uint16_t __pic_get_irq_reg(int ocw3) {
 }
  
 /* Returns the combined value of the cascaded PICs irq request register */
-uint16_t pic_get_irr(void) {
+uint16_t PIC::get_irr(void) {
     return __pic_get_irq_reg(PIC_READ_IRR);
 }
  
 /* Returns the combined value of the cascaded PICs in-service register */
-uint16_t pic_get_isr(void) {
+uint16_t PIC::get_isr(void) {
     return __pic_get_irq_reg(PIC_READ_ISR);
 }
