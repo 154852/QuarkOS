@@ -6,6 +6,7 @@
 #include <kernel/kmalloc.hpp>
 #include <kernel/paging.hpp>
 #include <kernel/hardware/gdt.hpp>
+#include <kernel/hardware/disk.hpp>
 #include <kernel/multiprocess.hpp>
 #include <stdio.h>
 #include <kernel/tty.hpp>
@@ -60,22 +61,18 @@ asm(
 );
 
 __attribute__((interrupt)) void page_fault(struct interrupt_frame*, unsigned long) {
-    asm("cli");
+    IRQ::disable_irq();
     printf("Page Fault\n");
     debugf("Page Fault\n");
     while (1) {};
 }
 
 __attribute__((interrupt)) void double_fault(struct interrupt_frame*, unsigned long) {
-    asm("cli");
+    IRQ::disable_irq();
     printf("Double Fault\n");
     debugf("Double Fault\n");
     while (1) {};
 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define TEST_OUT_WAIT 10000000
 
@@ -93,16 +90,21 @@ void proc_b() {
 }
 
 void proc_a() {
-    u32 counter = 0;
-    char A = 'A';
-    while (1) {
-        if (counter % TEST_OUT_WAIT == 0) {
-            terminal_reset();
-            terminal_write(&A, 1);
-            counter = 0;
-        }
-        counter++;
-    }
+    // u32 counter = 0;
+    // char A = 'A';
+    // while (1) {
+    //     if (counter % TEST_OUT_WAIT == 0) {
+    //         terminal_reset();
+    //         terminal_write(&A, 1);
+    //         counter = 0;
+    //     }
+    //     counter++;
+    // }
+
+    char* result = (char*) kmalloc(512, 0, 0);
+    Disk::read_sectors(0, 1, (u8*) result);
+    debugf("Disk string content: '%s' (len: %i)\n", result, strlen(result));
+    while (1) { asm("hlt"); }
 }
 
 #define QUICK_INTERRUPT(name) __attribute__((interrupt)) void name(struct interrupt_frame*, unsigned long) { debugf(#name "\n"); printf(#name "\n"); while (1) {} }
@@ -120,9 +122,8 @@ QUICK_INTERRUPT(invalid_tss);
 QUICK_INTERRUPT(segment_not_present);
 QUICK_INTERRUPT(stack_exception);
 QUICK_INTERRUPT(general_protection_fault);
-QUICK_INTERRUPT(unknonw_error2);
+QUICK_INTERRUPT(unknown_error2);
 QUICK_INTERRUPT(coprocessor_error);
-
 
 void* specific_interrupt_handlers[256];
 extern "C" void kernel_main(void) {
@@ -131,8 +132,6 @@ extern "C" void kernel_main(void) {
 
     PIC::remap(0x20, 0x28);
     PIC::irq_clear_mask(2); // Required
-    PIC::irq_clear_mask(1); // Keyboard
-    PIC::irq_clear_mask(0); // Clock
 
     GDT::initialise();
 
@@ -152,26 +151,30 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x0C] = (void*) stack_exception;
     specific_interrupt_handlers[0x0D] = (void*) general_protection_fault;
     specific_interrupt_handlers[0x0E] = (void*) page_fault;
-    specific_interrupt_handlers[0x0F] = (void*) unknonw_error2;
+    specific_interrupt_handlers[0x0F] = (void*) unknown_error2;
     specific_interrupt_handlers[0x10] = (void*) coprocessor_error;
 
     specific_interrupt_handlers[0x20] = (void*) clock_exception;
     specific_interrupt_handlers[0x21] = (void*) Keyboard::keyboard_interrupt;
+    specific_interrupt_handlers[0x2E] = (void*) Disk::disk_interrupt;
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
 
-    PIT::set_reload_value(PIT_CHANNEL_0, 100);
+    IRQ::enable_irq();
+    Disk::initialise();
+    IRQ::disable_irq();
 
     MemoryManagement::init_paging();
 
+    IRQ::disable_irq();
     create_kernel_process();
-
     create_process((void*) proc_a, "Process A");
     create_process((void*) proc_b, "Process B");
+    IRQ::enable_irq();
 
-    asm("sti");
+    PIC::irq_clear_mask(1); // Keyboard
+
+    PIT::set_reload_value(PIT_CHANNEL_0, 100);
+    PIC::irq_clear_mask(0); // Clock
+
     for(;;) { asm("hlt"); }
 }
-
-#ifdef __cplusplus
-}
-#endif

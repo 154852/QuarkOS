@@ -40,6 +40,7 @@ kernel/paging.o \
 kernel/multiprocess.o \
 kernel/hardware/pic.o \
 kernel/hardware/pit.o \
+kernel/hardware/disk.o \
 kernel/tty.o \
 # $(KERNEL_ARCH_OBJS)
  

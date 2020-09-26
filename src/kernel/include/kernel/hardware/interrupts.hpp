@@ -42,6 +42,14 @@ namespace IRQ {
     };
 
     void interrupts_initialise(GenericInterruptHandler handlers[256]);
+
+    inline void enable_irq() {
+        asm("sti");
+    }
+
+    inline void disable_irq() {
+        asm("cli");
+    }
 }
 
 #endif
