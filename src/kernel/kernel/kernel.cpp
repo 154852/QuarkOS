@@ -8,6 +8,7 @@
 #include <kernel/hardware/gdt.hpp>
 #include <kernel/hardware/disk.hpp>
 #include <kernel/multiprocess.hpp>
+#include <kernel/ustar.hpp>
 #include <stdio.h>
 #include <kernel/tty.hpp>
 #include <stdint2.h>
@@ -132,8 +133,10 @@ extern "C" void kernel_main(void) {
 
     PIC::remap(0x20, 0x28);
     PIC::irq_clear_mask(2); // Required
+    debugf("Initiliased PIC\n");
 
     GDT::initialise();
+    debugf("Initiliased GDT\n");
 
     memset(specific_interrupt_handlers, 0, sizeof(specific_interrupt_handlers));
     specific_interrupt_handlers[0x00] = (void*) division_error;
@@ -158,12 +161,17 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x21] = (void*) Keyboard::keyboard_interrupt;
     specific_interrupt_handlers[0x2E] = (void*) Disk::disk_interrupt;
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
+    debugf("Initiliased interrupts\n");
 
     IRQ::enable_irq();
     Disk::initialise();
+    debugf("Initiliased disk\n");
+    USTAR::initialise();
+    debugf("Initiliased file system\n");
     IRQ::disable_irq();
 
     MemoryManagement::init_paging();
+    debugf("Initiliased paging\n");
 
     IRQ::disable_irq();
     create_kernel_process();
@@ -172,8 +180,8 @@ extern "C" void kernel_main(void) {
     IRQ::enable_irq();
 
     PIC::irq_clear_mask(1); // Keyboard
-
     PIT::set_reload_value(PIT_CHANNEL_0, 100);
+    debugf("Starting clock...\n");
     PIC::irq_clear_mask(0); // Clock
 
     for(;;) { asm("hlt"); }

@@ -61,8 +61,8 @@ static Disk::CHS lba2chs(u8 drive_index, u16 lba) {
 	Disk::IDEDrive d = drive[drive_index];
 	Disk::CHS chs;
 	chs.cylinder = lba / (d.sectors_per_track * d.heads);
-	chs.head = (lba / d.sectors_per_track) % d.heads;
-	chs.sector = (lba % d.sectors_per_track) + 1;
+    chs.head = (lba / d.sectors_per_track) % d.heads;
+    chs.sector = (lba % d.sectors_per_track) + 1;
 	return chs;
 }
 
