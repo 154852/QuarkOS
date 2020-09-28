@@ -8,11 +8,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
-int printf(const char* __restrict, ...);
-int debugf(const char* __restrict, ...);
-int putchar(int);
-int puts(const char*);
+
+int printf_(void(*_putchar)(char character), const char* format, ...);
+
+void putchar(char ch);
+void debug_putchar(char ch);
+
+#define printf(fmt, args...) printf_(putchar, fmt, ##args)
+#define debugf(fmt, args...) printf_(debug_putchar, fmt, ##args)
+
+void puts(const char*);
 
 unsigned char inb(unsigned short port);
 void outb(unsigned short port, unsigned char value);

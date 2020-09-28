@@ -1,3 +1,4 @@
+#include <assertions.h>
 #include <kernel/vga.hpp>
 #include <kernel/hardware/pic.hpp>
 #include <kernel/hardware/pit.hpp>
@@ -13,13 +14,15 @@
 #include <kernel/tty.hpp>
 #include <stdint2.h>
 #include <string.h>
+#include <kernel/elf.hpp>
+#include <syscall.h>
 
 #define CLOCK_SPEED 1
 
-extern "C" u32 clock_exception_state_dump;
+extern "C" u32 exception_state_dump;
 asm(
-    ".globl clock_exception_state_dump\n"
-    "clock_exception_state_dump:\n"
+    ".globl exception_state_dump\n"
+    "exception_state_dump:\n"
     ".long 0\n"
 );
 
@@ -30,7 +33,7 @@ extern "C" void clock() {
     count--;
     if (!count) {
         count = CLOCK_SPEED;
-        switch_process(reinterpret_cast<IRQ::InterruptFrame*>(clock_exception_state_dump));
+        switch_process(reinterpret_cast<IRQ::InterruptFrame*>(exception_state_dump));
     }
 }
 
@@ -51,8 +54,46 @@ asm(
         "popw %es\n"
         "popw %fs\n"
         "popw %gs\n"
-        "mov %esp, clock_exception_state_dump\n"
+        "mov %esp, exception_state_dump\n"
         "call clock\n"
+        "popw %gs\n"
+        "popw %fs\n"
+        "popw %es\n"
+        "popw %ds\n"
+        "popa\n"
+        "iret\n"
+);
+
+extern "C" void syscall_run() {
+    IRQ::InterruptFrame* frame = reinterpret_cast<IRQ::InterruptFrame*>(exception_state_dump);
+    switch (frame->eax) {
+        case SC_Write: {
+            assert(frame->ebx == 1);
+            terminal_write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
+            return;
+        }
+    }
+}
+
+extern "C" void syscall_exception();
+asm(
+    ".globl syscall_exception\n"
+    "syscall_exception:\n"
+        "pusha\n"
+        "pushw %ds\n"
+        "pushw %es\n"
+        "pushw %fs\n"
+        "pushw %gs\n"
+        "pushw %ss\n"
+        "pushw %ss\n"
+        "pushw %ss\n"
+        "pushw %ss\n"
+        "popw %ds\n"
+        "popw %es\n"
+        "popw %fs\n"
+        "popw %gs\n"
+        "mov %esp, exception_state_dump\n"
+        "call syscall_run\n"
         "popw %gs\n"
         "popw %fs\n"
         "popw %es\n"
@@ -102,10 +143,15 @@ void proc_a() {
     //     counter++;
     // }
 
-    char* result = (char*) kmalloc(512, 0, 0);
-    Disk::read_sectors(0, 1, (u8*) result);
-    debugf("Disk string content: '%s' (len: %i)\n", result, strlen(result));
-    while (1) { asm("hlt"); }
+    // char* result = (char*) kmalloc(512, 0, 0);
+    // Disk::read_sectors(0, 1, (u8*) result);
+    // debugf("Disk string content: '%s' (len: %i)\n", result, strlen(result));
+    // while (1) { asm("hlt"); }
+    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/hello");
+    // USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/include/assertions.h");
+    assert(file);
+    ELF::load_static_source(file->content, file->length);
+    assert_not_reached;
 }
 
 #define QUICK_INTERRUPT(name) __attribute__((interrupt)) void name(struct interrupt_frame*, unsigned long) { debugf(#name "\n"); printf(#name "\n"); while (1) {} }
@@ -158,6 +204,7 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x10] = (void*) coprocessor_error;
 
     specific_interrupt_handlers[0x20] = (void*) clock_exception;
+    specific_interrupt_handlers[0x80] = (void*) syscall_exception;
     specific_interrupt_handlers[0x21] = (void*) Keyboard::keyboard_interrupt;
     specific_interrupt_handlers[0x2E] = (void*) Disk::disk_interrupt;
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
@@ -176,7 +223,7 @@ extern "C" void kernel_main(void) {
     IRQ::disable_irq();
     create_kernel_process();
     create_process((void*) proc_a, "Process A");
-    create_process((void*) proc_b, "Process B");
+    // create_process((void*) proc_b, "Process B");
     IRQ::enable_irq();
 
     PIC::irq_clear_mask(1); // Keyboard

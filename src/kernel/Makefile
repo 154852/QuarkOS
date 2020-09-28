@@ -42,6 +42,7 @@ kernel/hardware/pic.o \
 kernel/hardware/pit.o \
 kernel/hardware/disk.o \
 kernel/tty.o \
+kernel/elf.o \
 kernel/ustar.o \
 # $(KERNEL_ARCH_OBJS)
  

@@ -45,6 +45,7 @@ USTAR::FileRaw* USTAR::lookup_raw(const char* filename) {
 
 USTAR::FileParsed* USTAR::lookup_parsed(const char* filename) {
     FileRaw* raw = lookup_raw(filename);
+    if (!raw) return 0;
 
     FileParsed* parsed = (FileParsed*) kmalloc(sizeof(FileParsed), 0, 0);
     size_t name_length = strlen(raw->name) + 1;

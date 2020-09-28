@@ -9,4 +9,4 @@ for PROJECT in $PROJECTS; do
 done
  
 # rm -rf sysroot
-rm sysroot.img
+# rm sysroot.img

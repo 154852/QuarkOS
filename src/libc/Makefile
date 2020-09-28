@@ -33,26 +33,28 @@ $(ARCH_FREEOBJS) \
 stdio/debug.o \
 stdio/io.o \
 stdio/printf.o \
+stdio/_printf.o \
 stdio/putchar.o \
 stdio/puts.o \
 stdlib/abort.o \
+stdlib/syscall.o \
 string/memcmp.o \
 string/memcpy.o \
 string/memmove.o \
 string/memset.o \
-string/strlen.o \
+string/strlen.o\
  
 HOSTEDOBJS=\
-$(ARCH_HOSTEDOBJS) \
+$(ARCH_HOSTEDOBJS)
  
 OBJS=\
 $(FREEOBJS) \
-$(HOSTEDOBJS) \
+$(HOSTEDOBJS)
  
 LIBK_OBJS=$(FREEOBJS:.o=.libk.o)
  
-#BINARIES=libc.a libk.a # Not ready for libc yet.
-BINARIES=libk.a
+BINARIES=libc.a libk.a # Not ready for libc yet.
+# BINARIES=libk.a
  
 .PHONY: all clean install install-headers install-libs
 .SUFFIXES: .o .libk.o .c .S

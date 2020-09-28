@@ -1,5 +1,5 @@
 #include <stdio.h>
  
-int puts(const char* string) {
-	return printf("%s\n", string);
+void puts(const char* string) {
+	printf("%s\n", string);
 }
