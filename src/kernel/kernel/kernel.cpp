@@ -69,7 +69,7 @@ extern "C" void syscall_run() {
     switch (frame->eax) {
         case SC_Write: {
             assert(frame->ebx == 1);
-            terminal_write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
+            Terminal::write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
             return;
         }
     }
@@ -123,8 +123,8 @@ void proc_b() {
     char B = 'B';
     while (1) {
         if (counter % TEST_OUT_WAIT == 0) {
-            terminal_reset();
-            terminal_write(&B, 1);
+            Terminal::reset();
+            Terminal::write(&B, 1);
             counter = 0;
         }
         counter++;
@@ -175,7 +175,7 @@ QUICK_INTERRUPT(coprocessor_error);
 void* specific_interrupt_handlers[256];
 extern "C" void kernel_main(void) {
     debugf("Starting QuarkOS\n");
-    terminal_initialize();
+    Terminal::initialize();
 
     PIC::remap(0x20, 0x28);
     PIC::irq_clear_mask(2); // Required

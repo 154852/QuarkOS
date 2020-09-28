@@ -81,7 +81,7 @@ __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::Interru
     }
 
     if (code->name == KEY_BACKSPACE && code->action == KEY_PRESS) {
-        terminal_char_back();
+        Terminal::char_back();
         return;
     }
 

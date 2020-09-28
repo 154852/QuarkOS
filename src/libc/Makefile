@@ -33,7 +33,6 @@ $(ARCH_FREEOBJS) \
 stdio/debug.o \
 stdio/io.o \
 stdio/printf.o \
-stdio/_printf.o \
 stdio/putchar.o \
 stdio/puts.o \
 stdlib/abort.o \

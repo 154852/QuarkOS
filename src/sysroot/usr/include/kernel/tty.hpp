@@ -1,13 +1,19 @@
 #ifndef _KERNEL_TTY_H
 #define _KERNEL_TTY_H
  
-#include <stddef.h>
- 
-void terminal_initialize(void);
-void terminal_putchar(char c);
-void terminal_write(const char* data, size_t size);
-void terminal_writestring(const char* data);
-void terminal_char_back();
-void terminal_reset();
+#include <stdint2.h>
+
+namespace Terminal {
+	void initialize();
+	void putchar(char c);
+	void write(const char* data, u32 size);
+	void writestring(const char* data);
+	void char_back();
+	void set_color(u8 color);
+	void write(const char* data, u32 size);
+	void put_entry_at(unsigned char c, u8 color, u32 x, u32 y);
+	void scroll_up(u32 count);
+	void reset();
+};
  
 #endif
