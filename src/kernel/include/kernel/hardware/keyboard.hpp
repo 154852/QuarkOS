@@ -13,7 +13,7 @@ namespace Keyboard {
 	};
 
 	char scan_code_to_char(const ScanCode* scancode, KeyboardState* state);
-	__attribute__((interrupt)) void keyboard_interrupt(struct IRQ::InterruptFrame*);
+	__attribute__((interrupt)) void keyboard_interrupt(struct IRQ::CSITRegisters*);
 }
 
 #endif

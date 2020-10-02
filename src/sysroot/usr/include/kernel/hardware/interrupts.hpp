@@ -4,37 +4,53 @@
 #define _KERNEL_INTERRUPTS_H
 
 namespace IRQ {
-    struct InterruptFrame {
-        u16 gs;
-        u16 fs;
-        u16 es;
-        u16 ds;
+    struct __attribute__((packed)) CSITRegisters {
+        u32 ebp;
         u32 edi;
         u32 esi;
-        u32 ebp;
-        u32 esp;
-        u32 ebx;
         u32 edx;
         u32 ecx;
+        u32 ebx;
         u32 eax;
+
         u32 eip;
-        u16 cs;
-        u16 __csPadding;
+        u32 cs;
         u32 eflags;
-        u32 esp_if_crossRing;
-        u16 ss_if_crossRing;
+        u32 esp;
+        u32 ss;
     };
 
+    struct __attribute__((packed)) CSITRegisters2 {
+        u32 eax_ds;
+
+        u32 ebp;
+        u32 edi;
+        u32 esi;
+        u32 edx;
+        u32 ecx;
+        u32 ebx;
+        u32 eax;
+
+        u32 eip;
+        u32 cs;
+        u32 eflags;
+        u32 esp;
+        u32 ss;
+    };
+    
     struct __attribute__ ((__packed__)) Descriptor {
-        uint16_t offset_1;
-        uint16_t selector;
-        uint8_t zero;
-        uint8_t type_attr;
-        uint16_t offset_2;
+        u64 offset_1 : 16;
+        u64 selector : 16;
+        u64 zero : 8;
+        u64 type : 4;
+        u64 storage_segment : 1;
+        u64 dpl : 2;
+        u64 present : 1;
+        u16 offset_2;
     };
 
-    typedef void(*GenericInterruptHandler)(InterruptFrame* frame);
-    __attribute__((interrupt)) void interrupt_handler(InterruptFrame* frame);
+    typedef void(*GenericInterruptHandler)(CSITRegisters* frame);
+    __attribute__((interrupt)) void interrupt_handler(CSITRegisters* frame);
 
     struct __attribute__ ((__packed__)) DescriptorTablePointer {
         u16 limit;

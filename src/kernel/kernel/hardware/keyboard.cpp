@@ -65,7 +65,7 @@ char Keyboard::scan_code_to_char(const Keyboard::ScanCode* code, Keyboard::Keybo
     return 0;
 }
 
-__attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::InterruptFrame*) {
+__attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITRegisters*) {
     PIC::send_EOI(INTERRUPT_ID);
     
     const ScanCode* code = scan_code(inb(SCAN_CODE_PORT));

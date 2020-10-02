@@ -14,3 +14,11 @@ void syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned lon
 void write(const char* string, unsigned long length) {
 	syscall(SC_Write, 1, (unsigned long) string, length);
 }
+
+void yield() {
+	 syscall(SC_Yield, 0, 0, 0);
+}
+
+void exit(unsigned char code) {
+	 syscall(SC_Exit, 0, 0, 0);
+}

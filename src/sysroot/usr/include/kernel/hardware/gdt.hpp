@@ -20,6 +20,7 @@ namespace GDT {
 
     void set_gate(i32 idx, u32 base, u32 limit, u8 access, u8 granularity);
     void initialise();
+    void __attribute__((noinline, cold)) flush();
 }
 
 #endif

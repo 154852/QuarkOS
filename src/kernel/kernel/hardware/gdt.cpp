@@ -1,7 +1,26 @@
 #include <kernel/hardware/gdt.hpp>
 
-static GDT::GDTEntry gdt_entries[5];
+static GDT::GDTEntry gdt_entries[8];
 static GDT::GDTPointer gdt_pointer;
+
+void GDT::flush() {
+    asm volatile(
+        "lgdt %0\n"
+
+        "mov $0x10, %%ax\n"
+        "mov %%ax, %%ds\n"
+        "mov %%ax, %%es\n"
+        "mov %%ax, %%fs\n"
+        "mov %%ax, %%gs\n"
+        "mov %%ax, %%ss\n"
+
+        "ljmp $0x08, $gdt_flush_end\n"
+    "gdt_flush_end:\n"
+        "ret\n"
+    
+        ::"m"(gdt_pointer)
+    );
+}
 
 void GDT::set_gate(i32 idx, u32 base, u32 limit, u8 access, u8 granularity) {
     gdt_entries[idx].base_low = base & 0xFFFF;
@@ -25,13 +44,14 @@ void GDT::initialise() {
     GDT::set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF);
     GDT::set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 
-    asm("lgdt %0" ::"m"(gdt_pointer));
-    asm("mov %ax, 0x10");
-    asm("mov %ds, %ax");
-    asm("mov %es, %ax");
-    asm("mov %fs, %ax");
-    asm("mov %gs, %ax");
-    asm("mov %ss, %ax");
-    asm("jmp 0x08");
-    asm(".init_gdt_end:");
+    // asm("lgdt %0" ::"m"(gdt_pointer));
+    // asm("mov %ax, 0x10");
+    // asm("mov %ds, %ax");
+    // asm("mov %es, %ax");
+    // asm("mov %fs, %ax");
+    // asm("mov %gs, %ax");
+    // asm("mov %ss, %ax");
+    // asm("jmp 0x08");
+    // asm(".init_gdt_end:");
+    GDT::flush();
 }

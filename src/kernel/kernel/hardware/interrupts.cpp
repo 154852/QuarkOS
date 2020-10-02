@@ -2,7 +2,7 @@
 #include <kernel/hardware/interrupts.hpp>
 #include <kernel/hardware/pic.hpp>
 
-void IRQ::interrupt_handler(InterruptFrame*) {
+void IRQ::interrupt_handler(IRQ::CSITRegisters*) {
     debugf("Interrupt\n");
     while (1) {}
 }
@@ -17,7 +17,10 @@ void IRQ::interrupts_initialise(IRQ::GenericInterruptHandler handlers[256]) {
         s_idt[i].offset_1 = (u32) ISR & 0xFFFF;
         s_idt[i].selector = 0x0008;
         s_idt[i].zero = 0x00;
-        s_idt[i].type_attr = 0b10101110;
+        s_idt[i].type = 0b1110;
+        s_idt[i].storage_segment = 0;
+        s_idt[i].dpl = 0b11;
+        s_idt[i].present = 1;
         s_idt[i].offset_2 = (u16) ((u32) ISR >> 16);
     }
 
