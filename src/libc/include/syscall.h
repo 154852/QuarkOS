@@ -16,7 +16,7 @@ typedef enum {
 void syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
 void write(const char* string, unsigned long length);
 void yield();
-void exit(unsigned char code);
+void __attribute__((noreturn)) exit(unsigned char code);
  
 #ifdef __cplusplus
 }

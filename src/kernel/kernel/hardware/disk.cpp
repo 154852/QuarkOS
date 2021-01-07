@@ -53,8 +53,6 @@ void Disk::initialise() {
 	drive[0].cylinders = wbufbase[1];
 	drive[0].heads = wbufbase[3];
 	drive[0].sectors_per_track = wbufbase[6];
-
-	// debugf("Master: '%s', C/H/Spt=%i/%i/%i\n", byteBuffer + 54, drive[0].cylinders, drive[0].heads, drive[0].sectors_per_track);
 }
 
 static Disk::CHS lba2chs(u8 drive_index, u16 lba) {

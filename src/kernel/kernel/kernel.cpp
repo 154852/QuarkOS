@@ -110,7 +110,7 @@ extern "C" void syscall_handle(IRQ::CSITRegisters2* frame) {
             return;
         }
         case SC_Exit: {
-            MultiProcess::exit(0);
+            MultiProcess::exit(0, frame->ebx);
             MultiProcess::yield(frame);
             return;
         }
@@ -137,6 +137,19 @@ extern "C" void page_fault_handle(IRQ::CSITRegisters regs) {
 }
 full_state_dump_interrupt_with_code(page_fault);
 
+extern "C" void bounds_check_handle(IRQ::CSITRegisters regs) {
+    IRQ::disable_irq();
+
+    debugf("bounds_check failure\n");
+
+    debugf("exception code: %i\n", exception_code);
+    debugf("pc=%x:%x\n", regs.cs, regs.eip);
+    debugf("eax=%x ebx=%x ecx=%x edx=%x\n", regs.eax, regs.ebx, regs.ecx, regs.edx);
+    debugf("ebp=%x esp=%x esi=%x edi=%x\n", regs.ebp, regs.esp, regs.esi, regs.edi);
+    hang;
+}
+full_state_dump_interrupt_with_code(bounds_check);
+
 extern "C" void general_protection_fault_handle(IRQ::CSITRegisters regs) {
     IRQ::disable_irq();
 
@@ -157,17 +170,6 @@ extern "C" void double_fault_handle() {
 }
 full_state_dump_interrupt_with_code(double_fault);
 
-extern "C" void proc_a() {
-    u32 esp; asm("movl %%esp, %0":"=r"(esp));
-    debugf("In proc A, esp around: 0x%.8x\n", esp);
-    printf("Proc A started\n");
-}
-
-extern "C" void proc_b() {
-    printf("Proc B started\n");
-    hang;
-}
-
 #define QUICK_INTERRUPT(name) __attribute__((interrupt)) void name(struct interrupt_frame*, unsigned long) { kdebugf(#name "\n"); hang; }
 
 QUICK_INTERRUPT(division_error);
@@ -175,7 +177,6 @@ QUICK_INTERRUPT(debug_exception);
 QUICK_INTERRUPT(unknown_error);
 QUICK_INTERRUPT(breakpoint);
 QUICK_INTERRUPT(overflow);
-QUICK_INTERRUPT(bounds_check);
 QUICK_INTERRUPT(invalid_opcode);
 QUICK_INTERRUPT(coprocess_not_available);
 QUICK_INTERRUPT(coprocessor_segment_overrun);
@@ -205,7 +206,7 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x02] = (void*) unknown_error;
     specific_interrupt_handlers[0x03] = (void*) breakpoint;
     specific_interrupt_handlers[0x04] = (void*) overflow;
-    specific_interrupt_handlers[0x05] = (void*) bounds_check;
+    specific_interrupt_handlers[0x05] = (void*) bounds_check_interrupt_trigger;
     specific_interrupt_handlers[0x06] = (void*) invalid_opcode;
     specific_interrupt_handlers[0x07] = (void*) coprocess_not_available;
     specific_interrupt_handlers[0x08] = (void*) double_fault_interrupt_trigger;
@@ -228,25 +229,26 @@ extern "C" void kernel_main(void) {
     IRQ::enable_irq();
     Disk::initialise();
     kdebugf("Initiliased disk\n");
-    USTAR::initialise();
-    kdebugf("Initiliased file system\n");
     IRQ::disable_irq();
-
+    
     MemoryManagement::init_paging();
     kdebugf("Initiliased paging\n");
 
-    IRQ::disable_irq();
+    kdebugf("Disable IRQ\n");
     MultiProcess::init(5, 0x10, 0);
-    MultiProcess::create((void*) proc_a, "Process A");
-    MultiProcess::create((void*) proc_b, "Process B");
+    kdebugf("Multiprocess init\n");
+
     IRQ::enable_irq();
-    kdebugf("Initiliased processes\n");
 
     PIC::irq_clear_mask(1); // Keyboard
-    PIT::set_reload_value(PIT_CHANNEL_0, 1000);
+    PIT::set_reload_value(PIT_CHANNEL_0, 60000);
 
     u32 esp; asm volatile("mov %%esp, %0" : "=r"(esp));
     MultiProcess::tss_set_stack(0x10, esp);
+
+    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/hello");
+    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/hello"));
+    MultiProcess::append(proc);
 
     kdebugf("Starting clock...\n");
     PIC::irq_clear_mask(0); // Clock

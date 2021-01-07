@@ -38,7 +38,7 @@ extern "C" void update_process(IRQ::CSITRegisters registers) {
 	current_process->state = MultiProcess::ProcessState::Running;
 	memcpy(&registers, &current_process->registers, sizeof(registers));
 
-	// debugf("Switching to %s, with esp=%.8x, eip=%.8x\n", current_process->name, current_process->registers.esp, current_process->registers.eip);
+	MemoryManagement::load_page_dir(current_process->page_dir);
 }
 
 asm(
@@ -71,33 +71,34 @@ asm(
 		"iret\n"
 );
 
-void end() {
-	debugf("Returned\n");
-	exit(0);
+void MultiProcess::end() {
+	int exit_code;
+	asm volatile("movl %%eax, %0" :"=b"(exit_code));
+	MultiProcess::exit(current_process, exit_code);
+	hang;
+}
+
+void _idle_code() {
+	while (1);
 }
 
 MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	Process* proc = (Process*) kmalloc(sizeof(Process), 0, 0);
+	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc(sizeof(MemoryManagement::PageDirectory), 1, 0);
 	proc->name = name;
-	
-	if (!current_process) {
-		current_process = proc;
-		proc->next = proc;
-	} else {
-		proc->next = current_process->next;
-		current_process->next = proc;
-	}
 
 	proc->registers.ss = 0x20 | 0x03;
-	proc->registers.esp = kmalloc(0x1000, 0, 0) + 0x1000;
 	proc->registers.eflags = 0x0202;
 	proc->registers.cs = 0x18 | 0x03;
 	proc->registers.eip = (u32) entry;
 
-	proc->registers.esp -= 4;
-	*((u32*) proc->registers.esp) = (u32) end;
-
 	return proc;
+}
+
+void MultiProcess::append(Process* proc) {
+	proc->next = current_process->next;
+	current_process->next = proc;
+	debugf("Prepared to run process %s\n", proc->name);
 }
 
 extern "C" void tss_flush();
@@ -129,6 +130,11 @@ void MultiProcess::init(u32 ktss_idx, u32 kss, u32 kesp) {
 	current_process->name = "kernel";
 	current_process->state = ProcessState::Exitting;
 	current_process->next = current_process;
+	current_process->page_dir = MemoryManagement::get_kernel_page_dir();
+
+	MultiProcess::Process* idle = MultiProcess::create((void*) _idle_code, "idle");
+	idle->page_dir = MemoryManagement::get_kernel_page_dir();
+	MultiProcess::append(idle);
 }
 
 void MultiProcess::tss_set_stack(u32 kss, u32 kesp) {
@@ -136,10 +142,11 @@ void MultiProcess::tss_set_stack(u32 kss, u32 kesp) {
     kernel_tss.esp0 = kesp;
 }
 
-void MultiProcess::exit(Process* process) {
+void MultiProcess::exit(Process* process, u32 exit_code) {
 	if (process == 0) process = current_process;
 	
 	process->state = ProcessState::Exitting;
+	debugf("Process %s quit with code: %d\n", process->name, exit_code);
 }
 
 void MultiProcess::yield(IRQ::CSITRegisters2* registers) {

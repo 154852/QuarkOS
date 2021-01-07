@@ -44,14 +44,5 @@ void GDT::initialise() {
     GDT::set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF);
     GDT::set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 
-    // asm("lgdt %0" ::"m"(gdt_pointer));
-    // asm("mov %ax, 0x10");
-    // asm("mov %ds, %ax");
-    // asm("mov %es, %ax");
-    // asm("mov %fs, %ax");
-    // asm("mov %gs, %ax");
-    // asm("mov %ss, %ax");
-    // asm("jmp 0x08");
-    // asm(".init_gdt_end:");
     GDT::flush();
 }

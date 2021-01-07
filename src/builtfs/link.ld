@@ -2,7 +2,7 @@
 
     SECTIONS
     {
-        . = 0;                 /* relocate to address 0 */
+        . = 8M;                 /* relocate to address 0 */
 
         .text ALIGN(4):
         {

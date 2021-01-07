@@ -20,5 +20,6 @@ void yield() {
 }
 
 void exit(unsigned char code) {
-	 syscall(SC_Exit, 0, 0, 0);
+	 syscall(SC_Exit, code, 0, 0);
+	 while (1);
 }

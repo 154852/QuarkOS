@@ -6,10 +6,11 @@
 
 #define KB 1024
 #define MB (KB * 1024)
+#define GB (MB * 1024)
 #define PAGE_SIZE (4 * KB)
 
 namespace MemoryManagement {
-    struct PageDirectoryEntryFlags {
+    struct __attribute__((packed)) PageDirectoryEntry {
         u32 present : 1;
         u32 rw : 1;
         u32 user : 1;
@@ -21,27 +22,9 @@ namespace MemoryManagement {
         u32 ignored : 1;
         u32 avail : 3;
         u32 table_addr : 20;
-
-        inline u32 raw() {
-            return *(u32*) this;
-        }
     };
 
-    class PageDirectoryEntry {
-        PageDirectoryEntryFlags* flags;
-    public:
-        explicit PageDirectoryEntry(PageDirectoryEntryFlags* _flags): flags(_flags) {}
-
-        PageDirectoryEntryFlags& get_flags() {
-            return *flags;
-        }
-
-        static PageDirectoryEntry from(u32* flags) {
-            return PageDirectoryEntry((PageDirectoryEntryFlags*) flags);
-        }
-    };
-
-    struct PageTableEntryFlags {
+    struct __attribute__((packed)) PageTableEntry {
         u32 present : 1;
         u32 rw : 1;
         u32 user : 1;
@@ -53,33 +36,24 @@ namespace MemoryManagement {
         u32 global : 1;
         u32 avail : 3;
         u32 page_addr : 20;
-
-        inline u32 raw() {
-            return *(u32*) this;
-        }
     };
 
-    class PageTableEntry {
-        PageTableEntryFlags* flags;
-    public:
-        explicit PageTableEntry(PageTableEntryFlags* _flags): flags(_flags) {}
-
-        PageTableEntryFlags& get_flags() {
-            return *flags;
-        }
-
-        static PageTableEntry from(u32* flags) {
-            return PageTableEntry((PageTableEntryFlags*) flags);
-        }
+    struct __attribute__((packed)) PageTable {
+        PageTableEntry pages[1024];
     };
 
+    struct __attribute__((packed)) PageDirectory {
+        PageDirectoryEntry tables[1024];
+        PageTable* ref_tables[1024];
+    };
+
+    PageTableEntry* allocate_page(PageDirectory* dir, u32 vaddr, u32 frame, bool is_kernel, bool is_writable);
+    void identity_map_region(PageDirectory* dir, u32 addr, size_t length, bool is_kernel, bool is_writable);
+    void allocate_region(PageDirectory* dir, u32 vaddr, u32 size, bool is_kernel, bool is_writable);
     void init_paging();
-
-    void protect_map(linear_addr_t, size_t length);
-    void identity_map(linear_addr_t, size_t length);
-    PageTableEntry ensure_pte(linear_addr_t);
-
-    void allocate_physical_pages(physical_addr_t* addresses, size_t count);
+    void load_page_dir(PageDirectory* dir);
+    void save_kernel_page_dir();
+    PageDirectory* get_kernel_page_dir();
 };
 
 #endif

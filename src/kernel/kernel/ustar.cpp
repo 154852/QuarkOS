@@ -3,12 +3,12 @@
 #include <kernel/hardware/disk.hpp>
 #include <string.h>
 
-static unsigned char* open_archive;
+static unsigned char open_archive[512];;
 static int open_archive_sector = -1;
 
 void ensure_open_archive(int idx) {
     if (open_archive_sector == idx) return;
-    if (open_archive_sector == -1) open_archive = (unsigned char*) kmalloc(512, 0, 0);
+    // if (open_archive == 0) open_archive = (unsigned char*) kmalloc(512, 0, 0);
     open_archive_sector = idx;
 
     Disk::read_sectors(idx, 1, open_archive);
@@ -31,40 +31,44 @@ int oct2bin(unsigned char *str, int size) {
 }
 
 USTAR::FileRaw* USTAR::lookup_raw(const char* filename) {
-    u32 ptr = 0;
+    return (USTAR::FileRaw*) archive_pointer(USTAR::lookup_raw_pointer(filename));
+}
+
+unsigned int USTAR::lookup_raw_pointer(const char* filename) {
+    unsigned int ptr = 0;
 
     while (!memcmp(archive_pointer(ptr + 257), "ustar", 5)) {
         int filesize = oct2bin(archive_pointer(ptr + 0x7c), 11);
         if (!memcmp(archive_pointer(ptr), filename, strlen(filename) + 1)) {
-            return (USTAR::FileRaw*) archive_pointer(ptr);
+            return ptr;
         }
         ptr += (((filesize + 511) / 512) + 1) * 512;
     }
     return 0;
 }
 
+#define min(a, b) ((a) > (b)? (b):(a))
+
 USTAR::FileParsed* USTAR::lookup_parsed(const char* filename) {
-    FileRaw* raw = lookup_raw(filename);
-    if (!raw) return 0;
+    unsigned int raw_address = USTAR::lookup_raw_pointer(filename);
+    if (!raw_address) return 0;
+
+    USTAR::FileRaw* tmp_raw = (USTAR::FileRaw*) archive_pointer(raw_address);
 
     FileParsed* parsed = (FileParsed*) kmalloc(sizeof(FileParsed), 0, 0);
-    size_t name_length = strlen(raw->name) + 1;
+    size_t name_length = strlen(tmp_raw->name) + 1;
     parsed->name = (char*) kmalloc(name_length, 0, 0);
-    memcpy(parsed->name, raw->name, name_length);
+    memcpy(parsed->name, tmp_raw->name, name_length);
 
-    parsed->length = oct2bin((unsigned char*) raw->size, 11);
+    parsed->length = oct2bin((unsigned char*) tmp_raw->size, 11);
     parsed->content = (unsigned char*) kmalloc(parsed->length + 1, 0, 0);
-    memcpy(parsed->content, content_from_raw(raw), parsed->length);
+    unsigned int raw_content_start = raw_address + 512;
+    for (u32 i = 0; i < parsed->length; i += 512) {
+        memcpy(parsed->content + i, archive_pointer(raw_content_start + i), min(512, parsed->length - i));
+    }
+
+
     parsed->content[parsed->length] = 0;
 
     return parsed;
-}
-
-unsigned char* USTAR::content_from_raw(FileRaw* raw) {
-    return archive_pointer(((unsigned int) raw - (unsigned int) open_archive + (512 * open_archive_sector)) + 512);
-}
-
-void USTAR::initialise() {
-    // FileParsed* parsed = lookup_parsed("builtfs/hello.txt");
-    // debugf("%s: (length = %i) '%s'\n", parsed->name, parsed->length, parsed->content);
 }

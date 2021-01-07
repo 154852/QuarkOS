@@ -29,10 +29,9 @@ namespace USTAR {
 		unsigned char* content;
 	};
 
-	void initialise();
 	FileRaw* lookup_raw(const char* name);
+	unsigned int lookup_raw_pointer(const char* name);
 	FileParsed* lookup_parsed(const char* name);
-	unsigned char* content_from_raw(FileRaw* raw);
 };
 
 #endif

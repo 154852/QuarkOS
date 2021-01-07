@@ -40,7 +40,7 @@ hello
 all: hello
 
 hello: $(OBJS) link.ld
-	$(CC) -T link.ld -o $@ $(CFLAGS) $(LINK_LIST)
+	$(CC) -o $@ $(CFLAGS) $(LINK_LIST)
 
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)

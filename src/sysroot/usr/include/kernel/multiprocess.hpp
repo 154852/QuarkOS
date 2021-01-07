@@ -17,6 +17,7 @@ namespace MultiProcess {
         Process* next;
         const char* name;
         ProcessState state;
+        MemoryManagement::PageDirectory* page_dir;
     };
 
     struct __attribute__((packed)) TSS {
@@ -53,8 +54,10 @@ namespace MultiProcess {
     void tss_set_stack(u32 kss, u32 kesp);
 
     Process* create(void* entry, const char* name);
+    void end();
+    void append(Process* process);
     void init(u32 ktss_idx, u32 kss, u32 kesp);
-    void exit(Process* process);
+    void exit(Process* process, u32 exit_code);
     void yield(IRQ::CSITRegisters2* regs);
 };
 
