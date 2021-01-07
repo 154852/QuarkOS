@@ -1,4 +1,5 @@
 #include <kernel/multiprocess.hpp>
+#include <kernel/kernel.hpp>
 #include <assertions.h>
 #include <kernel/kmalloc.hpp>
 #include <kernel/hardware/gdt.hpp>
@@ -98,7 +99,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 void MultiProcess::append(Process* proc) {
 	proc->next = current_process->next;
 	current_process->next = proc;
-	debugf("Prepared to run process %s\n", proc->name);
+	kdebugf("Prepared to run process %s\n", proc->name);
 }
 
 extern "C" void tss_flush();
@@ -146,7 +147,7 @@ void MultiProcess::exit(Process* process, u32 exit_code) {
 	if (process == 0) process = current_process;
 	
 	process->state = ProcessState::Exitting;
-	debugf("Process %s quit with code: %d\n", process->name, exit_code);
+	kdebugf("Process %s quit with code: %d\n", process->name, exit_code);
 }
 
 void MultiProcess::yield(IRQ::CSITRegisters2* registers) {

@@ -1,6 +1,7 @@
 #include <assertions.h>
 #include <kernel/vga.hpp>
 #include <kernel/hardware/pic.hpp>
+#include <kernel/hardware/cmos.hpp>
 #include <kernel/hardware/pit.hpp>
 #include <kernel/hardware/interrupts.hpp>
 #include <kernel/hardware/keyboard.hpp>
@@ -16,8 +17,7 @@
 #include <string.h>
 #include <kernel/elf.hpp>
 #include <syscall.h>
-
-#define kdebugf(...) debugf(__VA_ARGS__); printf(__VA_ARGS__)
+#include <kernel/kernel.hpp>
 
 extern "C" u16 exception_code;
 asm(
@@ -187,18 +187,16 @@ QUICK_INTERRUPT(unknown_error2);
 QUICK_INTERRUPT(coprocessor_error);
 
 void* specific_interrupt_handlers[256];
-extern "C" void kernel_main(void) {
-    debugf("Starting QuarkOS\n");
 
-    Terminal::initialize();
-    debugf("Initialized terminal\n");
+extern "C" void kernel_main(void) {
+    kdebugf("Starting QuarkOS\n");
 
     PIC::remap(0x20, 0x28);
     PIC::irq_clear_mask(2); // Required
-    debugf("Initiliased PIC\n");
+    kdebugf("Initiliased PIC\n");
 
     GDT::initialise();
-    debugf("Initiliased GDT\n");
+    kdebugf("Initiliased GDT\n");
 
     memset(specific_interrupt_handlers, 0, sizeof(specific_interrupt_handlers));
     specific_interrupt_handlers[0x00] = (void*) division_error;
@@ -243,6 +241,10 @@ extern "C" void kernel_main(void) {
     PIC::irq_clear_mask(1); // Keyboard
     PIT::set_reload_value(PIT_CHANNEL_0, 60000);
 
+    Terminal::initialize();
+    kdebugf("Initialized terminal\n");
+
+    // Safe to do, only because we have no local variables
     u32 esp; asm volatile("mov %%esp, %0" : "=r"(esp));
     MultiProcess::tss_set_stack(0x10, esp);
 
@@ -251,7 +253,7 @@ extern "C" void kernel_main(void) {
     MultiProcess::append(proc);
 
     kdebugf("Starting clock...\n");
-    PIC::irq_clear_mask(0); // Clock
+    PIC::irq_clear_mask(0); // PIT
 
     for(;;) { asm("hlt"); }
 }

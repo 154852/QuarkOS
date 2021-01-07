@@ -35,6 +35,7 @@ kernel/hardware/interrupts.o \
 kernel/kernel.o \
 kernel/hardware/keyboard.o \
 kernel/hardware/keyboard_scancodes.o \
+kernel/hardware/cmos.o \
 kernel/kmalloc.o \
 kernel/paging.o \
 kernel/multiprocess.o \
