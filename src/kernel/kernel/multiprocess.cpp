@@ -12,13 +12,11 @@ MultiProcess::TSS kernel_tss;
 
 MultiProcess::Process* current_process;
 
-extern "C" void update_process(IRQ::CSITRegisters registers) {
-	PIC::send_EOI(0);
+MultiProcess::Process* MultiProcess::get_current_task() {
+	return current_process;
+}
 
-	if (current_process->state != MultiProcess::ProcessState::Exitting) {
-		memcpy(&current_process->registers, &registers, sizeof(registers));
-	}
-
+MultiProcess::Process* find_next_task() {
 	if (current_process->state == MultiProcess::ProcessState::Running) current_process->state = MultiProcess::ProcessState::Runnable;
 	current_process = current_process->next;
 	// Move to the next thread
@@ -35,6 +33,28 @@ extern "C" void update_process(IRQ::CSITRegisters registers) {
 	}
 	// If this thread is also exitting it, skip it, but don't remove it (we can't)
 
+	if (current_process->state == MultiProcess::ProcessState::Waiting) {
+		assert(current_process->waitTask.has_wait_task);
+		
+		MemoryManagement::load_page_dir(current_process->page_dir);
+		current_process->waitTask.update(current_process);
+		MemoryManagement::save_kernel_page_dir();
+
+		if (current_process->state != MultiProcess::ProcessState::Waiting) current_process->waitTask.has_wait_task = false;
+		return find_next_task();
+	}
+
+	return current_process;
+}
+
+extern "C" void update_process(IRQ::CSITRegisters registers) {
+	PIC::send_EOI(0);
+
+	if (current_process->state != MultiProcess::ProcessState::Exitting) {
+		memcpy(&current_process->registers, &registers, sizeof(registers));
+	}
+
+	current_process = find_next_task();
 	
 	current_process->state = MultiProcess::ProcessState::Running;
 	memcpy(&registers, &current_process->registers, sizeof(registers));
@@ -72,6 +92,12 @@ asm(
 		"iret\n"
 );
 
+void MultiProcess::append_wait_task(MultiProcess::WaitTaskCallback callback) {
+	current_process->waitTask.has_wait_task = true;
+	current_process->waitTask.update = callback;
+	current_process->state = MultiProcess::ProcessState::Waiting;
+}
+
 void MultiProcess::end() {
 	int exit_code;
 	asm volatile("movl %%eax, %0" :"=b"(exit_code));
@@ -87,6 +113,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	Process* proc = (Process*) kmalloc(sizeof(Process), 0, 0);
 	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc(sizeof(MemoryManagement::PageDirectory), 1, 0);
 	proc->name = name;
+	proc->waitTask.has_wait_task = false;
 
 	proc->registers.ss = 0x20 | 0x03;
 	proc->registers.eflags = 0x0202;
@@ -155,21 +182,7 @@ void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
 		memcpy(&current_process->registers, (unsigned char*)registers + 4, sizeof(IRQ::CSITRegisters));
 	}
 
-	if (current_process->state == MultiProcess::ProcessState::Running) current_process->state = MultiProcess::ProcessState::Runnable;
-	current_process = current_process->next;
-	// Move to the next thread
-	
-	while (current_process->next->state == MultiProcess::Exitting) {
-		assert(current_process->next != current_process);
-		current_process->next = current_process->next->next;
-	}
-	// Remove all of the exitting processes directly after this thread
-
-	if (current_process->state == MultiProcess::ProcessState::Exitting) {
-		assert(current_process->next != current_process);
-		current_process = current_process->next;
-	}
-	// If this thread is also exitting it, skip it, but don't remove it (we can't)
+	current_process = find_next_task();
 	
 	current_process->state = MultiProcess::ProcessState::Running;
 	memcpy((unsigned char*) registers + 4, &current_process->registers, sizeof(IRQ::CSITRegisters));

@@ -14,6 +14,11 @@ namespace Keyboard {
 
 	char scan_code_to_char(const ScanCode* scancode, KeyboardState* state);
 	__attribute__((interrupt)) void keyboard_interrupt(struct IRQ::CSITRegisters*);
+	
+	void pop_from_buffer(u32 count);
+	void push_to_buffer(char character);
+	u32 get_buffer_size();
+	char* get_buffer();
 }
 
 #endif

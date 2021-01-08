@@ -9,7 +9,17 @@ namespace MultiProcess {
     enum ProcessState {
         Running,
         Runnable,
-        Exitting
+        Exitting,
+        Waiting
+    };
+
+    struct Process;
+
+    typedef void(*WaitTaskCallback)(Process* process);
+    
+    struct WaitTask {
+        bool has_wait_task;
+        WaitTaskCallback update;
     };
 
     struct Process {
@@ -18,6 +28,7 @@ namespace MultiProcess {
         const char* name;
         ProcessState state;
         MemoryManagement::PageDirectory* page_dir;
+        WaitTask waitTask;
     };
 
     struct __attribute__((packed)) TSS {
@@ -54,6 +65,8 @@ namespace MultiProcess {
     void tss_set_stack(u32 kss, u32 kesp);
 
     Process* create(void* entry, const char* name);
+    Process* get_current_task();
+    void append_wait_task(WaitTaskCallback callback);
     void end();
     void append(Process* process);
     void init(u32 ktss_idx, u32 kss, u32 kesp);

@@ -2,11 +2,34 @@
 #include <stdio.h>
 #include <kernel/hardware/pic.hpp>
 #include <kernel/tty.hpp>
+#include <assertions.h>
 
 #define SCAN_CODE_PORT 0x60
 #define INTERRUPT_ID 0x01
 
 static Keyboard::KeyboardState global_keyboard_state = { false, false };
+#define CHAR_BUFFER_CAPACITY 64
+static char buffer[CHAR_BUFFER_CAPACITY];
+static u32 buffer_size = 0;
+
+void Keyboard::push_to_buffer(char character) {
+    assert(buffer_size < CHAR_BUFFER_CAPACITY);
+    buffer[buffer_size] = character;
+    buffer_size++;
+}
+
+void Keyboard::pop_from_buffer(u32 count) {
+    assert(buffer_size - count >= 0);
+    buffer_size -= count;
+}
+
+u32 Keyboard::get_buffer_size() {
+    return buffer_size;
+}
+
+char* Keyboard::get_buffer() {
+    return buffer;
+}
 
 char Keyboard::scan_code_to_char(const Keyboard::ScanCode* code, Keyboard::KeyboardState* state) {
     if (!code) return 0;
@@ -86,5 +109,6 @@ __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITReg
     }
 
     char ch = scan_code_to_char(code, &global_keyboard_state);
-    if (ch) printf("%c", ch);
+    // if (ch) printf("%c", ch);
+    if (ch) push_to_buffer(ch);
 }

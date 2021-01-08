@@ -102,6 +102,14 @@ asm( \
 		"iret\n" \
 );
 
+void read_syscall_wait_task(MultiProcess::Process* task) {
+    if (Keyboard::get_buffer_size() < task->registers.edx) return;
+
+    memcpy((void*) task->registers.ecx, Keyboard::get_buffer(), task->registers.edx);
+    Keyboard::pop_from_buffer(task->registers.edx);
+    task->state = MultiProcess::Runnable;
+}
+
 extern "C" void syscall_handle(IRQ::CSITRegisters2* frame) {
     switch (frame->eax) {
         case SC_Write: {
@@ -110,9 +118,8 @@ extern "C" void syscall_handle(IRQ::CSITRegisters2* frame) {
             return;
         }
         case SC_Read: {
-            assert(frame->ebx == 0);
-            assert(frame->edx == 1);
-            *reinterpret_cast<char*>(frame->ecx) = 'a';
+            MultiProcess::append_wait_task(read_syscall_wait_task);
+            MultiProcess::yield(frame);
             return;
         }
         case SC_Exit: {
