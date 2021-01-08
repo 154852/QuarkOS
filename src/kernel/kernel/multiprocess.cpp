@@ -99,7 +99,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 void MultiProcess::append(Process* proc) {
 	proc->next = current_process->next;
 	current_process->next = proc;
-	kdebugf("Prepared to run process %s\n", proc->name);
+	kdebugf("[MultiProcess] Process %s linked to process chain and will execute next\n", proc->name);
 }
 
 extern "C" void tss_flush();
@@ -147,7 +147,7 @@ void MultiProcess::exit(Process* process, u32 exit_code) {
 	if (process == 0) process = current_process;
 	
 	process->state = ProcessState::Exitting;
-	kdebugf("Process %s quit with code: %d\n", process->name, exit_code);
+	kdebugf("[MultiProcess] Process %s quit with code: %d\n", process->name, exit_code);
 }
 
 void MultiProcess::yield(IRQ::CSITRegisters2* registers) {

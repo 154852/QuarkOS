@@ -109,6 +109,12 @@ extern "C" void syscall_handle(IRQ::CSITRegisters2* frame) {
             Terminal::write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
             return;
         }
+        case SC_Read: {
+            assert(frame->ebx == 0);
+            assert(frame->edx == 1);
+            *reinterpret_cast<char*>(frame->ecx) = 'a';
+            return;
+        }
         case SC_Exit: {
             MultiProcess::exit(0, frame->ebx);
             MultiProcess::yield(frame);
@@ -117,6 +123,10 @@ extern "C" void syscall_handle(IRQ::CSITRegisters2* frame) {
         case SC_Yield: {
             MultiProcess::yield(frame);
             return;
+        }
+        default: {
+            kdebugf("[Core::Syscall] Unknown syscall: %.2x\n", frame->eax);
+            hang;
         }
     }
 }
@@ -189,14 +199,14 @@ QUICK_INTERRUPT(coprocessor_error);
 void* specific_interrupt_handlers[256];
 
 extern "C" void kernel_main(void) {
-    kdebugf("Starting QuarkOS\n");
+    kdebugf("[Core] Starting QuarkOS\n");
 
     PIC::remap(0x20, 0x28);
     PIC::irq_clear_mask(2); // Required
-    kdebugf("Initiliased PIC\n");
+    kdebugf("[Core] Initiliased PIC\n");
 
     GDT::initialise();
-    kdebugf("Initiliased GDT\n");
+    kdebugf("[Core] Initiliased GDT\n");
 
     memset(specific_interrupt_handlers, 0, sizeof(specific_interrupt_handlers));
     specific_interrupt_handlers[0x00] = (void*) division_error;
@@ -222,19 +232,19 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x21] = (void*) Keyboard::keyboard_interrupt;
     specific_interrupt_handlers[0x2E] = (void*) Disk::disk_interrupt;
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
-    kdebugf("Initiliased interrupts\n");
+    kdebugf("[Core] Initiliased interrupts\n");
 
     IRQ::enable_irq();
     Disk::initialise();
-    kdebugf("Initiliased disk\n");
+    kdebugf("[Core] Initiliased disk\n");
     IRQ::disable_irq();
     
     MemoryManagement::init_paging();
-    kdebugf("Initiliased paging\n");
+    kdebugf("[Core] Initiliased paging\n");
 
-    kdebugf("Disable IRQ\n");
+    kdebugf("[Core] Disable IRQ\n");
     MultiProcess::init(5, 0x10, 0);
-    kdebugf("Multiprocess init\n");
+    kdebugf("[Core] Multiprocess init\n");
 
     IRQ::enable_irq();
 
@@ -242,7 +252,7 @@ extern "C" void kernel_main(void) {
     PIT::set_reload_value(PIT_CHANNEL_0, 60000);
 
     Terminal::initialize();
-    kdebugf("Initialized terminal\n");
+    kdebugf("[Core] Initialized terminal\n");
 
     // Safe to do, only because we have no local variables
     u32 esp; asm volatile("mov %%esp, %0" : "=r"(esp));
@@ -252,7 +262,7 @@ extern "C" void kernel_main(void) {
     MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/hello"));
     MultiProcess::append(proc);
 
-    kdebugf("Starting clock...\n");
+    kdebugf("[Core] Starting clock...\n");
     PIC::irq_clear_mask(0); // PIT
 
     for(;;) { asm("hlt"); }

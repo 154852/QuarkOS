@@ -69,10 +69,10 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	}
 
 	const int EBP = 0xC0000000;
-	MemoryManagement::allocate_region(process->page_dir, EBP, 4 * KB, false, true);
+	MemoryManagement::allocate_region(process->page_dir, EBP, 16 * KB, false, true);
 
     process->registers.ebp = EBP;
-	process->registers.esp = EBP + (4 * KB);
+	process->registers.esp = EBP + (16 * KB);
 	process->registers.esp -= 4;
 	MemoryManagement::load_page_dir(process->page_dir);
 	(*(u32*) process->registers.esp) = (u32) MultiProcess::end;

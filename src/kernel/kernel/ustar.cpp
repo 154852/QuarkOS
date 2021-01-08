@@ -8,7 +8,6 @@ static int open_archive_sector = -1;
 
 void ensure_open_archive(int idx) {
     if (open_archive_sector == idx) return;
-    // if (open_archive == 0) open_archive = (unsigned char*) kmalloc(512, 0, 0);
     open_archive_sector = idx;
 
     Disk::read_sectors(idx, 1, open_archive);

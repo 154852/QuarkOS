@@ -2,3 +2,4 @@
 src/kernel/include
 -I
 src/libc/include
+-m32
