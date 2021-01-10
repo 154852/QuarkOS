@@ -21,7 +21,7 @@ MultiProcess::Process* find_next_task() {
 	current_process = current_process->next;
 	// Move to the next thread
 	
-	while (current_process->next->state == MultiProcess::Exitting) {
+	while (current_process->next->state == MultiProcess::ProcessState::Exitting) {
 		assert(current_process->next != current_process);
 		current_process->next = current_process->next->next;
 	}
@@ -64,7 +64,7 @@ void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
 	if (current_process->state == MultiProcess::ProcessState::Waiting) {
 		memcpy(original_registers, &current_process->wait_task.registers, sizeof(IRQ::CSITRegisters));
 	} else {
-		current_process->state = MultiProcess::ProcessState::Running;
+		if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
 		memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
 	}
 

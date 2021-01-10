@@ -186,10 +186,45 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
             MultiProcess::yield(frame);
             return 0;
         }
-        case SC_IsAlive: {
-            MultiProcess::Process* proc =  MultiProcess::find_process_by_pid(frame->ebx);
-            if (proc == 0 || proc->state == MultiProcess::ProcessState::Exitting) frame->eax = 0;
-            else frame->eax = 1;
+        case SC_ProcInfo: {
+            ProcessInfo* info = reinterpret_cast<ProcessInfo*>(frame->ebx);
+
+            MultiProcess::Process* proc = MultiProcess::find_process_by_pid(info->pid);
+            if (proc == 0) {
+                info->state = ProcessStateSC::PSSC_NotPresent;
+            } else {
+                if (proc->state == MultiProcess::Exitting) info->state = ProcessStateSC::PSSC_Exitting;
+                else if (proc->state == MultiProcess::Idle) info->state = ProcessStateSC::PSSC_Idle;
+                else info->state = ProcessStateSC::PSSC_Running;
+
+                memcpy(info->name, proc->name, strlen(proc->name) + 1);
+            }
+            return 0;
+        }
+        case SC_LSProc: {
+            unsigned int length = 0;
+            unsigned int* pids = reinterpret_cast<unsigned int*>(frame->ebx);
+            unsigned long max_length = frame->ecx;
+
+            if (max_length == 0) {
+                frame->eax = 0;
+                return 0;
+            }
+
+            pids[0] = MultiProcess::get_current_task()->pid;
+            length++;
+
+            MultiProcess::Process* proc = MultiProcess::get_current_task()->next;
+            while (proc != MultiProcess::get_current_task()) {
+                if (length >= max_length) {
+                    frame->eax = length;
+                    return 0;
+                }
+                
+                pids[length++] = proc->pid;
+                proc = proc->next;
+            }
+            frame->eax = length;
             return 0;
         }
         default: {

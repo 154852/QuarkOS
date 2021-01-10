@@ -18,8 +18,8 @@ unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsi
 	return ret;
 }
 
-int is_alive(unsigned int pid) {
-	return syscall(SC_IsAlive, pid, 0, 0);
+void proc_info(ProcessInfo *info) {
+	syscall(SC_ProcInfo, (unsigned long) info, 0, 0);
 }
 
 void write(const char* string, unsigned long length) {
@@ -41,4 +41,8 @@ void yield() {
 void exit(unsigned char code) {
 	 syscall(SC_Exit, code, 0, 0);
 	 while (1);
+}
+
+unsigned int list_process_pids(int* pids, unsigned long length) {
+	return syscall(SC_LSProc, (unsigned long) pids, length, 0);
 }

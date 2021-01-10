@@ -25,7 +25,8 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 
 OBJS=\
 hello.o \
-shell.o
+shell.o \
+ps.o
 
 LINK_LIST=\
 $(LDFLAGS) \
@@ -33,17 +34,21 @@ $(LIBS) \
 
 BINARIES=\
 hello \
-shell
+shell \
+ps
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello shell
+all: hello shell ps
 
 hello: hello.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 shell: shell.o link.ld
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+ps: ps.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 .c.o:
@@ -58,7 +63,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello shell
+install-executable: hello shell ps
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

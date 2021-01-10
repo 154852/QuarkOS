@@ -18,13 +18,30 @@ typedef enum {
 	SC_Yield=0x17,
 	SC_Exit=0x37,
 	SC_Exec=0x3b,
-	SC_IsAlive=0x01
+	SC_ProcInfo=0x01,
+	SC_LSProc=0x02
 } Syscall;
  
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
 void write(const char* string, unsigned long length);
 void read(char* string, unsigned long length);
-int is_alive(unsigned int pid);
+unsigned int list_process_pids(int* pids, unsigned long length);
+
+typedef enum {
+	PSSC_NotPresent,
+	PSSC_Exitting,
+	PSSC_Running,
+	PSSC_Idle
+} ProcessStateSC;
+
+typedef struct {
+	unsigned int pid;
+
+	ProcessStateSC state;
+	char name[64];
+} ProcessInfo;
+
+void proc_info(ProcessInfo* info);
 unsigned int exec(const char* path);
 void yield();
 void __attribute__((noreturn)) exit(unsigned char code);

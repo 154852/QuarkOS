@@ -41,10 +41,14 @@ int main() {
 	char pwd[PWD_SIZE];
 	memcpy(pwd, INIT_PATH, sizeof(INIT_PATH));
 
+	printf("Session started at %s\n", pwd);
+
 	int input_length;
 	char input[INPUT_SIZE];
 
 	char tmp_path[PWD_SIZE];
+
+	ProcessInfo info;
 
 	while (1) {
 		printf("$ ");
@@ -65,7 +69,10 @@ int main() {
 			continue;
 		}
 
-		while (is_alive(pid)) yield();
+		info.pid = pid;
+		do {
+			proc_info(&info);
+		} while (info.state != PSSC_Exitting && info.state != PSSC_NotPresent);
 		printf("%s ended\n", tmp_path);
 	}
 
