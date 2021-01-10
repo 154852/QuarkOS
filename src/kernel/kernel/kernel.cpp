@@ -102,34 +102,87 @@ asm( \
 		"iret\n" \
 );
 
-void read_syscall_wait_task(MultiProcess::Process* task) {
-    if (Keyboard::get_buffer_size() < task->registers.edx) return;
+struct ELFLoadRequest {
+    USTAR::FileParsed* file;
+    MultiProcess::Process* proc;
+};
+
+void load_elf_ring0_callback(void* data) {
+    ELFLoadRequest* req = static_cast<ELFLoadRequest*>(data);
+    USTAR::FileParsed* file = req->file;
+
+    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, file->name));
+    req->proc = proc;
+
+    MultiProcess::get_current_task()->ring0_request.has_ring0_request = false;
+}
+
+void read_syscall_wait_task() {
+    MultiProcess::Process* task = MultiProcess::get_current_task();
+
+    while (Keyboard::get_buffer_size() < task->registers.edx) {
+        yield();
+    }
 
     memcpy((void*) task->registers.ecx, Keyboard::get_buffer(), task->registers.edx);
     Keyboard::pop_from_buffer(task->registers.edx);
-    task->state = MultiProcess::Runnable;
+    task->state = MultiProcess::EndWaiting;
+    task->wait_task.has_wait_task = false;
+    yield();
 }
 
-extern "C" void syscall_handle(IRQ::CSITRegisters2* frame) {
+void execve_syscall_wait_task() {
+    MultiProcess::Process* task = MultiProcess::get_current_task();
+
+    USTAR::FileParsed* file = USTAR::lookup_parsed((const char*) task->registers.ebx);
+    ELFLoadRequest req = {
+        .file = file,
+        .proc = 0
+    };
+
+    MultiProcess::append_ring0_sync_request(load_elf_ring0_callback, &req);
+    yield();
+    MultiProcess::append(req.proc);
+
+    task->registers.eax = req.proc->pid;
+
+    task->state = MultiProcess::EndWaiting;
+    task->wait_task.has_wait_task = false;
+    yield();
+}
+
+// NOTE: We return int (even though we have no desire to return anything) to prevent gcc tail end optimising function calls, which somehow breaks things
+extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
     switch (frame->eax) {
         case SC_Write: {
             assert(frame->ebx == 1);
             Terminal::write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
-            return;
+            return 0;
         }
         case SC_Read: {
             MultiProcess::append_wait_task(read_syscall_wait_task);
             MultiProcess::yield(frame);
-            return;
+            return 0;
         }
         case SC_Exit: {
             MultiProcess::exit(0, frame->ebx);
             MultiProcess::yield(frame);
-            return;
+            return 0;
         }
         case SC_Yield: {
             MultiProcess::yield(frame);
-            return;
+            return 0;
+        }
+        case SC_Exec: {
+            MultiProcess::append_wait_task(execve_syscall_wait_task);
+            MultiProcess::yield(frame);
+            return 0;
+        }
+        case SC_IsAlive: {
+            MultiProcess::Process* proc =  MultiProcess::find_process_by_pid(frame->ebx);
+            if (proc == 0 || proc->state == MultiProcess::ProcessState::Exitting) frame->eax = 0;
+            else frame->eax = 1;
+            return 0;
         }
         default: {
             kdebugf("[Core::Syscall] Unknown syscall: %.2x\n", frame->eax);
@@ -205,7 +258,11 @@ QUICK_INTERRUPT(coprocessor_error);
 
 void* specific_interrupt_handlers[256];
 
+u32 stack_top;
+
 extern "C" void kernel_main(void) {
+    asm volatile("mov %%esp, %0" : "=m"(stack_top));
+
     kdebugf("[Core] Starting QuarkOS\n");
 
     PIC::remap(0x20, 0x28);
@@ -262,11 +319,12 @@ extern "C" void kernel_main(void) {
     kdebugf("[Core] Initialized terminal\n");
 
     // Safe to do, only because we have no local variables
-    u32 esp; asm volatile("mov %%esp, %0" : "=r"(esp));
-    MultiProcess::tss_set_stack(0x10, esp);
+    // u32 esp; asm volatile("mov %%esp, %0" : "=r"(esp));
+    kdebugf("[Core] Stack top = %.8x\n", stack_top);
+    MultiProcess::tss_set_stack(0x10, stack_top);
 
-    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/hello");
-    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/hello"));
+    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/shell");
+    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/shell"));
     MultiProcess::append(proc);
 
     kdebugf("[Core] Starting clock...\n");

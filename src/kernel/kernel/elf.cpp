@@ -1,3 +1,4 @@
+#include "kernel/kernel.hpp"
 #include <assertions.h>
 #include <kernel/elf.hpp>
 #include <kernel/paging.hpp>
@@ -21,6 +22,9 @@ u32 ELF::find_section_index(ELFLoadingContext* ctx, const char* name) {
 }
 
 MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process) {
+	MemoryManagement::PageDirectory* old = MemoryManagement::get_active_page_dir();
+	MemoryManagement::save_kernel_page_dir();
+
 	assert(length > sizeof(Header));
 	Header* header = (Header*) content;
 
@@ -77,6 +81,8 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	MemoryManagement::load_page_dir(process->page_dir);
 	(*(u32*) process->registers.esp) = (u32) MultiProcess::end;
 	MemoryManagement::save_kernel_page_dir();
+
+	MemoryManagement::load_page_dir(old);
 
 	return process;
 }

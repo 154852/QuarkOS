@@ -99,3 +99,8 @@ void Disk::disk_interrupt(void*) {
 	inb(0x1f7); // status
 	PIC::send_EOI(IRQ_FIXED_DISK);
 }
+
+// // Read queue?
+// void Disk::async_read_sectors() {
+
+// }

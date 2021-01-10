@@ -53,6 +53,8 @@ namespace MemoryManagement {
     void init_paging();
     void load_page_dir(PageDirectory* dir);
     void save_kernel_page_dir();
+    
+    PageDirectory* get_active_page_dir();
     PageDirectory* get_kernel_page_dir();
 };
 

@@ -66,7 +66,6 @@ USTAR::FileParsed* USTAR::lookup_parsed(const char* filename) {
         memcpy(parsed->content + i, archive_pointer(raw_content_start + i), min(512, parsed->length - i));
     }
 
-
     parsed->content[parsed->length] = 0;
 
     return parsed;

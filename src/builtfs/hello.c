@@ -3,6 +3,7 @@
 
 int main() {
 	printf("What is your name? ");
+	// yield();
 
 	char name[10];
 	for (int i = 0; i < 9; i++) {
@@ -15,5 +16,5 @@ int main() {
 	printf("\n");
 
 	printf("Hello %s!\n", name);
-	return 42;
+	return 0;
 }

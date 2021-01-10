@@ -24,23 +24,27 @@ LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
 LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 
 OBJS=\
-hello.o
+hello.o \
+shell.o
 
 LINK_LIST=\
-$(OBJS) \
 $(LDFLAGS) \
 $(LIBS) \
 
 BINARIES=\
-hello
+hello \
+shell
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello
+all: hello shell
 
-hello: $(OBJS) link.ld
-	$(CC) -o $@ $(CFLAGS) $(LINK_LIST)
+hello: hello.o link.ld
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+shell: shell.o link.ld
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
@@ -54,7 +58,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello
+install-executable: hello shell
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

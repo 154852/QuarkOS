@@ -3,14 +3,15 @@
 #include <kernel/hardware/pic.hpp>
 #include <kernel/tty.hpp>
 #include <assertions.h>
+#include <kernel/kernel.hpp>
 
 #define SCAN_CODE_PORT 0x60
 #define INTERRUPT_ID 0x01
 
 static Keyboard::KeyboardState global_keyboard_state = { false, false };
 #define CHAR_BUFFER_CAPACITY 64
-static char buffer[CHAR_BUFFER_CAPACITY];
-static u32 buffer_size = 0;
+static volatile char buffer[CHAR_BUFFER_CAPACITY];
+static volatile u32 buffer_size = 0;
 
 void Keyboard::push_to_buffer(char character) {
     assert(buffer_size < CHAR_BUFFER_CAPACITY);
@@ -19,7 +20,7 @@ void Keyboard::push_to_buffer(char character) {
 }
 
 void Keyboard::pop_from_buffer(u32 count) {
-    assert(buffer_size - count >= 0);
+    assert((i32) buffer_size - (i32) count >= 0);
     buffer_size -= count;
 }
 
@@ -28,7 +29,7 @@ u32 Keyboard::get_buffer_size() {
 }
 
 char* Keyboard::get_buffer() {
-    return buffer;
+    return (char*) buffer;
 }
 
 char Keyboard::scan_code_to_char(const Keyboard::ScanCode* code, Keyboard::KeyboardState* state) {

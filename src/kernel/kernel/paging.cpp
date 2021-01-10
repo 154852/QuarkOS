@@ -128,6 +128,10 @@ namespace MemoryManagement {
 		return kernel_page_dir;
 	}
 
+	PageDirectory* get_active_page_dir() {
+		return active_page_dir;
+	}
+
 	void load_page_dir(PageDirectory* dir) {
 		asm volatile(
 			"movl %%eax, %%cr3\n"

@@ -14,12 +14,16 @@ typedef enum {
 	// SC_Exit=0x3c
 	SC_Write=0x04,
 	SC_Yield=0x17,
-	SC_Exit=0x37
+	SC_Exit=0x37,
+	SC_Exec=0x3b,
+	SC_IsAlive=0x01
 } Syscall;
  
-void syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
+unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
 void write(const char* string, unsigned long length);
 void read(char* string, unsigned long length);
+int is_alive(unsigned int pid);
+unsigned int exec(const char* path);
 void yield();
 void __attribute__((noreturn)) exit(unsigned char code);
  
