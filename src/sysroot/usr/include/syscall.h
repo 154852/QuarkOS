@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define EFILENOTFOUND 1
+
 typedef enum {
 	SC_Read=0x00,
 	// SC_Write=0x01,

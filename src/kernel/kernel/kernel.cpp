@@ -135,6 +135,14 @@ void execve_syscall_wait_task() {
     MultiProcess::Process* task = MultiProcess::get_current_task();
 
     USTAR::FileParsed* file = USTAR::lookup_parsed((const char*) task->registers.ebx);
+    if (file == 0) {
+        task->registers.eax = -EFILENOTFOUND;
+        task->state = MultiProcess::EndWaiting;
+        task->wait_task.has_wait_task = false;
+        yield();
+        return;
+    }
+
     ELFLoadRequest req = {
         .file = file,
         .proc = 0

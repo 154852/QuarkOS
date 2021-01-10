@@ -106,6 +106,7 @@ __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITReg
 
     if (code->name == KEY_BACKSPACE && code->action == KEY_PRESS) {
         Terminal::char_back();
+        push_to_buffer(0x08);
         return;
     }
 

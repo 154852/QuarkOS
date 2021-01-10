@@ -6,7 +6,7 @@
 
 #define hang while (1) {};
 
-__attribute__((noreturn)) inline void __assertion_fail(const char* message, unsigned int line, const char* file) {
+__attribute__((noreturn, always_inline)) inline void __assertion_fail(const char* message, unsigned int line, const char* file) {
 	debugf("%s at %s, line %u\n", message, file, line);
 	printf("%s at %s, line %u\n", message, file, line);
 	hang;
