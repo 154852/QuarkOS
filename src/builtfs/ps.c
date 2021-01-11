@@ -22,11 +22,11 @@ int main() {
 	unsigned int length = list_process_pids((int*) pids, 100);
 
 	ProcessInfo info;
-	for (int i = 0; i < length; i++) {
+	for (unsigned int i = 0; i < length; i++) {
 		info.pid = pids[i];
 		proc_info(&info);
 
-		printf("%.3d   %s   %.64s\n", pids[i], state_name(info.state), info.name);
+		printf("%.3u   %s   %.64s\n", pids[i], state_name(info.state), info.name);
 	}
 
 	return 0;

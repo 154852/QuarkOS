@@ -26,7 +26,8 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 OBJS=\
 hello.o \
 shell.o \
-ps.o
+ps.o \
+windowserver.o
 
 LINK_LIST=\
 $(LDFLAGS) \
@@ -35,12 +36,13 @@ $(LIBS) \
 BINARIES=\
 hello \
 shell \
-ps
+ps \
+windowserver
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello shell ps
+all: hello shell windowserver
 
 hello: hello.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
@@ -49,6 +51,9 @@ shell: shell.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 ps: ps.o link.ld
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+windowserver: windowserver.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 .c.o:
@@ -63,7 +68,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello shell ps
+install-executable: hello shell ps windowserver
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

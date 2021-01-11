@@ -113,26 +113,6 @@ namespace ELF {
 		u8 entry_size[4];
 	};
 
-	struct Symbol {
-		unsigned char* ptr;
-		u32 size;
-	};
-
-	struct ELFLoadingContext {
-		unsigned char* content;
-		u32 length;
-
-		u32 symbol_table_section_index;
-		u32 string_table_section_index;
-
-		u32 section_count;
-		const char** section_names;
-
-		u32 symbol_count;
-		Symbol* symbols;
-	};
-
-	u32 find_section_index(ELFLoadingContext* ctx, const char* name);
 	MultiProcess::Process* load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process);
 };
 

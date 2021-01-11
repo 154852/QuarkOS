@@ -45,6 +45,8 @@ kernel/hardware/disk.o \
 kernel/tty.o \
 kernel/elf.o \
 kernel/ustar.o \
+kernel/hardware/pci.o \
+kernel/hardware/BXVGA.o \
 # $(KERNEL_ARCH_OBJS)
  
 OBJS=\

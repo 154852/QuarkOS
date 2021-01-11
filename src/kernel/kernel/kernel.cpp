@@ -5,7 +5,9 @@
 #include <kernel/hardware/pit.hpp>
 #include <kernel/hardware/interrupts.hpp>
 #include <kernel/hardware/keyboard.hpp>
+#include <kernel/hardware/BXVGA.hpp>
 #include <kernel/kmalloc.hpp>
+#include <kernel/hardware/pci.hpp>
 #include <kernel/paging.hpp>
 #include <kernel/hardware/gdt.hpp>
 #include <kernel/hardware/disk.hpp>
@@ -119,12 +121,14 @@ void load_elf_ring0_callback(void* data) {
 
 void read_syscall_wait_task() {
     MultiProcess::Process* task = MultiProcess::get_current_task();
+    assert(task->registers.edx == 1);
 
     while (Keyboard::get_buffer_size() < task->registers.edx) {
         yield();
     }
 
     memcpy((void*) task->registers.ecx, Keyboard::get_buffer(), task->registers.edx);
+    memmove(Keyboard::get_buffer(), Keyboard::get_buffer() + 1, Keyboard::get_buffer_size());
     Keyboard::pop_from_buffer(task->registers.edx);
     task->state = MultiProcess::EndWaiting;
     task->wait_task.has_wait_task = false;
@@ -184,6 +188,32 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
         case SC_Exec: {
             MultiProcess::append_wait_task(execve_syscall_wait_task);
             MultiProcess::yield(frame);
+            return 0;
+        }
+        case SC_FrameBufferInfo: {
+            FrameBufferInfo* info = reinterpret_cast<FrameBufferInfo*>(frame->ebx);
+            info->framebuffer = BXVGA::framebuffer();
+            info->size = BXVGA::framebuffer_size();
+            info->width = BXVGA::width();
+            info->height = BXVGA::height();
+            info->enabled = BXVGA::is_enabled();
+            return 0;
+        }
+        case SC_FrameBufferSetState: {
+            FrameBufferInfo* info = reinterpret_cast<FrameBufferInfo*>(frame->ebx);
+            
+            if (info->width != 0 && info->height != 0)
+                BXVGA::set_resolution(info->width, info->height);
+            if ((bool) info->enabled != BXVGA::is_enabled()) {
+                if (info->enabled) BXVGA::enable();
+                else BXVGA::disable();
+            }
+
+            info->framebuffer = BXVGA::framebuffer();
+            info->size = BXVGA::framebuffer_size();
+            info->width = BXVGA::width();
+            info->height = BXVGA::height();
+            info->enabled = BXVGA::is_enabled();
             return 0;
         }
         case SC_ProcInfo: {
@@ -341,6 +371,11 @@ extern "C" void kernel_main(void) {
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
     kdebugf("[Core] Initiliased interrupts\n");
 
+    PCI::load_hardware();
+    kdebugf("[Core] Initialised PCI\n");
+    BXVGA::initialise();
+    kdebugf("[Core] Initialised BXVGA\n");
+
     IRQ::enable_irq();
     Disk::initialise();
     kdebugf("[Core] Initiliased disk\n");
@@ -366,8 +401,8 @@ extern "C" void kernel_main(void) {
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
     MultiProcess::tss_set_stack(0x10, stack_top);
 
-    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/shell");
-    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/shell"));
+    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/windowserver");
+    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/windowserver"));
     MultiProcess::append(proc);
 
     kdebugf("[Core] Starting clock...\n");

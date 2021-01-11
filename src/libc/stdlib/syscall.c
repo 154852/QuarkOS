@@ -22,6 +22,14 @@ void proc_info(ProcessInfo *info) {
 	syscall(SC_ProcInfo, (unsigned long) info, 0, 0);
 }
 
+void framebuffer_info(FrameBufferInfo* info) {
+	syscall(SC_FrameBufferInfo, (unsigned long) info, 0, 0);
+}
+
+void framebuffer_set_state(FrameBufferInfo* info) {
+	syscall(SC_FrameBufferSetState, (unsigned long) info, 0, 0);
+}
+
 void write(const char* string, unsigned long length) {
 	syscall(SC_Write, 1, (unsigned long) string, length);
 }

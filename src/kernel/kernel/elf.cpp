@@ -1,6 +1,7 @@
 #include "kernel/kernel.hpp"
 #include <assertions.h>
 #include <kernel/elf.hpp>
+#include <kernel/hardware/BXVGA.hpp>
 #include <kernel/paging.hpp>
 #include <stdio.h>
 #include <kernel/kmalloc.hpp>
@@ -12,13 +13,6 @@ u32 get_le_u32(const u8* le) {
 
 u16 get_le_u16(const u8* le) {
 	return (u16) le[0] | ((u16) le[1] << 8);
-}
-
-u32 ELF::find_section_index(ELFLoadingContext* ctx, const char* name) {
-	for (u32 i = 0; i < ctx->section_count; i++) {
-		if (strcmp(ctx->section_names[i], name) == 0) return i;
-	}
-	assert_not_reached;
 }
 
 MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process) {
@@ -40,8 +34,6 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 	MemoryManagement::identity_map_region(process->page_dir, 0, 8 * MB, true, true);
 
-	ELFLoadingContext* context = (ELFLoadingContext*) kmalloc(sizeof(ELFLoadingContext), 0, 0);
-
 	u32 entry = get_le_u32(header->entry);
 
 	u32 program_header_entry_size = get_le_u16(header->program_header_entry_size);
@@ -49,7 +41,7 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	u32 program_header_entry_count = get_le_u16(header->program_header_entry_count);
 	ProgramHeader* program_headers = (ProgramHeader*) ((u32) content + get_le_u32(header->program_header_position));
 
-	for (int i = 0; i < program_header_entry_count; i++) {
+	for (u32 i = 0; i < program_header_entry_count; i++) {
 		ProgramHeader pheader = program_headers[i];
 
 		u32 flags = get_le_u32(pheader.flags);
@@ -83,6 +75,8 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	MemoryManagement::save_kernel_page_dir();
 
 	MemoryManagement::load_page_dir(old);
+
+	MemoryManagement::identity_map_region(process->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true);
 
 	return process;
 }

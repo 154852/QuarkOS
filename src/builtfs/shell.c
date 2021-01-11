@@ -64,7 +64,7 @@ int main() {
 		concat(pwd, pwd_length, input, input_length, tmp_path, PWD_SIZE);
 		unsigned pid = exec(tmp_path);
 
-		if (pid == -EFILENOTFOUND) {
+		if ((int) pid == -EFILENOTFOUND) {
 			printf("File not found %s\n", tmp_path);
 			continue;
 		}
@@ -72,7 +72,7 @@ int main() {
 		info.pid = pid;
 		do {
 			proc_info(&info);
-		} while (info.state != PSSC_Exitting && info.state != PSSC_NotPresent);
+		} while (info.state == PSSC_Running);
 		printf("%s ended\n", tmp_path);
 	}
 
