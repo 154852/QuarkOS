@@ -43,7 +43,6 @@ string/memmove.o \
 string/memset.o \
 string/strlen.o\
 string/strcmp.o \
-floatingpoint.o \
  
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS)
@@ -54,8 +53,7 @@ $(HOSTEDOBJS)
  
 LIBK_OBJS=$(FREEOBJS:.o=.libk.o)
  
-BINARIES=libc.a libk.a # Not ready for libc yet.
-# BINARIES=libk.a
+BINARIES=libc.a libk.a libg.a # Not ready for libc yet.
  
 .PHONY: all clean install install-headers install-libs
 .SUFFIXES: .o .libk.o .c .S
@@ -63,6 +61,9 @@ BINARIES=libc.a libk.a # Not ready for libc yet.
 all: $(BINARIES)
  
 libc.a: $(OBJS)
+	$(AR) rcs $@ $(OBJS)
+
+libg.a: $(OBJS)
 	$(AR) rcs $@ $(OBJS)
  
 libk.a: $(LIBK_OBJS)

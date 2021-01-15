@@ -13,12 +13,12 @@ EXEC_PREFIX?=$(PREFIX)
 INCLUDEDIR?=$(PREFIX)/include
 BINDIR?=$(EXEC_PREFIX)/bin
 
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -mgeneral-regs-only -static
+CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -static
 CPPFLAGS:=$(CPPFLAGS)
 LDFLAGS:=$(LDFLAGS)
-LIBS:=$(LIBS) -nostdlib -lc -lgcc -msoft-float -lsoftfloat
+LIBS:=$(LIBS) -lc -lgcc
 
-CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
+CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS) -nostartfiles
 CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
 LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
@@ -46,23 +46,26 @@ guiapp
 
 all: hello shell ps windowserver guiapp
 
-hello: hello.o link.ld
-	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+hello: hello.o link.ld crt0.o
+	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
 
-shell: shell.o link.ld
-	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+shell: shell.o link.ld crt0.o
+	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
 
-ps: ps.o link.ld
-	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+ps: ps.o link.ld crt0.o
+	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
 
-windowserver: windowserver.o link.ld
-	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+windowserver: windowserver.o link.ld crt0.o
+	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
 
-guiapp: guiapp.o link.ld
-	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+guiapp: guiapp.o link.ld crt0.o
+	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
 
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
+
+.S.o:
+	$(CC) -o $@ -c $< -lc -static
 
 clean:
 	rm -f $(OBJS) *.o */*.o */*/*.o

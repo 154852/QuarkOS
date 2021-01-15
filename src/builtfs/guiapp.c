@@ -2,7 +2,6 @@
 #include <syscall.h>
 #include <stdio.h>
 #include "wsmsg.h"
-#include "softfloat.h"
 
 unsigned windowserver;
 typedef unsigned WindowHandle;
@@ -43,14 +42,6 @@ int main() {
 
 	WindowHandle windowhandle = create_window("Hello World!", 400, 300, 100, 100);
 	debugf("WindowHandle = %d\n", windowhandle);
-
-	// int ix = 10;
-	// debugf("ix = %d, sizeof(double)=%d\n", ix, sizeof(double));
-
-	double x = (1.5 + windowhandle) * 3.0;
-	// uint64_t result = f64_add((float64_t) { *(uint64_t*) &x }, i32_to_f64((int32_t) { ix })).v;
-	// x = *(double*) &result;
-	debugf("%f\n", x);
 
 	return 0;
 }

@@ -40,6 +40,15 @@ Pixel pixel_from_hex(unsigned hex) {
 	};
 }
 
+#define pixel_from_rgb(_r, _g, _b) { .r = _r, .g = _g, .b = _b, .a = 0xff };
+
+const Pixel COLOR_BLACK = pixel_from_rgb(0, 0, 0);
+const Pixel COLOR_DARKGREY = pixel_from_rgb(0x60, 0x60, 0x60);
+const Pixel COLOR_LIGHTGREY = pixel_from_rgb(0xe0, 0xe0, 0xe0);
+const Pixel COLOR_VERYLIGHTGREY = pixel_from_rgb(0xc0, 0xc0, 0xc0);
+const Pixel COLOR_RED = pixel_from_rgb(0xff, 0, 0);
+const Pixel COLOR_DARKRED = pixel_from_rgb(0xd0, 0, 0);
+
 Pixel desktopBackground;
 
 Pixel data[SUPPORTED_SIZE];
@@ -59,14 +68,28 @@ int idx_for_xyw(int x, int y, int w) {
 	return ((y * w) + x);
 }
 
-void copy_image(int x0, int y0, Pixel* image, int w, int h, int shift) {
+int mix(int a, int b, float frac) {
+	return ((b - a) * frac) + a;
+}
+
+void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color) {
 	for (int x = 0; x < w; x++) {
 		for (int y = 0; y < h; y++) {
 			int image_idx = idx_for_xyw(x, y, w);
-			int framebuffer_idx = idx_for_xy((x >> shift) + x0, (y >> shift) + y0);
+			int framebuffer_idx = idx_for_xy((x * scale) + x0, (y * scale) + y0);
 
-			data[framebuffer_idx] = image[image_idx];
-			data[framebuffer_idx].a = 0;
+			Pixel pixel = image[image_idx];
+			if (color != 0) pixel = *color;
+
+			if (image[image_idx].a == 0xff) {
+				data[framebuffer_idx] = pixel;
+			} else if (image[image_idx].a != 0) {
+				float frac = (float) image[image_idx].a / (float) 0xff;
+				data[framebuffer_idx].r = mix(data[framebuffer_idx].r, pixel.r, frac);
+				data[framebuffer_idx].g = mix(data[framebuffer_idx].g, pixel.g, frac);
+				data[framebuffer_idx].b = mix(data[framebuffer_idx].b, pixel.b, frac);
+			}
+			data[framebuffer_idx].a = 0xff;
 		}
 	}
 }
@@ -90,6 +113,8 @@ typedef struct {
 #define WINDOWS_CAPACITY 32
 static InternalWindow windows[WINDOWS_CAPACITY];
 
+#define WINDOW_BUTTON_SIZE 15
+
 void render_window(InternalWindow* window) {
 	for (int x = 0; x < (int) window->width; x++) {
 		for (int y = 0; y < (int) window->height; y++) {
@@ -100,13 +125,33 @@ void render_window(InternalWindow* window) {
 
 			int idx = idx_for_xy(x + window->x, y + window->y);
 			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == TITLE_BAR_HEIGHT || y == 0) {
-				data[idx] = pixel_from_hex(0xc0c0c0);
+				data[idx] = COLOR_VERYLIGHTGREY;
 			} else if (y < TITLE_BAR_HEIGHT) {
-				data[idx] = pixel_from_hex(0xe0e0e0);
+				data[idx] = COLOR_LIGHTGREY;
 			} else {
 				data[idx].raw = window->background.raw;
 			}
 		}
+	}
+
+	for (int x = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; x < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; x++) {
+		for (int y = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; y < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; y++) {
+			int idx = idx_for_xy(x + window->x, y + window->y);
+			data[idx] = COLOR_DARKRED;
+		}
+	}
+
+	FontChar chr = fontchar_for_char('A');
+	double paddingpc = 0.6;
+	double scale = (TITLE_BAR_HEIGHT * (1.0 - paddingpc)) / chr.height;
+	int padding = TITLE_BAR_HEIGHT * paddingpc * 0.5;
+
+	int x = window->x + ((TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2) + padding;
+	int y = window->y + padding;
+	for (size_t i = 0; i < strlen(window->title); i++) {
+		FontChar chr = fontchar_for_char(window->title[i]);
+		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY);
+		x += (chr.width * scale) + 1;
 	}
 }
 
@@ -187,17 +232,9 @@ int main() {
 
 	framebuffer = info.framebuffer;
 
-	// int x = 0;
-	// const char* msg = "hello world";
-	// int shift = 1;
-	// for (size_t i = 0; i < strlen(msg); i++) {
-	// 	FontChar chr = fontchar_for_char(msg[i]);
-	// 	if (chr.raw != 0) copy_image(x, 0, (Pixel*) chr.raw, chr.width, chr.height, shift);
-	// 	x += chr.width >> shift;
-	// }
-
 	desktopBackground = pixel_from_hex(0xffffff);
 
+	// blit();
 	render();
 
 	exec("sysroot/usr/bin/guiapp");
