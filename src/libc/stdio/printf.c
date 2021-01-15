@@ -38,6 +38,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define PRINTF_SUPPORT_FLOAT
+
 // #include "printf.h"
 
 

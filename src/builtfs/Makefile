@@ -16,7 +16,7 @@ BINDIR?=$(EXEC_PREFIX)/bin
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -mgeneral-regs-only -static
 CPPFLAGS:=$(CPPFLAGS)
 LDFLAGS:=$(LDFLAGS)
-LIBS:=$(LIBS) -nostdlib -lc -lgcc
+LIBS:=$(LIBS) -nostdlib -lc -lgcc -msoft-float -lsoftfloat
 
 CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
 CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
@@ -27,7 +27,8 @@ OBJS=\
 hello.o \
 shell.o \
 ps.o \
-windowserver.o
+windowserver.o \
+guiapp.o
 
 LINK_LIST=\
 $(LDFLAGS) \
@@ -37,12 +38,13 @@ BINARIES=\
 hello \
 shell \
 ps \
-windowserver
+windowserver \
+guiapp
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello shell windowserver
+all: hello shell ps windowserver guiapp
 
 hello: hello.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
@@ -54,6 +56,9 @@ ps: ps.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 windowserver: windowserver.o link.ld
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+guiapp: guiapp.o link.ld
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 .c.o:
@@ -68,7 +73,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello shell ps windowserver
+install-executable: hello shell ps windowserver guiapp
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

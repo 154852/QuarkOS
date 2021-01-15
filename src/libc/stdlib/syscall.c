@@ -54,3 +54,19 @@ void exit(unsigned char code) {
 unsigned int list_process_pids(int* pids, unsigned long length) {
 	return syscall(SC_LSProc, (unsigned long) pids, length, 0);
 }
+
+void send_ipc_message(unsigned target_pid, char* raw, unsigned length) {
+	syscall(SC_SendIPCMessage, target_pid, (unsigned) raw, length);
+}
+
+unsigned read_ipc_message(char* raw, unsigned length, unsigned* sender) {
+	return syscall(SC_ReadIPCMessage, (unsigned) raw, length, (unsigned) sender);
+}
+
+unsigned get_pid() {
+	return syscall(SC_GetPid, 0, 0, 0);
+}
+
+unsigned find_proc_pid(char* name) {
+	return syscall(SC_FindProcPID, (unsigned) name, 0, 0);
+}

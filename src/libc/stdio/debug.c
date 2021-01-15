@@ -34,8 +34,8 @@ void init_serial() {
 }
 
 void debug_putchar(char a) {
-  if (!serial_is_init) init_serial();
-   while (is_transmit_empty() == 0);
+	if (!serial_is_init) init_serial();
+	while (is_transmit_empty() == 0);
  
-   outb(PORT,a);
+	outb(PORT,a);
 }

@@ -144,7 +144,7 @@ PCI::ID* PCI::get_ids() {
 }
 
 PCI::ID* PCI::find_id(u16 vendor_id, u16 device_id) {
-	for (int i = 0; i < loaded_devices; i++) {
+	for (u32 i = 0; i < loaded_devices; i++) {
 		if (devices[i].vendor_id == vendor_id && devices[i].device_id == device_id) return &devices[i];
 	}
 	return 0;

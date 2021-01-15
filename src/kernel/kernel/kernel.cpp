@@ -5,6 +5,7 @@
 #include <kernel/hardware/pit.hpp>
 #include <kernel/hardware/interrupts.hpp>
 #include <kernel/hardware/keyboard.hpp>
+#include <kernel/ipcmessaging.hpp>
 #include <kernel/hardware/BXVGA.hpp>
 #include <kernel/kmalloc.hpp>
 #include <kernel/hardware/pci.hpp>
@@ -33,6 +34,8 @@ extern "C" void name ## _interrupt_trigger();\
 asm( \
 	".globl " #name "_interrupt_trigger\n" \
 	#name  "_interrupt_trigger:\n" \
+        "cli\n" \
+        \
 		"pushl %eax\n" \
 		"pushl %ebx\n" \
 		"pushl %ecx\n" \
@@ -67,6 +70,8 @@ asm( \
 		"popl %ecx\n" \
 		"popl %ebx\n" \
 		"popl %eax\n" \
+        \
+        "sti\n" \
         \
 		"iret\n" \
 );
@@ -165,6 +170,7 @@ void execve_syscall_wait_task() {
 
 // NOTE: We return int (even though we have no desire to return anything) to prevent gcc tail end optimising function calls, which somehow breaks things
 extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
+    // debug_putchar('A');
     switch (frame->eax) {
         case SC_Write: {
             assert(frame->ebx == 1);
@@ -231,6 +237,10 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
             }
             return 0;
         }
+        case SC_GetPid: {
+            frame->eax = MultiProcess::get_current_task()->pid;
+            return 0;
+        }
         case SC_LSProc: {
             unsigned int length = 0;
             unsigned int* pids = reinterpret_cast<unsigned int*>(frame->ebx);
@@ -255,6 +265,43 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
                 proc = proc->next;
             }
             frame->eax = length;
+            return 0;
+        }
+        case SC_SendIPCMessage: {
+            char* copied_raw = (char*) kmalloc(frame->edx, 0, 0);
+            memcpy(copied_raw, (char*) frame->ecx, frame->edx);
+            IPCMessaging::send_message(MultiProcess::get_current_task()->pid, frame->ebx, copied_raw, frame->edx);
+            return 0;
+        }
+        case SC_ReadIPCMessage: {
+            IPCMessaging::Message msg = IPCMessaging::read_message(MultiProcess::get_current_task()->pid);
+            if (!msg.present) {
+                frame->eax = -ENOTFOUND;
+            } else if (msg.size > frame->ecx) {
+                frame->eax = -ETOOSMALL;
+            } else {
+                memcpy((void*) frame->ebx, msg.raw, msg.size);
+                *reinterpret_cast<unsigned*>(frame->edx) = msg.from_pid;
+                frame->eax = msg.size;
+            }
+            return 0;
+        }
+        case SC_FindProcPID: {
+            const char* name = reinterpret_cast<const char*>(frame->ebx);
+            if (strcmp(MultiProcess::get_current_task()->name, name) == 0) {
+                frame->eax = MultiProcess::get_current_task()->pid;
+                return 0;
+            }
+
+            MultiProcess::Process* proc = MultiProcess::get_current_task()->next;
+            while (proc != MultiProcess::get_current_task()) {
+                if (strcmp(proc->name, name) == 0) {
+                    frame->eax = proc->pid;
+                    return 0;
+                }
+                proc = proc->next;
+            }
+            frame->eax = -ENOTFOUND;
             return 0;
         }
         default: {

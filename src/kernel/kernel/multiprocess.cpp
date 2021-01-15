@@ -40,8 +40,8 @@ MultiProcess::Process* find_next_task() {
 }
 
 extern "C" int update_process(IRQ::CSITRegisters2* registers) {
-	PIC::send_EOI(0);
 	MultiProcess::yield(registers);
+	PIC::send_EOI(0);
 	return 0;
 }
 
@@ -58,11 +58,13 @@ void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
 			memcpy(&current_process->registers, original_registers, sizeof(IRQ::CSITRegisters));
 		}
 	}
-
 	/* current_process = */ find_next_task();
 	
 	if (current_process->state == MultiProcess::ProcessState::Waiting) {
 		memcpy(original_registers, &current_process->wait_task.registers, sizeof(IRQ::CSITRegisters));
+	} else if (current_process->state == MultiProcess::ProcessState::EndWaiting) {
+		current_process->state = MultiProcess::ProcessState::Running;
+		memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
 	} else {
 		if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
 		memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
@@ -78,6 +80,7 @@ void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
 asm (
 	".globl context_switch_interrupt_trigger\n" \
 	"context_switch_interrupt_trigger:\n" \
+		"cli\n" \
 		"pushl %eax\n" \
 		"pushl %ebx\n" \
 		"pushl %ecx\n" \
@@ -86,9 +89,11 @@ asm (
 		"pushl %edi\n" \
 		"pushl %ebp\n" \
         \
+		"movl $0x0, %eax\n" \
         "mov %ds, %ax\n"\
         "pushl %eax\n" \
         \
+		"movl $0x0, %eax\n" \
         "mov $0x10, %ax\n" \
         "mov %ax, %ds\n" \
         "mov %ax, %es\n" \
@@ -112,6 +117,7 @@ asm (
 		"popl %ecx\n" \
 		"popl %ebx\n" \
 		"popl %eax\n" \
+		"sti\n" \
         \
 		"iret\n" \
 );
@@ -169,7 +175,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 void MultiProcess::append(Process* proc) {
 	proc->next = current_process->next;
 	current_process->next = proc;
-	kdebugf("[MultiProcess] Process %s linked to process chain and will execute next\n", proc->name);
+	kdebugf("[MultiProcess] Process %s (pid=%d) linked to process chain and will execute next\n", proc->name, proc->pid);
 }
 
 extern "C" void tss_flush();

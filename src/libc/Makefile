@@ -14,7 +14,7 @@ INCLUDEDIR?=$(PREFIX)/include
 LIBDIR?=$(EXEC_PREFIX)/lib
  
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra
-CPPFLAGS:=$(CPPFLAGS) -D__is_libc -Iinclude
+CPPFLAGS:=$(CPPFLAGS) -D__is_libc -Iinclude -I/usr/include
 LIBK_CFLAGS:=$(CFLAGS)
 LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_libk
  
@@ -42,7 +42,8 @@ string/memcpy.o \
 string/memmove.o \
 string/memset.o \
 string/strlen.o\
-string/strcmp.o\
+string/strcmp.o \
+floatingpoint.o \
  
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS)

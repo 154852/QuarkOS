@@ -47,6 +47,7 @@ kernel/elf.o \
 kernel/ustar.o \
 kernel/hardware/pci.o \
 kernel/hardware/BXVGA.o \
+kernel/ipcmessaging.o \
 # $(KERNEL_ARCH_OBJS)
  
 OBJS=\

@@ -1,4 +1,5 @@
-#include "syscall.h"
+#include "wsmsg.h"
+#include <syscall.h>
 #include <stdio.h>
 #include <assertions.h>
 #include <string.h>
@@ -9,16 +10,37 @@
 #define SUPPORTED_SIZE (SUPPORTED_WIDTH * SUPPORTED_HEIGHT)
 #define FULL_SIZE (SUPPORTED_SIZE * sizeof(unsigned))
 
-typedef union {
-	struct {
-		unsigned char b;
-		unsigned char g;
-		unsigned char r;
-		unsigned char a;
-	};
+#define max(a, b) ((a) > (b)? (a):(b))
+#define min(a, b) ((a) < (b)? (a):(b))
 
-	unsigned raw;
-} Pixel;
+Pixel pixel_from_hex(unsigned hex) {
+	if (hex > 0xffffff) {
+		return (Pixel) {
+			.b = hex & 0xff,
+			.g = (hex >> 8) & 0xff,
+			.r = (hex >> 16) & 0xff,
+			.a = (hex >> 24) & 0xff
+		};
+	}
+
+	if (hex > 0xfff) {
+		return (Pixel) {
+			.b = hex & 0xff,
+			.g = (hex >> 8) & 0xff,
+			.r = (hex >> 16) & 0xff,
+			.a = 0xff
+		};
+	}
+
+	return (Pixel) {
+		.b = (hex & 0xf) * 0xf,
+		.g = ((hex >> 4) & 0xf) * 0xf,
+		.r = ((hex >> 12) & 0xf) * 0xf,
+		.a = 0xff
+	};
+}
+
+Pixel desktopBackground;
 
 Pixel data[SUPPORTED_SIZE];
 FrameBufferInfo info;
@@ -37,15 +59,121 @@ int idx_for_xyw(int x, int y, int w) {
 	return ((y * w) + x);
 }
 
-void copy_image(int x0, int y0, Pixel* image, int w, int h) {
+void copy_image(int x0, int y0, Pixel* image, int w, int h, int shift) {
 	for (int x = 0; x < w; x++) {
 		for (int y = 0; y < h; y++) {
 			int image_idx = idx_for_xyw(x, y, w);
-			int framebuffer_idx = idx_for_xy(x + x0, y + y0);
+			int framebuffer_idx = idx_for_xy((x >> shift) + x0, (y >> shift) + y0);
 
 			data[framebuffer_idx] = image[image_idx];
 			data[framebuffer_idx].a = 0;
 		}
+	}
+}
+
+#define TITLE_BAR_HEIGHT 30
+
+typedef struct {
+	char present;
+	unsigned handle;
+	unsigned creatorpid;
+
+	char title[64];
+	unsigned width;
+	unsigned height;
+	int x;
+	int y;
+
+	Pixel background;
+} InternalWindow;
+
+#define WINDOWS_CAPACITY 32
+static InternalWindow windows[WINDOWS_CAPACITY];
+
+void render_window(InternalWindow* window) {
+	for (int x = 0; x < (int) window->width; x++) {
+		for (int y = 0; y < (int) window->height; y++) {
+			if (x + window->x < 0) continue;
+			if (y + window->y < 0) continue;
+			if (x + window->x >= info.width) continue;
+			if (y + window->y >= info.height) continue;
+
+			int idx = idx_for_xy(x + window->x, y + window->y);
+			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == TITLE_BAR_HEIGHT || y == 0) {
+				data[idx] = pixel_from_hex(0xc0c0c0);
+			} else if (y < TITLE_BAR_HEIGHT) {
+				data[idx] = pixel_from_hex(0xe0e0e0);
+			} else {
+				data[idx].raw = window->background.raw;
+			}
+		}
+	}
+}
+
+void render() {
+	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
+		if (windows[i].present) {
+			render_window(&windows[i]);
+		}
+	}
+	for (int x = 0; x < info.width; x++) {
+		for (int y = 0; y < info.height; y++) {
+			int idx = idx_for_xy(x, y);
+			if (data[idx].a == 0) {
+				data[idx].raw = desktopBackground.raw;
+			}
+		}
+	}
+	blit();
+}
+
+void handle_request(unsigned action, unsigned sender, char* raw) {
+	switch (action) {
+		case WSCreateWindow: {
+			CreateWindowRequest* createwindow = (CreateWindowRequest*) raw;
+
+			CreateWindowResponse res;
+			for (int i = 0; i < WINDOWS_CAPACITY; i++) {
+				if (!windows[i].present) {
+					InternalWindow* win = &windows[i];
+
+					win->present = 1;
+					win->handle = i;
+					win->creatorpid = sender;
+
+					memcpy(win->title, createwindow->title, 64);
+					win->width = createwindow->width;
+					win->height = createwindow->height;
+					win->x = createwindow->x;
+					win->y = createwindow->y;
+					win->background = createwindow->background;
+
+					res.handle = win->handle;
+					break;
+				}
+			}
+
+			send_ipc_message(sender, (char*) &res, sizeof(res));
+			render();
+			return;
+		}
+		default: {
+			debugf("Unknown command %d\n", action);
+			return;
+		}
+	}
+}
+
+char rawrequest[1024];
+void recieve_message() {
+	unsigned sender;
+	
+	while (1) {
+		int status = read_ipc_message(rawrequest, 1024, &sender);
+		if (status < 0) continue;
+
+		WindowServerAction action = ((WindowServerRequest*) rawrequest)->action;
+		handle_request(action, sender, rawrequest);
 	}
 }
 
@@ -59,26 +187,24 @@ int main() {
 
 	framebuffer = info.framebuffer;
 
-	for (int x = 0; x < info.width; x++) {
-		for (int y = 0; y < info.height; y++) {
-			int idx = idx_for_xy(x, y);
-			unsigned char color = (0xff * x * y) / (info.width * info.height);
-			data[idx].r = color;
-			data[idx].g = color;
-			data[idx].b = color;
-		}
+	// int x = 0;
+	// const char* msg = "hello world";
+	// int shift = 1;
+	// for (size_t i = 0; i < strlen(msg); i++) {
+	// 	FontChar chr = fontchar_for_char(msg[i]);
+	// 	if (chr.raw != 0) copy_image(x, 0, (Pixel*) chr.raw, chr.width, chr.height, shift);
+	// 	x += chr.width >> shift;
+	// }
+
+	desktopBackground = pixel_from_hex(0xffffff);
+
+	render();
+
+	exec("sysroot/usr/bin/guiapp");
+
+	while (1) {
+		recieve_message();
 	}
-
-	int x = 0;
-	copy_image(x, 0, (Pixel*) FONTCHAR_A, FONTCHAR_A_W, FONTCHAR_A_H); x += FONTCHAR_A_W;
-	copy_image(x, 0, (Pixel*) FONTCHAR_B, FONTCHAR_B_W, FONTCHAR_B_H); x += FONTCHAR_B_W;
-	copy_image(x, 0, (Pixel*) FONTCHAR_C, FONTCHAR_C_W, FONTCHAR_C_H); x += FONTCHAR_C_W;
-
-	copy_image(x, 0, (Pixel*) FONTCHAR_X, FONTCHAR_X_W, FONTCHAR_X_H); x += FONTCHAR_X_W;
-	copy_image(x, 0, (Pixel*) FONTCHAR_Y, FONTCHAR_Y_W, FONTCHAR_Y_H); x += FONTCHAR_Y_W;
-	copy_image(x, 0, (Pixel*) FONTCHAR_Z, FONTCHAR_Z_W, FONTCHAR_Z_H); x += FONTCHAR_Z_W;
-
-	blit();
 
 	hang;
 	return 0;

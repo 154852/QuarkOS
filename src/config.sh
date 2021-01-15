@@ -1,5 +1,5 @@
 SYSTEM_HEADER_PROJECTS="libc kernel"
-PROJECTS="libc kernel builtfs"
+PROJECTS="libc/SoftFloat-3e/build/Linux-386-GCC libc kernel builtfs"
  
 export MAKE=${MAKE:-make}
 export HOST=${HOST:-$(./default-host.sh)}
