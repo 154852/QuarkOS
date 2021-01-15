@@ -1,5 +1,6 @@
 typedef enum {
-	WSCreateWindow
+	WSCreateWindow,
+	WSUpdateElement
 } WindowServerAction;
 
 typedef union {
@@ -30,3 +31,32 @@ typedef struct {
 typedef struct {
 	unsigned handle;
 } CreateWindowResponse;
+
+typedef enum {
+	WSLabelElement,
+} WindowServerElementType;
+
+typedef struct {
+	WindowServerAction action;
+	WindowServerElementType elementType;
+	unsigned window;
+	unsigned elementId;
+	/* element data */
+} WindowServerElementUpdateRequest;
+
+typedef struct {
+	unsigned elementId;
+} WindowServerElementUpdateResponse;
+
+typedef struct {
+	WindowServerAction action;
+	WindowServerElementType elementType;
+	unsigned window;
+	unsigned elementId;
+	
+	char content[256];
+	int x;
+	int y;
+	Pixel color;
+	float scale;
+} WindowServerLabelUpdateRequest;

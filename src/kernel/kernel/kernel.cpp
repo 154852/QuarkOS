@@ -438,7 +438,7 @@ extern "C" void kernel_main(void) {
     IRQ::enable_irq();
 
     PIC::irq_clear_mask(1); // Keyboard
-    PIT::set_reload_value(PIT_CHANNEL_0, 60000);
+    PIT::set_reload_value(PIT_CHANNEL_0, 500);
 
     Terminal::initialize();
     kdebugf("[Core] Initialized terminal\n");

@@ -98,6 +98,25 @@ void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const 
 
 typedef struct {
 	char present;
+	WindowServerElementType type;
+	unsigned elementID;
+} InternalElement;
+
+typedef struct {
+	char present;
+	WindowServerElementType type;
+	unsigned elementID;
+	
+	char content[256];
+	int x;
+	int y;
+	Pixel color;
+	float scale;
+} InternalLabelElement;
+
+#define WINDOW_ELEMENTS_CAPACITY 32
+typedef struct {
+	char present;
 	unsigned handle;
 	unsigned creatorpid;
 
@@ -108,12 +127,27 @@ typedef struct {
 	int y;
 
 	Pixel background;
+
+	InternalElement* elements[WINDOW_ELEMENTS_CAPACITY];
 } InternalWindow;
 
 #define WINDOWS_CAPACITY 32
 static InternalWindow windows[WINDOWS_CAPACITY];
+#define LABELS_CAPACITY 32
+static InternalLabelElement labelElements[LABELS_CAPACITY];
 
 #define WINDOW_BUTTON_SIZE 15
+
+void render_label(InternalWindow* window, InternalLabelElement* label) {
+	int x = window->x + label->x;
+	int y = window->y + TITLE_BAR_HEIGHT + label->y;
+	double scale = 1;
+	for (size_t i = 0; i < strlen(label->content); i++) {
+		FontChar chr = fontchar_for_char(label->content[i]);
+		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &label->color);
+		x += (chr.width * scale) + 1;
+	}
+}
 
 void render_window(InternalWindow* window) {
 	for (int x = 0; x < (int) window->width; x++) {
@@ -152,6 +186,21 @@ void render_window(InternalWindow* window) {
 		FontChar chr = fontchar_for_char(window->title[i]);
 		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY);
 		x += (chr.width * scale) + 1;
+	}
+
+	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+		if (window->elements[i] != 0) {
+			switch (window->elements[i]->type) {
+				case WSLabelElement: {
+					render_label(window, (InternalLabelElement*) window->elements[i]);
+					break;
+				}
+				default: {
+					debugf("Unknown element type in render %d\n", window->elements[i]->type);
+					break;
+				}
+			}
+		}
 	}
 }
 
@@ -202,6 +251,60 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 			render();
 			return;
 		}
+		case WSUpdateElement: {
+			WindowServerElementUpdateRequest* req = (WindowServerElementUpdateRequest*) raw;
+			WindowServerElementUpdateResponse res;
+
+			if ((int) req->elementId == -1) {
+				switch (req->elementType) {
+					case WSLabelElement: {
+						WindowServerLabelUpdateRequest* labelreq = (WindowServerLabelUpdateRequest*) raw;
+
+						if (req->window >= WINDOWS_CAPACITY) {
+							debugf("Invalid window ID\n");
+							return;
+						}
+						InternalWindow* window = &windows[req->window];
+						if (window->creatorpid != sender) {
+							debugf("Invalid permissions for window\n");
+							return;
+						}
+
+						for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+							if (window->elements[i] == 0) {
+								for (int j = 0; j < LABELS_CAPACITY; j++) {
+									if (!labelElements[i].present) {
+										window->elements[i] = (InternalElement*) &labelElements[i];
+										window->elements[i]->present = 1;
+										window->elements[i]->type = WSLabelElement;
+										memcpy(labelElements[i].content, labelreq->content, 256);
+										labelElements[i].color = labelreq->color;
+										labelElements[i].x = labelreq->x;
+										labelElements[i].y = labelreq->y;
+
+										res.elementId = i;
+										break;
+									}
+								}
+								break;
+							}
+						}
+						break;
+					}
+					default: {
+						debugf("Unknown element type 0x%.8x\n", req->elementType);
+						return;
+					}
+				}
+			} else {
+				debugf("Cannot (yet) update elements\n");
+				return;
+			}
+
+			send_ipc_message(sender, (char*) &res, sizeof(res));
+			render();
+			return;
+		}
 		default: {
 			debugf("Unknown command %d\n", action);
 			return;
@@ -219,6 +322,7 @@ void recieve_message() {
 
 		WindowServerAction action = ((WindowServerRequest*) rawrequest)->action;
 		handle_request(action, sender, rawrequest);
+		memset(rawrequest, 0, 1024);
 	}
 }
 
@@ -234,7 +338,6 @@ int main() {
 
 	desktopBackground = pixel_from_hex(0xffffff);
 
-	// blit();
 	render();
 
 	exec("sysroot/usr/bin/guiapp");
