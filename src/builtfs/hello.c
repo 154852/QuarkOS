@@ -8,7 +8,7 @@ int main() {
 	char name[10];
 	for (int i = 0; i < 9; i++) {
 		char next;
-		read(&next, 1);
+		read(FD_STDIN, &next, 1);
 		if (next == '\n') break;
 		printf("%c", next);
 		name[i] = next;

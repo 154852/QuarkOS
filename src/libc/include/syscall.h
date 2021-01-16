@@ -11,6 +11,12 @@ extern "C" {
 #define ETOOSMALL 2
 #define ENOTFOUND 3
 
+#define FD_STDIN 0x00
+#define FD_STDOUT 0x01
+#define FD_STDERR 0x02
+#define FD_SOCKET 0x03
+#define FD_FILE 0x04
+
 typedef enum {
 	SC_Read = 0x00,
 	SC_Write = 0x04,
@@ -25,11 +31,17 @@ typedef enum {
 	SC_ReadIPCMessage = 0x07,
 	SC_GetPid = 0x08,
 	SC_FindProcPID = 0x09,
+	SC_Open = 0x0a,
 } Syscall;
 
+#define FILE_FLAG_R (1)
+#define FILE_FLAG_W (1 << 1)
+
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
-void write(const char *string, unsigned long length);
-void read(char *string, unsigned long length);
+
+void write(unsigned fd, const char *string, unsigned long length);
+unsigned read(unsigned fd, char *string, unsigned long length);
+unsigned open(char *string, unsigned flags);
 unsigned int list_process_pids(int *pids, unsigned long length);
 
 typedef enum {

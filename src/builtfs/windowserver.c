@@ -297,8 +297,47 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 					}
 				}
 			} else {
-				debugf("Cannot (yet) update elements\n");
-				return;
+				switch (req->elementType) {
+					case WSLabelElement: {
+						WindowServerLabelUpdateRequest* labelreq = (WindowServerLabelUpdateRequest*) raw;
+
+						if (req->window >= WINDOWS_CAPACITY) {
+							debugf("Invalid window ID\n");
+							return;
+						}
+						InternalWindow* window = &windows[req->window];
+						if (window->creatorpid != sender) {
+							debugf("Invalid permissions for window\n");
+							return;
+						}
+
+						if (req->elementId >= WINDOW_ELEMENTS_CAPACITY) {
+							debugf("Invalid element ID (does not exist)\n");
+							return;
+						}
+						
+						InternalLabelElement* element = (InternalLabelElement*) window->elements[req->elementId];
+						if (element->type != WSLabelElement) {
+							debugf("Not a label\n");
+							return;
+						}
+
+						if (!element->present) {
+							debugf("Invalid element ID (not present)\n");
+							return;
+						}
+
+						memcpy(element->content, labelreq->content, 256);
+						element->color = labelreq->color;
+						element->x = labelreq->x;
+						element->y = labelreq->y;
+						break;
+					}
+					default: {
+						debugf("Unknown element type 0x%.8x\n", req->elementType);
+						return;
+					}
+				}
 			}
 
 			send_ipc_message(sender, (char*) &res, sizeof(res));
@@ -323,6 +362,7 @@ void recieve_message() {
 		WindowServerAction action = ((WindowServerRequest*) rawrequest)->action;
 		handle_request(action, sender, rawrequest);
 		memset(rawrequest, 0, 1024);
+		return;
 	}
 }
 
@@ -343,9 +383,8 @@ int main() {
 	exec("sysroot/usr/bin/guiapp");
 
 	while (1) {
-		recieve_message();
+		recieve_message();		
 	}
 
-	hang;
 	return 0;
 }

@@ -30,12 +30,16 @@ void framebuffer_set_state(FrameBufferInfo* info) {
 	syscall(SC_FrameBufferSetState, (unsigned long) info, 0, 0);
 }
 
-void write(const char* string, unsigned long length) {
-	syscall(SC_Write, 1, (unsigned long) string, length);
+void write(unsigned fd, const char* string, unsigned long length) {
+	syscall(SC_Write, fd, (unsigned long) string, length);
 }
 
-void read(char* string, unsigned long length) {
-	syscall(SC_Read, 0, (unsigned long) string, length);
+unsigned read(unsigned fd, char* string, unsigned long length) {
+	return syscall(SC_Read, fd, (unsigned long) string, length);
+}
+
+unsigned open(char *string, unsigned flags) {
+	return syscall(SC_Open, (unsigned long) string, flags, 0);
 }
 
 unsigned int exec(const char* path) {

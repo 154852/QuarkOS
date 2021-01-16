@@ -21,6 +21,7 @@
 #include <kernel/elf.hpp>
 #include <syscall.h>
 #include <kernel/kernel.hpp>
+#include <kernel/socket.hpp>
 
 extern "C" u16 exception_code;
 asm(
@@ -173,13 +174,40 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
     // debug_putchar('A');
     switch (frame->eax) {
         case SC_Write: {
-            assert(frame->ebx == 1);
-            Terminal::write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
+            if (frame->ebx == FD_STDOUT || frame->ebx == FD_STDERR) {
+                Terminal::write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
+            } else if ((frame->ebx & 0xff) == FD_SOCKET) {
+                unsigned id = frame->ebx >> 8;
+                Socket::write_socket(Socket::socket_from_id(id), frame->edx, reinterpret_cast<void*>(frame->ecx));
+            } else {
+                assert(0);
+            }
             return 0;
         }
         case SC_Read: {
-            MultiProcess::append_wait_task(read_syscall_wait_task);
-            MultiProcess::yield(frame);
+            if (frame->ebx == FD_STDIN) {
+                MultiProcess::append_wait_task(read_syscall_wait_task);
+                MultiProcess::yield(frame);
+            } else if ((frame->ebx & 0xff) == FD_SOCKET) {
+                unsigned id = frame->ebx >> 8;
+                frame->eax = Socket::read_socket(Socket::socket_from_id(id), frame->edx, reinterpret_cast<void*>(frame->ecx));
+            } else {
+                assert(0);
+            }
+            return 0;
+        }
+        case SC_Open: {
+            Socket::Socket* socket = Socket::open_socket(reinterpret_cast<char*>(frame->ebx));
+            if (frame->ecx & FILE_FLAG_R) {
+                assert(socket != 0);
+            } else if (frame->ecx & FILE_FLAG_W) {
+                if (socket == 0) {
+                    socket = Socket::new_socket(reinterpret_cast<char*>(frame->ebx));
+                }
+            } else {
+                assert(false);
+            }
+            frame->eax = (socket->id << 8) | FD_SOCKET; // 0x00 for stdin, 0x01 for stdout, 0x02 for stderr, 0x03 for socket, 0x04 for file
             return 0;
         }
         case SC_Exit: {
@@ -427,6 +455,8 @@ extern "C" void kernel_main(void) {
     Disk::initialise();
     kdebugf("[Core] Initiliased disk\n");
     IRQ::disable_irq();
+
+    Keyboard::init();
     
     MemoryManagement::init_paging();
     kdebugf("[Core] Initiliased paging\n");

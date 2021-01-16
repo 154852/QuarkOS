@@ -48,6 +48,7 @@ kernel/ustar.o \
 kernel/hardware/pci.o \
 kernel/hardware/BXVGA.o \
 kernel/ipcmessaging.o \
+kernel/socket.o \
 # $(KERNEL_ARCH_OBJS)
  
 OBJS=\

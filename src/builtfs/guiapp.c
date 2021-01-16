@@ -2,6 +2,7 @@
 #include <syscall.h>
 #include <stdio.h>
 #include "wsmsg.h"
+#include <kernel/ckeyboard.h>
 
 unsigned windowserver;
 typedef unsigned WindowHandle;
@@ -9,6 +10,7 @@ typedef unsigned ElementID;
 
 WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y) {
 	CreateWindowRequest req;
+	memset(&req, 0, sizeof(req));
 	req.action = WSCreateWindow;
 	size_t titlelen = strlen(title);
 	memcpy(req.title, title, titlelen > 64? 64:titlelen);
@@ -39,11 +41,12 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 
 ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y) {
 	WindowServerLabelUpdateRequest req;
+	memset(&req, 0, sizeof(req));
 	req.window = windowid;
 	req.action = WSUpdateElement;
 	req.elementId = id;
 	req.elementType = WSLabelElement;
-	req.scale = 0.7;
+	req.scale = 0.5;
 	size_t titlelen = strlen(content);
 	memcpy(req.content, content, titlelen > 256? 256:titlelen);
 	req.x = x;
@@ -78,8 +81,28 @@ int main() {
 
 	WindowHandle windowhandle = create_window("Hello World!", 400, 300, 100, 100);
 
-	ElementID labelID = create_label(windowhandle, "Hello there!", 0, 5, 5);
-	(void) labelID;
+	char text[64] = "a";
+	int textidx = 1;
+	ElementID labelID = create_label(windowhandle, text, 0, 5, 5);
+
+	unsigned fd = open("/dev/keyboard", FILE_FLAG_R);
+	char data[sizeof(KeyEvent)];
+	while (1) {
+		unsigned len = read(fd, data, sizeof(KeyEvent));
+		if (len != 0) {
+			KeyEvent* state = (KeyEvent*) data;
+			if (state->action == KEY_PRESS && state->name == KEY_BACKSPACE) {
+				text[textidx - 1] = 0;
+				textidx--;
+			} else {
+				char chr = scan_code_to_char(state);
+				if (chr == 0) continue;
+				text[textidx++] = chr;
+			}
+			
+			update_label(windowhandle, labelID, text, 0, 5, 5);
+		}
+	}
 
 	return 0;
 }

@@ -7,7 +7,7 @@ void read_input(char* value, int length, int* str_length) {
 	int i;
 	for (i = 0; i < length - 1; i++) {
 		char next;
-		read(&next, 1);
+		read(FD_STDIN, &next, 1);
 		if (next == '\n') break;
 		if (next == 0x08) {
 			i -= 2;

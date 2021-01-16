@@ -3,5 +3,5 @@
  
 void putchar(char ic) {
 	char c = (char) ic;
-	write(&c, 1);
+	write(FD_STDOUT, &c, 1);
 }

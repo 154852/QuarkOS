@@ -1,9 +1,11 @@
 #include <kernel/hardware/keyboard.hpp>
 #include <stdio.h>
+#include <string.h>
 #include <kernel/hardware/pic.hpp>
 #include <kernel/tty.hpp>
 #include <assertions.h>
 #include <kernel/kernel.hpp>
+#include <kernel/socket.hpp>
 
 #define SCAN_CODE_PORT 0x60
 #define INTERRUPT_ID 0x01
@@ -89,6 +91,12 @@ char Keyboard::scan_code_to_char(const Keyboard::ScanCode* code, Keyboard::Keybo
     return 0;
 }
 
+Socket::Socket* socket;
+char write_buffer[sizeof(Keyboard::ScanCode) + sizeof(Keyboard::KeyboardState)];
+void Keyboard::init() {
+    socket = Socket::new_socket("/dev/keyboard");
+}
+
 __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITRegisters*) {
     PIC::send_EOI(INTERRUPT_ID);
     
@@ -96,21 +104,13 @@ __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITReg
 
     if (code->name == KEY_LEFT_SHIFT || code->name == KEY_RIGHT_SHIFT) {
         global_keyboard_state.is_shifted = code->action == KEY_PRESS;
-        return;
     }
 
     if (code->name == KEY_CAPS_LOCK) {
         global_keyboard_state.is_caps_locked = code->action == KEY_PRESS;
-        return;
     }
 
-    if (code->name == KEY_BACKSPACE && code->action == KEY_PRESS) {
-        Terminal::char_back();
-        push_to_buffer(0x08);
-        return;
-    }
-
-    char ch = scan_code_to_char(code, &global_keyboard_state);
-    // if (ch) printf("%c", ch);
-    if (ch) push_to_buffer(ch);
+    memcpy(write_buffer, code, sizeof(Keyboard::ScanCode));
+    memcpy(write_buffer + sizeof(Keyboard::ScanCode), &global_keyboard_state, sizeof(Keyboard::KeyboardState));
+    Socket::write_socket(socket, sizeof(Keyboard::ScanCode) + sizeof(Keyboard::KeyboardState), write_buffer);
 }
