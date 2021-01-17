@@ -100,7 +100,8 @@ void Keyboard::init() {
 __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITRegisters*) {
     PIC::send_EOI(INTERRUPT_ID);
     
-    const ScanCode* code = scan_code(inb(SCAN_CODE_PORT));
+    char rawcode = inb(SCAN_CODE_PORT);
+    const ScanCode* code = scan_code(rawcode);
 
     if (code->name == KEY_LEFT_SHIFT || code->name == KEY_RIGHT_SHIFT) {
         global_keyboard_state.is_shifted = code->action == KEY_PRESS;

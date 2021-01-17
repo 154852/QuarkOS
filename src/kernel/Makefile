@@ -49,6 +49,7 @@ kernel/hardware/pci.o \
 kernel/hardware/BXVGA.o \
 kernel/ipcmessaging.o \
 kernel/socket.o \
+kernel/hardware/mouse.o \
 # $(KERNEL_ARCH_OBJS)
  
 OBJS=\

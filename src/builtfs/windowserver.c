@@ -4,6 +4,7 @@
 #include <assertions.h>
 #include <string.h>
 #include "fontchars.h"
+#include <kernel/cmouse.h>
 
 #define SUPPORTED_WIDTH 1024
 #define SUPPORTED_HEIGHT 768
@@ -12,6 +13,7 @@
 
 #define max(a, b) ((a) > (b)? (a):(b))
 #define min(a, b) ((a) < (b)? (a):(b))
+#define clamp(x, a, b) min(max(x, a), b)
 
 Pixel pixel_from_hex(unsigned hex) {
 	if (hex > 0xffffff) {
@@ -57,6 +59,9 @@ unsigned* framebuffer;
 
 void blit() {
 	memcpy(framebuffer, data, FULL_SIZE);
+}
+
+void clear() {
 	memset(data, 0, FULL_SIZE);
 }
 
@@ -141,7 +146,7 @@ static InternalLabelElement labelElements[LABELS_CAPACITY];
 void render_label(InternalWindow* window, InternalLabelElement* label) {
 	int x = window->x + label->x;
 	int y = window->y + TITLE_BAR_HEIGHT + label->y;
-	double scale = 1;
+	double scale = label->scale;
 	for (size_t i = 0; i < strlen(label->content); i++) {
 		FontChar chr = fontchar_for_char(label->content[i]);
 		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &label->color);
@@ -204,7 +209,24 @@ void render_window(InternalWindow* window) {
 	}
 }
 
+static unsigned mouse_socket;
+static int mouse_x;
+static int mouse_y;
+
+void render_cursor_to_swapbuffer() {
+	int x0 = clamp(mouse_x, 1, info.width - 1);
+	int y0 = clamp(-mouse_y, 1, info.height - 1);
+	
+	for (int x = -1; x <= 1; x++) {
+		for (int y = -1; y <= 1; y++) {
+			int idx = idx_for_xy(x0 + x, y0 + y);
+			data[idx].raw = COLOR_RED.raw;
+		}
+	}
+}
+
 void render() {
+	clear();
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
 		if (windows[i].present) {
 			render_window(&windows[i]);
@@ -218,7 +240,28 @@ void render() {
 			}
 		}
 	}
+
+	render_cursor_to_swapbuffer();
 	blit();
+}
+
+void update_cursor() {
+	MousePacket packet;
+	unsigned length = read(mouse_socket, (char*) &packet, sizeof(MousePacket));
+	char has_changed = 0;
+	
+	while (length != 0) {
+		assert(length == sizeof(MousePacket));
+		mouse_x += packet.x_delta;
+		mouse_y += packet.y_delta;
+		has_changed = 1;
+
+		length = read(mouse_socket, (char*) &packet, sizeof(MousePacket));
+	}
+
+	if (has_changed) {
+		render(); // ideally just blit
+	}
 }
 
 void handle_request(unsigned action, unsigned sender, char* raw) {
@@ -281,6 +324,7 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 										labelElements[i].color = labelreq->color;
 										labelElements[i].x = labelreq->x;
 										labelElements[i].y = labelreq->y;
+										labelElements[i].scale = labelreq->scale;
 
 										res.elementId = i;
 										break;
@@ -331,6 +375,8 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 						element->color = labelreq->color;
 						element->x = labelreq->x;
 						element->y = labelreq->y;
+						element->scale = labelreq->scale;
+						res.elementId = element->elementID;
 						break;
 					}
 					default: {
@@ -354,8 +400,13 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 char rawrequest[1024];
 void recieve_message() {
 	unsigned sender;
+
+	// unsigned i = 0;
 	
 	while (1) {
+		update_cursor();
+		// debugf("Update Cursor %d\n", i++);
+		
 		int status = read_ipc_message(rawrequest, 1024, &sender);
 		if (status < 0) continue;
 
@@ -377,6 +428,8 @@ int main() {
 	framebuffer = info.framebuffer;
 
 	desktopBackground = pixel_from_hex(0xffffff);
+
+	mouse_socket = open("/dev/mouse", FILE_FLAG_R);
 
 	render();
 

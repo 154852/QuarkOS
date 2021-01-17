@@ -11,6 +11,7 @@
 #include <kernel/hardware/pci.hpp>
 #include <kernel/paging.hpp>
 #include <kernel/hardware/gdt.hpp>
+#include <kernel/hardware/mouse.hpp>
 #include <kernel/hardware/disk.hpp>
 #include <kernel/multiprocess.hpp>
 #include <kernel/ustar.hpp>
@@ -440,8 +441,9 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x10] = (void*) coprocessor_error;
 
     specific_interrupt_handlers[0x20] = (void*) MultiProcess::context_switch_interrupt_trigger;
-    specific_interrupt_handlers[0x80] = (void*) syscall_interrupt_trigger;
     specific_interrupt_handlers[0x21] = (void*) Keyboard::keyboard_interrupt;
+    specific_interrupt_handlers[0x20 + 12] = (void*) Mouse::mouse_interrupt;
+    specific_interrupt_handlers[0x80] = (void*) syscall_interrupt_trigger;
     specific_interrupt_handlers[0x2E] = (void*) Disk::disk_interrupt;
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
     kdebugf("[Core] Initiliased interrupts\n");
@@ -456,6 +458,7 @@ extern "C" void kernel_main(void) {
     kdebugf("[Core] Initiliased disk\n");
     IRQ::disable_irq();
 
+    Mouse::init();
     Keyboard::init();
     
     MemoryManagement::init_paging();
@@ -468,13 +471,13 @@ extern "C" void kernel_main(void) {
     IRQ::enable_irq();
 
     PIC::irq_clear_mask(1); // Keyboard
-    PIT::set_reload_value(PIT_CHANNEL_0, 500);
+    PIC::irq_clear_mask(12);
+    // PIT::set_reload_value(PIT_CHANNEL_0, PIT::get_reload_value_for(20));
+    PIT::attempt_to_set_frequency(400);
 
     Terminal::initialize();
     kdebugf("[Core] Initialized terminal\n");
 
-    // Safe to do, only because we have no local variables
-    // u32 esp; asm volatile("mov %%esp, %0" : "=r"(esp));
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
     MultiProcess::tss_set_stack(0x10, stack_top);
 
