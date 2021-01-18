@@ -1,6 +1,7 @@
 #include <stdint2.h>
 #include <kernel/paging.hpp>
 #include <kernel/hardware/interrupts.hpp>
+#include <kernel/socket.hpp>
 
 #ifndef _KERNEL_MULTIPROCESS_H
 #define _KERNEL_MULTIPROCESS_H
@@ -57,6 +58,9 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
         MemoryManagement::PageDirectory* page_dir;
         WaitTask wait_task;
         Ring0SyncRequest ring0_request;
+        Socket::Socket stdin;
+        Socket::Socket stdout;
+        Socket::Socket stderr;
     };
 
     struct __attribute__((packed)) TSS {

@@ -169,6 +169,10 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 
 	proc->pid = last_pid++;
 
+	proc->stdin.present = true;
+	proc->stdout.present = true;
+	proc->stderr.present = true;
+
 	return proc;
 }
 
