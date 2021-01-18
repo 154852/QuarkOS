@@ -36,6 +36,7 @@ typedef enum {
 
 #define FILE_FLAG_R (1)
 #define FILE_FLAG_W (1 << 1)
+#define FILE_FLAG_SOCK (1 << 2)
 
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
 

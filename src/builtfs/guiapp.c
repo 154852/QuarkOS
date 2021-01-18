@@ -1,6 +1,7 @@
 #include <string.h>
 #include <syscall.h>
 #include <stdio.h>
+#include "assertions.h"
 #include "wsmsg.h"
 #include <kernel/ckeyboard.h>
 
@@ -77,7 +78,8 @@ ElementID create_label(unsigned windowid, const char* content, Pixel* color, int
 }
 
 int main() {
-	windowserver = find_proc_pid("sysroot/usr/bin/windowserver");
+	windowserver = find_proc_pid("/usr/bin/windowserver");
+	assert(windowserver != -ENOTFOUND);
 
 	WindowHandle windowhandle = create_window("Hello World!", 400, 300, 100, 100);
 
@@ -85,7 +87,12 @@ int main() {
 	int textidx = 1;
 	ElementID labelID = create_label(windowhandle, text, 0, 5, 5);
 
-	unsigned fd = open("/dev/keyboard", FILE_FLAG_R);
+	// unsigned stdint2 = open("/usr/include/stdint2.h", FILE_FLAG_R);
+	// char content[100];
+	// unsigned int used = read(stdint2, content, 100);
+	// debugf("(%d) %.*s\n", used, used, content);
+
+	unsigned fd = open("/dev/keyboard", FILE_FLAG_R | FILE_FLAG_SOCK);
 	char data[sizeof(KeyEvent)];
 	while (1) {
 		unsigned len = read(fd, data, sizeof(KeyEvent));

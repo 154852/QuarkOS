@@ -282,8 +282,9 @@ extern "C" void kernel_main(void) {
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
     MultiProcess::tss_set_stack(0x10, stack_top);
 
-    USTAR::FileParsed* file = USTAR::lookup_parsed("sysroot/usr/bin/windowserver");
-    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "sysroot/usr/bin/windowserver"));
+    USTAR::FileParsed* file = USTAR::lookup_parsed("/usr/bin/windowserver");
+    assert(file);
+    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "/usr/bin/windowserver"));
     MultiProcess::append(proc);
 
     kdebugf("[Core] Starting clock...\n");

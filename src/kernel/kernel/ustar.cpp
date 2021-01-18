@@ -30,12 +30,15 @@ int oct2bin(unsigned char *str, int size) {
 }
 
 USTAR::FileRaw* USTAR::lookup_raw(const char* filename) {
-    return (USTAR::FileRaw*) archive_pointer(USTAR::lookup_raw_pointer(filename));
+    unsigned int addr = USTAR::lookup_raw_pointer(filename);
+    if (addr == 0) return 0;
+    return (USTAR::FileRaw*) archive_pointer(addr);
 }
 
 unsigned int USTAR::lookup_raw_pointer(const char* filename) {
     unsigned int ptr = 0;
 
+    if (filename[0] == '/') filename++;
     while (!memcmp(archive_pointer(ptr + 257), "ustar", 5)) {
         int filesize = oct2bin(archive_pointer(ptr + 0x7c), 11);
         if (!memcmp(archive_pointer(ptr), filename, strlen(filename) + 1)) {
@@ -52,6 +55,26 @@ USTAR::FileParsed* USTAR::lookup_parsed(const char* filename) {
     unsigned int raw_address = USTAR::lookup_raw_pointer(filename);
     if (!raw_address) return 0;
 
+    USTAR::FileRaw* tmp_raw = (USTAR::FileRaw*) archive_pointer(raw_address);
+
+    FileParsed* parsed = (FileParsed*) kmalloc(sizeof(FileParsed));
+    size_t name_length = strlen(tmp_raw->name) + 1;
+    parsed->name = (char*) kmalloc(name_length);
+    memcpy(parsed->name, tmp_raw->name, name_length);
+
+    parsed->length = oct2bin((unsigned char*) tmp_raw->size, 11);
+    parsed->content = (unsigned char*) kmalloc(parsed->length + 1);
+    unsigned int raw_content_start = raw_address + 512;
+    for (u32 i = 0; i < parsed->length; i += 512) {
+        memcpy(parsed->content + i, archive_pointer(raw_content_start + i), min(512, parsed->length - i));
+    }
+
+    parsed->content[parsed->length] = 0;
+
+    return parsed;
+}
+
+USTAR::FileParsed* USTAR::lookup_parsed_from_raw_pointer(unsigned int raw_address) {
     USTAR::FileRaw* tmp_raw = (USTAR::FileRaw*) archive_pointer(raw_address);
 
     FileParsed* parsed = (FileParsed*) kmalloc(sizeof(FileParsed));

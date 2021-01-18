@@ -426,11 +426,11 @@ int main() {
 
 	desktopBackground = pixel_from_hex(0xffffff);
 
-	mouse_socket = open("/dev/mouse", FILE_FLAG_R);
+	mouse_socket = open("/dev/mouse", FILE_FLAG_R | FILE_FLAG_SOCK);
 
 	render();
 
-	exec("sysroot/usr/bin/guiapp");
+	exec("/usr/bin/guiapp");
 
 	while (1) {
 		recieve_message();		
