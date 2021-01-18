@@ -19,10 +19,6 @@ extern "C" {
 
 typedef enum {
 	SC_Read = 0x00,
-	SC_Write = 0x04,
-	SC_Yield = 0x17,
-	SC_Exit = 0x37,
-	SC_Exec = 0x3b,
 	SC_ProcInfo = 0x01,
 	SC_LSProc = 0x02,
 	SC_FrameBufferInfo = 0x03,
@@ -32,6 +28,10 @@ typedef enum {
 	SC_GetPid = 0x08,
 	SC_FindProcPID = 0x09,
 	SC_Open = 0x0a,
+	SC_Write = 0x0b,
+	SC_Yield = 0x0c,
+	SC_Exit = 0x0d,
+	SC_Exec = 0x0e,
 } Syscall;
 
 #define FILE_FLAG_R (1)
@@ -39,8 +39,8 @@ typedef enum {
 
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
 
-void write(unsigned fd, const char *string, unsigned long length);
-unsigned read(unsigned fd, char *string, unsigned long length);
+void write(unsigned fd, const void *string, unsigned long length);
+unsigned read(unsigned fd, void *string, unsigned long length);
 unsigned open(char *string, unsigned flags);
 unsigned int list_process_pids(int *pids, unsigned long length);
 
@@ -71,8 +71,8 @@ typedef struct {
 void framebuffer_info(FrameBufferInfo* info);
 void framebuffer_set_state(FrameBufferInfo* info);
 
-void send_ipc_message(unsigned target_pid, char* raw, unsigned length);
-unsigned read_ipc_message(char* raw, unsigned length, unsigned* sender);
+void send_ipc_message(unsigned target_pid, void* raw, unsigned length);
+unsigned read_ipc_message(void* raw, unsigned length, unsigned* sender);
 
 unsigned get_pid();
 unsigned find_proc_pid(char* name);

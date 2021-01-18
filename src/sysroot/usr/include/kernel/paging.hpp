@@ -9,6 +9,8 @@
 #define GB (MB * 1024)
 #define PAGE_SIZE (4 * KB)
 
+#define KERNEL_SIZE (8 * MB)
+
 namespace MemoryManagement {
     struct __attribute__((packed)) PageDirectoryEntry {
         u32 present : 1;

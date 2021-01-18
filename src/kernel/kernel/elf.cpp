@@ -32,7 +32,7 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 	if (process == nullptr) process = MultiProcess::create(0, "<unnamed elf loaded>");
 
-	MemoryManagement::identity_map_region(process->page_dir, 0, 8 * MB, true, true);
+	MemoryManagement::identity_map_region(process->page_dir, 0, KERNEL_SIZE, true, true);
 
 	u32 entry = get_le_u32(header->entry);
 
@@ -51,8 +51,8 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 		u32 fsize = get_le_u32(pheader.file_segment_size);
 		u32 fbegin = get_le_u32(pheader.offset);
 
-		assert((u32) &process < (8 * MB));
-		assert(begin >= 8 * MB);
+		assert((u32) &process < KERNEL_SIZE);
+		assert(begin >= KERNEL_SIZE);
 		MemoryManagement::allocate_region(process->page_dir, begin, size, false, true);
 
 		MemoryManagement::load_page_dir(process->page_dir);
@@ -65,11 +65,11 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	}
 
 	const int EBP = 0xC0000000;
-	MemoryManagement::allocate_region(process->page_dir, EBP, 16 * KB, false, true);
+	MemoryManagement::allocate_region(process->page_dir, EBP, STACK_SIZE, false, true);
 
     process->registers.ebp = EBP;
-	process->registers.esp = EBP + (16 * KB);
-	process->registers.esp -= 4;
+	process->registers.esp = EBP + STACK_SIZE;
+	process->registers.esp -= 4; // leave 0 on the stack
 	MemoryManagement::load_page_dir(process->page_dir);
 	(*(u32*) process->registers.esp) = (u32) MultiProcess::end;
 	MemoryManagement::save_kernel_page_dir();

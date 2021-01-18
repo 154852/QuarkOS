@@ -13,11 +13,11 @@ namespace IPCMessaging {
 
 		u32 from_pid = 0;
 		u32 target_pid = 0;
-		char* raw = NULL;
+		void* raw = NULL;
 		size_t size = 0;
 	};
 
-	void send_message(u32 from_pid, u32 target_pid, char* raw, size_t size);
+	void send_message(u32 from_pid, u32 target_pid, void* raw, size_t size);
 	Message read_message(u32 to_pid);
 };
 

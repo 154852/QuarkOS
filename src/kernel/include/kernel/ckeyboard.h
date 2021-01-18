@@ -25,7 +25,7 @@ typedef struct {
 	char is_caps_locked;
 } __attribute__((packed)) KeyEvent;
 
-// TODO: Move out of .h, and into.c
+// TODO: Move out of .h, and into .c
 char scan_code_to_char(const KeyEvent* code) {
     if (!code) return 0;
     if (code->name == KEY_UNKNOWN) return 0;

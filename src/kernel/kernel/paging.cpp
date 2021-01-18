@@ -27,7 +27,7 @@ namespace MemoryManagement {
 
 	void allocate_blocks(u32 block_count) {
 		size_t length = block_count / 8;
-		bitmap = (u8*) kmalloc(length, 0, 0);
+		bitmap = (u8*) kmalloc(length);
 		total_blocks = block_count;
 		memset(bitmap, 0, length);
 		mem_start = 16 * MB;
@@ -76,7 +76,7 @@ namespace MemoryManagement {
 
 		PageTable* table = dir->ref_tables[page_dir_idx];
 		if (!table) {
-			table = (PageTable*) kmalloc(sizeof(PageTable), 1, 0);
+			table = (PageTable*) kmalloc_aligned(sizeof(PageTable));
 			memset(table, 0, sizeof(PageTable));
 
 			dir->tables[page_dir_idx].table_addr = (u32) table >> 12;
@@ -150,14 +150,14 @@ namespace MemoryManagement {
 	}
 
 	void init_paging() {
-		kernel_page_dir = (PageDirectory*) kmalloc(sizeof(PageDirectory), 1, 0);
+		kernel_page_dir = (PageDirectory*) kmalloc_aligned(sizeof(PageDirectory));
 		memset(kernel_page_dir, 0, sizeof(PageDirectory));
 		active_page_dir = kernel_page_dir;
 		paging_enabled = true;
 
 		allocate_blocks((GB >> 12) << 2); // 4GB: Just a big number
 
-		identity_map_region(kernel_page_dir, 0, 8 * MB, true, true);
+		identity_map_region(kernel_page_dir, 0, KERNEL_SIZE, true, true);
 
 		load_page_dir(kernel_page_dir);
 		enable_paging_bit();

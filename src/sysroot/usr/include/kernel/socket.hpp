@@ -1,3 +1,6 @@
+#ifndef _KERNEL_SOCKET_H
+#define _KERNEL_SOCKET_H
+
 #include <stdint2.h>
 
 namespace Socket {
@@ -16,3 +19,5 @@ namespace Socket {
 	unsigned read_socket(Socket* socket, unsigned length, void* data);
 	void write_socket(Socket* socket, unsigned length, void* data);
 }
+
+#endif

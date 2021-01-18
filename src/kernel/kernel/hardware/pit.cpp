@@ -19,9 +19,3 @@ bool PIT::attempt_to_set_frequency(unsigned int frequency) {
 	set_reload_value(PIT_CHANNEL_0, reload_value);
 	return true;
 }
-
-// unsigned int PIT::get_reload_value_for(unsigned int ms) {
-// 	// return ms * ((3579545 / 3) * 1000);
-// 	// reload_value * PIT_HZ = ms
-// 	return ms / PIT_HZ;
-// }

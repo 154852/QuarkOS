@@ -150,8 +150,8 @@ void _idle_code() {
 static volatile u32 last_pid = 0;
 
 MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
-	Process* proc = (Process*) kmalloc(sizeof(Process), 0, 0);
-	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc(sizeof(MemoryManagement::PageDirectory), 1, 0);
+	Process* proc = (Process*) kmalloc(sizeof(Process));
+	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc_aligned(sizeof(MemoryManagement::PageDirectory));
 	proc->name = name;
 	proc->wait_task.has_wait_task = false;
 	proc->ring0_request.has_ring0_request = false;
@@ -165,7 +165,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	proc->wait_task.registers.ss = 0x20 | 0x03;
 	proc->wait_task.registers.eflags = 0x0202;
 	proc->wait_task.registers.cs = 0x18 | 0x03;
-	proc->wait_task.ebp = (u32) kmalloc(4 * KB, 0, 0);
+	proc->wait_task.ebp = (u32) kmalloc(PAGE_SIZE);
 
 	proc->pid = last_pid++;
 
@@ -203,7 +203,7 @@ void MultiProcess::init(u32 ktss_idx, u32 kss, u32 kesp) {
 
 	tss_flush();
 
-	current_process = (Process*) kmalloc(sizeof(Process), 0, 0);
+	current_process = (Process*) kmalloc(sizeof(Process));
 	current_process->name = "kernel";
 	current_process->state = ProcessState::Exitting;
 	current_process->next = current_process;

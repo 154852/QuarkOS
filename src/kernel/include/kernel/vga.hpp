@@ -3,7 +3,7 @@
  
 #include <stdint.h>
  
-enum vga_color {
+enum VGAColor {
 	VGA_COLOR_BLACK = 0,
 	VGA_COLOR_BLUE = 1,
 	VGA_COLOR_GREEN = 2,
@@ -22,7 +22,7 @@ enum vga_color {
 	VGA_COLOR_WHITE = 15,
 };
  
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
+static inline uint8_t vga_entry_color(enum VGAColor fg, enum VGAColor bg) {
 	return fg | bg << 4;
 }
  

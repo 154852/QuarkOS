@@ -188,6 +188,8 @@ void __attribute__((interrupt)) Mouse::mouse_interrupt(struct IRQ::CSITRegisters
 		.flags = MousePacketFlags { .raw = inb(I8042_BUFFER) },
 		.x_delta = inb(I8042_BUFFER),
 		.y_delta = inb(I8042_BUFFER),
+		.scroll_delta_x = 0,
+		.scroll_delta_y = 0
 	};
 
 	unsigned scroll_delta = inb(I8042_BUFFER);

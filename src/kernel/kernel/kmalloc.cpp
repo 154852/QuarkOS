@@ -1,9 +1,11 @@
 #include <kernel/kmalloc.hpp>
+#include <assertions.h>
+#include <kernel/paging.hpp>
 
 extern u32 kernel_end;
 u32 placement_address = 0;
 
-u32 kmalloc(u32 size, int align, u32* physical) {
+void* _kmalloc(u32 size, int align) {
     if (placement_address == 0) placement_address = (u32) &kernel_end;
 
     if (align == 1 && (placement_address & 0x00000FFF)) {
@@ -11,23 +13,18 @@ u32 kmalloc(u32 size, int align, u32* physical) {
         placement_address += 0x1000;
     }
 
-    if (physical) *physical = placement_address;
-
     u32 tmp = placement_address;
+    assert(placement_address < KERNEL_SIZE);
     placement_address += size;
-    return tmp;
+    return (void*) tmp;
 }
 
-u32 kmalloc_a(u32 size) {
-    return kmalloc(size, 1, 0);
+void* kmalloc(size_t size) {
+    return _kmalloc(size, 0);
 }
 
-u32 kmalloc_p(u32 size, u32* physical) {
-    return kmalloc(size, 0, physical);
-}
-
-u32 kmalloc_ap(u32 size, u32* physical) {
-    return kmalloc(size, 1, physical);
+void* kmalloc_aligned(size_t size) {
+    return _kmalloc(size, 1);
 }
 
 u32 kmalloc_placement_address() {

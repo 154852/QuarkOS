@@ -34,8 +34,8 @@ void Disk::initialise() {
 	enable_disk_irq();
 	await_interrupt();
 
-	void* wbuf = (void*) kmalloc(512, 0, 0);
-	u8* byteBuffer = (u8*) kmalloc(512, 0, 0);
+	void* wbuf = (void*) kmalloc(512);
+	u8* byteBuffer = (u8*) kmalloc(512);
 	u8* b = byteBuffer;
 	u16* wbufbase = (u16*) wbuf;
 	u16* w = (u16*) wbuf;

@@ -87,7 +87,7 @@ void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const 
 			if (color != 0) pixel = *color;
 
 			if (image[image_idx].a == 0xff) {
-				data[framebuffer_idx] = pixel;
+				data[framebuffer_idx].raw = pixel.raw;
 			} else if (image[image_idx].a != 0) {
 				float frac = (float) image[image_idx].a / (float) 0xff;
 				data[framebuffer_idx].r = mix(data[framebuffer_idx].r, pixel.r, frac);
@@ -164,9 +164,9 @@ void render_window(InternalWindow* window) {
 
 			int idx = idx_for_xy(x + window->x, y + window->y);
 			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == TITLE_BAR_HEIGHT || y == 0) {
-				data[idx] = COLOR_VERYLIGHTGREY;
+				data[idx].raw = COLOR_VERYLIGHTGREY.raw;
 			} else if (y < TITLE_BAR_HEIGHT) {
-				data[idx] = COLOR_LIGHTGREY;
+				data[idx].raw = COLOR_LIGHTGREY.raw;
 			} else {
 				data[idx].raw = window->background.raw;
 			}
@@ -176,7 +176,7 @@ void render_window(InternalWindow* window) {
 	for (int x = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; x < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; x++) {
 		for (int y = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; y < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; y++) {
 			int idx = idx_for_xy(x + window->x, y + window->y);
-			data[idx] = COLOR_DARKRED;
+			data[idx].raw = COLOR_DARKRED.raw;
 		}
 	}
 
@@ -215,7 +215,7 @@ static int mouse_y;
 
 void render_cursor_to_swapbuffer() {
 	int x0 = clamp(mouse_x, 1, info.width - 1);
-	int y0 = clamp(-mouse_y, 1, info.height - 1);
+	int y0 = clamp(mouse_y, 1, info.height - 1);
 	
 	for (int x = -1; x <= 1; x++) {
 		for (int y = -1; y <= 1; y++) {
@@ -247,16 +247,16 @@ void render() {
 
 void update_cursor() {
 	MousePacket packet;
-	unsigned length = read(mouse_socket, (char*) &packet, sizeof(MousePacket));
+	unsigned length = read(mouse_socket, &packet, sizeof(MousePacket));
 	char has_changed = 0;
 	
 	while (length != 0) {
 		assert(length == sizeof(MousePacket));
-		mouse_x += packet.x_delta;
-		mouse_y += packet.y_delta;
+		mouse_x = clamp(mouse_x + packet.x_delta, 0, info.width);
+		mouse_y = clamp(mouse_y - packet.y_delta, 0, info.height);
 		has_changed = 1;
 
-		length = read(mouse_socket, (char*) &packet, sizeof(MousePacket));
+		length = read(mouse_socket, &packet, sizeof(MousePacket));
 	}
 
 	if (has_changed) {
@@ -264,7 +264,7 @@ void update_cursor() {
 	}
 }
 
-void handle_request(unsigned action, unsigned sender, char* raw) {
+void handle_request(unsigned action, unsigned sender, void* raw) {
 	switch (action) {
 		case WSCreateWindow: {
 			CreateWindowRequest* createwindow = (CreateWindowRequest*) raw;
@@ -290,7 +290,7 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 				}
 			}
 
-			send_ipc_message(sender, (char*) &res, sizeof(res));
+			send_ipc_message(sender, &res, sizeof(res));
 			render();
 			return;
 		}
@@ -386,7 +386,7 @@ void handle_request(unsigned action, unsigned sender, char* raw) {
 				}
 			}
 
-			send_ipc_message(sender, (char*) &res, sizeof(res));
+			send_ipc_message(sender, &res, sizeof(res));
 			render();
 			return;
 		}
@@ -401,11 +401,8 @@ char rawrequest[1024];
 void recieve_message() {
 	unsigned sender;
 
-	// unsigned i = 0;
-	
 	while (1) {
 		update_cursor();
-		// debugf("Update Cursor %d\n", i++);
 		
 		int status = read_ipc_message(rawrequest, 1024, &sender);
 		if (status < 0) continue;

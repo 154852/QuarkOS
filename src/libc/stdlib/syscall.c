@@ -30,11 +30,11 @@ void framebuffer_set_state(FrameBufferInfo* info) {
 	syscall(SC_FrameBufferSetState, (unsigned long) info, 0, 0);
 }
 
-void write(unsigned fd, const char* string, unsigned long length) {
+void write(unsigned fd, const void* string, unsigned long length) {
 	syscall(SC_Write, fd, (unsigned long) string, length);
 }
 
-unsigned read(unsigned fd, char* string, unsigned long length) {
+unsigned read(unsigned fd, void* string, unsigned long length) {
 	return syscall(SC_Read, fd, (unsigned long) string, length);
 }
 
@@ -59,11 +59,11 @@ unsigned int list_process_pids(int* pids, unsigned long length) {
 	return syscall(SC_LSProc, (unsigned long) pids, length, 0);
 }
 
-void send_ipc_message(unsigned target_pid, char* raw, unsigned length) {
+void send_ipc_message(unsigned target_pid, void* raw, unsigned length) {
 	syscall(SC_SendIPCMessage, target_pid, (unsigned) raw, length);
 }
 
-unsigned read_ipc_message(char* raw, unsigned length, unsigned* sender) {
+unsigned read_ipc_message(void* raw, unsigned length, unsigned* sender) {
 	return syscall(SC_ReadIPCMessage, (unsigned) raw, length, (unsigned) sender);
 }
 

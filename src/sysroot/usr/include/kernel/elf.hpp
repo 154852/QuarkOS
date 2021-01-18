@@ -65,6 +65,8 @@ constexpr u8 ELF_VERSION[4] = {0x01, 0x00, 0x00, 0x00};
 #define ELF_SHT_LOUSER	  0x80000000	/* Start of application-specific */
 #define ELF_SHT_HIUSER	  0x8fffffff	/* End of application-specific */
 
+#define STACK_SIZE (8 * KB)
+
 namespace ELF {
 	struct __attribute__((packed)) Header {
 		u8 magic[4];

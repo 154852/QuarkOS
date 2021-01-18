@@ -50,7 +50,20 @@ kernel/hardware/BXVGA.o \
 kernel/ipcmessaging.o \
 kernel/socket.o \
 kernel/hardware/mouse.o \
-# $(KERNEL_ARCH_OBJS)
+kernel/syscalls/read.o \
+kernel/syscalls/write.o \
+kernel/syscalls/open.o \
+kernel/syscalls/exit.o \
+kernel/syscalls/exec.o \
+kernel/syscalls/find_proc_id.o \
+kernel/syscalls/framebuffer_info.o \
+kernel/syscalls/framebuffer_set_state.o \
+kernel/syscalls/get_pid.o \
+kernel/syscalls/list_procs.o \
+kernel/syscalls/proc_info.o \
+kernel/syscalls/read_ipc_message.o \
+kernel/syscalls/send_ipc_message.o \
+kernel/syscalls/yield.o \
  
 OBJS=\
 $(ARCHDIR)/crti.o \

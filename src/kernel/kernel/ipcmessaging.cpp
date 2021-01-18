@@ -8,7 +8,7 @@
 #define MESSAGES_CAPACITY 512
 static IPCMessaging::Message messages[MESSAGES_CAPACITY];
 
-void IPCMessaging::send_message(u32 from_pid, u32 target_pid, char* raw, size_t size) {
+void IPCMessaging::send_message(u32 from_pid, u32 target_pid, void* raw, size_t size) {
 	for (int i = 0; i < MESSAGES_CAPACITY; i++) {
 		if (!messages[i].present) {
 			messages[i].present = true;

@@ -23,6 +23,7 @@
 #include <syscall.h>
 #include <kernel/kernel.hpp>
 #include <kernel/socket.hpp>
+#include <kernel/syscall.hpp>
 
 extern "C" u16 exception_code;
 asm(
@@ -111,233 +112,18 @@ asm( \
 		"iret\n" \
 );
 
-struct ELFLoadRequest {
-    USTAR::FileParsed* file;
-    MultiProcess::Process* proc;
-};
-
-void load_elf_ring0_callback(void* data) {
-    ELFLoadRequest* req = static_cast<ELFLoadRequest*>(data);
-    USTAR::FileParsed* file = req->file;
-
-    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, file->name));
-    req->proc = proc;
-
-    MultiProcess::get_current_task()->ring0_request.has_ring0_request = false;
-}
-
-void read_syscall_wait_task() {
-    MultiProcess::Process* task = MultiProcess::get_current_task();
-    assert(task->registers.edx == 1);
-
-    while (Keyboard::get_buffer_size() < task->registers.edx) {
-        yield();
-    }
-
-    memcpy((void*) task->registers.ecx, Keyboard::get_buffer(), task->registers.edx);
-    memmove(Keyboard::get_buffer(), Keyboard::get_buffer() + 1, Keyboard::get_buffer_size());
-    Keyboard::pop_from_buffer(task->registers.edx);
-    task->state = MultiProcess::EndWaiting;
-    task->wait_task.has_wait_task = false;
-    yield();
-}
-
-void execve_syscall_wait_task() {
-    MultiProcess::Process* task = MultiProcess::get_current_task();
-
-    USTAR::FileParsed* file = USTAR::lookup_parsed((const char*) task->registers.ebx);
-    if (file == 0) {
-        task->registers.eax = -EFILENOTFOUND;
-        task->state = MultiProcess::EndWaiting;
-        task->wait_task.has_wait_task = false;
-        yield();
-        return;
-    }
-
-    ELFLoadRequest req = {
-        .file = file,
-        .proc = 0
-    };
-
-    MultiProcess::append_ring0_sync_request(load_elf_ring0_callback, &req);
-    yield();
-    MultiProcess::append(req.proc);
-
-    task->registers.eax = req.proc->pid;
-
-    task->state = MultiProcess::EndWaiting;
-    task->wait_task.has_wait_task = false;
-    yield();
-}
+typedef void(*SyscallHandler)(IRQ::CSITRegisters2* frame);
+SyscallHandler syscall_table[0xff];
 
 // NOTE: We return int (even though we have no desire to return anything) to prevent gcc tail end optimising function calls, which somehow breaks things
 extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
-    // debug_putchar('A');
-    switch (frame->eax) {
-        case SC_Write: {
-            if (frame->ebx == FD_STDOUT || frame->ebx == FD_STDERR) {
-                Terminal::write(reinterpret_cast<const char*>(frame->ecx), frame->edx);
-            } else if ((frame->ebx & 0xff) == FD_SOCKET) {
-                unsigned id = frame->ebx >> 8;
-                Socket::write_socket(Socket::socket_from_id(id), frame->edx, reinterpret_cast<void*>(frame->ecx));
-            } else {
-                assert(0);
-            }
-            return 0;
-        }
-        case SC_Read: {
-            if (frame->ebx == FD_STDIN) {
-                MultiProcess::append_wait_task(read_syscall_wait_task);
-                MultiProcess::yield(frame);
-            } else if ((frame->ebx & 0xff) == FD_SOCKET) {
-                unsigned id = frame->ebx >> 8;
-                frame->eax = Socket::read_socket(Socket::socket_from_id(id), frame->edx, reinterpret_cast<void*>(frame->ecx));
-            } else {
-                assert(0);
-            }
-            return 0;
-        }
-        case SC_Open: {
-            Socket::Socket* socket = Socket::open_socket(reinterpret_cast<char*>(frame->ebx));
-            if (frame->ecx & FILE_FLAG_R) {
-                assert(socket != 0);
-            } else if (frame->ecx & FILE_FLAG_W) {
-                if (socket == 0) {
-                    socket = Socket::new_socket(reinterpret_cast<char*>(frame->ebx));
-                }
-            } else {
-                assert(false);
-            }
-            frame->eax = (socket->id << 8) | FD_SOCKET; // 0x00 for stdin, 0x01 for stdout, 0x02 for stderr, 0x03 for socket, 0x04 for file
-            return 0;
-        }
-        case SC_Exit: {
-            MultiProcess::exit(0, frame->ebx);
-            MultiProcess::yield(frame);
-            return 0;
-        }
-        case SC_Yield: {
-            MultiProcess::yield(frame);
-            return 0;
-        }
-        case SC_Exec: {
-            MultiProcess::append_wait_task(execve_syscall_wait_task);
-            MultiProcess::yield(frame);
-            return 0;
-        }
-        case SC_FrameBufferInfo: {
-            FrameBufferInfo* info = reinterpret_cast<FrameBufferInfo*>(frame->ebx);
-            info->framebuffer = BXVGA::framebuffer();
-            info->size = BXVGA::framebuffer_size();
-            info->width = BXVGA::width();
-            info->height = BXVGA::height();
-            info->enabled = BXVGA::is_enabled();
-            return 0;
-        }
-        case SC_FrameBufferSetState: {
-            FrameBufferInfo* info = reinterpret_cast<FrameBufferInfo*>(frame->ebx);
-            
-            if (info->width != 0 && info->height != 0)
-                BXVGA::set_resolution(info->width, info->height);
-            if ((bool) info->enabled != BXVGA::is_enabled()) {
-                if (info->enabled) BXVGA::enable();
-                else BXVGA::disable();
-            }
-
-            info->framebuffer = BXVGA::framebuffer();
-            info->size = BXVGA::framebuffer_size();
-            info->width = BXVGA::width();
-            info->height = BXVGA::height();
-            info->enabled = BXVGA::is_enabled();
-            return 0;
-        }
-        case SC_ProcInfo: {
-            ProcessInfo* info = reinterpret_cast<ProcessInfo*>(frame->ebx);
-
-            MultiProcess::Process* proc = MultiProcess::find_process_by_pid(info->pid);
-            if (proc == 0) {
-                info->state = ProcessStateSC::PSSC_NotPresent;
-            } else {
-                if (proc->state == MultiProcess::Exitting) info->state = ProcessStateSC::PSSC_Exitting;
-                else if (proc->state == MultiProcess::Idle) info->state = ProcessStateSC::PSSC_Idle;
-                else info->state = ProcessStateSC::PSSC_Running;
-
-                memcpy(info->name, proc->name, strlen(proc->name) + 1);
-            }
-            return 0;
-        }
-        case SC_GetPid: {
-            frame->eax = MultiProcess::get_current_task()->pid;
-            return 0;
-        }
-        case SC_LSProc: {
-            unsigned int length = 0;
-            unsigned int* pids = reinterpret_cast<unsigned int*>(frame->ebx);
-            unsigned long max_length = frame->ecx;
-
-            if (max_length == 0) {
-                frame->eax = 0;
-                return 0;
-            }
-
-            pids[0] = MultiProcess::get_current_task()->pid;
-            length++;
-
-            MultiProcess::Process* proc = MultiProcess::get_current_task()->next;
-            while (proc != MultiProcess::get_current_task()) {
-                if (length >= max_length) {
-                    frame->eax = length;
-                    return 0;
-                }
-                
-                pids[length++] = proc->pid;
-                proc = proc->next;
-            }
-            frame->eax = length;
-            return 0;
-        }
-        case SC_SendIPCMessage: {
-            char* copied_raw = (char*) kmalloc(frame->edx, 0, 0);
-            memcpy(copied_raw, (char*) frame->ecx, frame->edx);
-            IPCMessaging::send_message(MultiProcess::get_current_task()->pid, frame->ebx, copied_raw, frame->edx);
-            return 0;
-        }
-        case SC_ReadIPCMessage: {
-            IPCMessaging::Message msg = IPCMessaging::read_message(MultiProcess::get_current_task()->pid);
-            if (!msg.present) {
-                frame->eax = -ENOTFOUND;
-            } else if (msg.size > frame->ecx) {
-                frame->eax = -ETOOSMALL;
-            } else {
-                memcpy((void*) frame->ebx, msg.raw, msg.size);
-                *reinterpret_cast<unsigned*>(frame->edx) = msg.from_pid;
-                frame->eax = msg.size;
-            }
-            return 0;
-        }
-        case SC_FindProcPID: {
-            const char* name = reinterpret_cast<const char*>(frame->ebx);
-            if (strcmp(MultiProcess::get_current_task()->name, name) == 0) {
-                frame->eax = MultiProcess::get_current_task()->pid;
-                return 0;
-            }
-
-            MultiProcess::Process* proc = MultiProcess::get_current_task()->next;
-            while (proc != MultiProcess::get_current_task()) {
-                if (strcmp(proc->name, name) == 0) {
-                    frame->eax = proc->pid;
-                    return 0;
-                }
-                proc = proc->next;
-            }
-            frame->eax = -ENOTFOUND;
-            return 0;
-        }
-        default: {
-            kdebugf("[Core::Syscall] Unknown syscall: %.2x\n", frame->eax);
-            hang;
-        }
+    if (frame->eax > 0xff || syscall_table[frame->eax] == 0) {
+        kdebugf("[Core::Syscall] Unknown syscall: %.2x\n", frame->eax);
+        hang;
     }
+
+    syscall_table[frame->eax](frame);
+    return 0;
 }
 full_state_dump_interrupt(syscall);
 
@@ -447,6 +233,21 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x2E] = (void*) Disk::disk_interrupt;
     IRQ::interrupts_initialise((IRQ::GenericInterruptHandler*) specific_interrupt_handlers);
     kdebugf("[Core] Initiliased interrupts\n");
+
+    syscall_table[SC_Read] = sys_read;
+    syscall_table[SC_ProcInfo] = sys_proc_info;
+    syscall_table[SC_LSProc] = sys_list_procs;
+    syscall_table[SC_FrameBufferInfo] = sys_framebuffer_info;
+    syscall_table[SC_FrameBufferSetState] = sys_framebuffer_set_state;
+    syscall_table[SC_SendIPCMessage] = sys_send_ipc_message;
+    syscall_table[SC_ReadIPCMessage] = sys_read_ipc_message;
+    syscall_table[SC_GetPid] = sys_get_pid;
+    syscall_table[SC_FindProcPID] = sys_find_proc_by_id;
+    syscall_table[SC_Open] = sys_open;
+    syscall_table[SC_Write] = sys_write;
+    syscall_table[SC_Yield] = sys_yield;
+    syscall_table[SC_Exit] = sys_exit;
+    syscall_table[SC_Exec] = sys_exec;
 
     PCI::load_hardware();
     kdebugf("[Core] Initialised PCI\n");

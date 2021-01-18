@@ -7,7 +7,7 @@
 static Socket::Socket sockets[SOCKETS_CAPACITY];
 
 Socket::Socket* Socket::socket_from_id(unsigned id) {
-	assert(id >= 0 && id < SOCKETS_CAPACITY);
+	assert(id < SOCKETS_CAPACITY);
 	return &sockets[id];
 }
 
@@ -52,7 +52,7 @@ unsigned Socket::read_socket(Socket* socket, unsigned length, void* data) {
 }
 
 void Socket::write_socket(Socket* socket, unsigned length, void* data) {
-	void* raw = (void*) kmalloc(socket->length + length, 0, 0);
+	void* raw = kmalloc(socket->length + length);
 	if (socket->length != 0) memcpy(raw, socket->data, socket->length);
 	memcpy((void*) ((unsigned) raw + socket->length), data, length); // write to the end
 	// free socket->data

@@ -11,7 +11,6 @@ namespace PIT {
 	void set_reload_value(unsigned char channel, unsigned short reload_value);
 	bool can_have_frequency(unsigned int frequency);
 	bool attempt_to_set_frequency(unsigned int frequency);
-	// unsigned int get_reload_value_for(unsigned int hz);
 }
 
 #endif
