@@ -79,7 +79,7 @@ ElementID create_label(unsigned windowid, const char* content, Pixel* color, int
 
 int main() {
 	windowserver = find_proc_pid("/usr/bin/windowserver");
-	assert(windowserver != -ENOTFOUND);
+	assert((int) windowserver != -ENOTFOUND);
 
 	WindowHandle windowhandle = create_window("Hello World!", 400, 300, 100, 100);
 

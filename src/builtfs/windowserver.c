@@ -55,46 +55,36 @@ Pixel desktopBackground;
 
 Pixel data[SUPPORTED_SIZE];
 FrameBufferInfo info;
-unsigned* framebuffer;
+Pixel* framebuffer;
 
 void blit() {
-	memcpy(framebuffer, data, FULL_SIZE);
+	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
+		framebuffer[idx] = data[idx];
+	}
 }
 
-void clear() {
-	memset(data, 0, FULL_SIZE);
-}
+#define idx_for_xy(x, y) (((int) (y) * info.width) + (int) (x))
+#define idx_for_xyw(x, y, w) (((int) (y) * (int) (w)) + (int) (x))
+#define mix(a, b, frac) ((((float) (b) - (float) (a)) * (float) (frac)) + (float) (a))
 
-int idx_for_xy(int x, int y) {
-	return ((y * info.width) + x);
-}
-
-int idx_for_xyw(int x, int y, int w) {
-	return ((y * w) + x);
-}
-
-int mix(int a, int b, float frac) {
-	return ((b - a) * frac) + a;
-}
-
-void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color) {
+void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color, Pixel* out, int memw) {
 	for (int x = 0; x < w; x++) {
 		for (int y = 0; y < h; y++) {
-			int image_idx = idx_for_xyw(x, y, w);
+			int image_idx = idx_for_xyw(x, y, memw);
 			int framebuffer_idx = idx_for_xy((x * scale) + x0, (y * scale) + y0);
 
 			Pixel pixel = image[image_idx];
 			if (color != 0) pixel = *color;
 
 			if (image[image_idx].a == 0xff) {
-				data[framebuffer_idx].raw = pixel.raw;
+				out[framebuffer_idx] = pixel;
 			} else if (image[image_idx].a != 0) {
 				float frac = (float) image[image_idx].a / (float) 0xff;
-				data[framebuffer_idx].r = mix(data[framebuffer_idx].r, pixel.r, frac);
-				data[framebuffer_idx].g = mix(data[framebuffer_idx].g, pixel.g, frac);
-				data[framebuffer_idx].b = mix(data[framebuffer_idx].b, pixel.b, frac);
+				out[framebuffer_idx].r = mix(out[framebuffer_idx].r, pixel.r, frac);
+				out[framebuffer_idx].g = mix(out[framebuffer_idx].g, pixel.g, frac);
+				out[framebuffer_idx].b = mix(out[framebuffer_idx].b, pixel.b, frac);
 			}
-			data[framebuffer_idx].a = 0xff;
+			out[framebuffer_idx].a = 0xff;
 		}
 	}
 }
@@ -132,6 +122,7 @@ typedef struct {
 	int y;
 
 	Pixel background;
+	Pixel raster[SUPPORTED_SIZE];
 
 	InternalElement* elements[WINDOW_ELEMENTS_CAPACITY];
 } InternalWindow;
@@ -144,12 +135,12 @@ static InternalLabelElement labelElements[LABELS_CAPACITY];
 #define WINDOW_BUTTON_SIZE 15
 
 void render_label(InternalWindow* window, InternalLabelElement* label) {
-	int x = window->x + label->x;
-	int y = window->y + TITLE_BAR_HEIGHT + label->y;
+	int x = label->x;
+	int y = TITLE_BAR_HEIGHT + label->y;
 	double scale = label->scale;
 	for (size_t i = 0; i < strlen(label->content); i++) {
 		FontChar chr = fontchar_for_char(label->content[i]);
-		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &label->color);
+		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &label->color, window->raster, chr.width);
 		x += (chr.width * scale) + 1;
 	}
 }
@@ -162,21 +153,20 @@ void render_window(InternalWindow* window) {
 			if (x + window->x >= info.width) continue;
 			if (y + window->y >= info.height) continue;
 
-			int idx = idx_for_xy(x + window->x, y + window->y);
+			int idx = idx_for_xy(x, y);
 			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == TITLE_BAR_HEIGHT || y == 0) {
-				data[idx].raw = COLOR_VERYLIGHTGREY.raw;
+				window->raster[idx] = COLOR_VERYLIGHTGREY;
 			} else if (y < TITLE_BAR_HEIGHT) {
-				data[idx].raw = COLOR_LIGHTGREY.raw;
+				window->raster[idx] = COLOR_LIGHTGREY;
 			} else {
-				data[idx].raw = window->background.raw;
+				window->raster[idx] = window->background;
 			}
 		}
 	}
 
 	for (int x = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; x < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; x++) {
 		for (int y = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; y < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; y++) {
-			int idx = idx_for_xy(x + window->x, y + window->y);
-			data[idx].raw = COLOR_DARKRED.raw;
+			window->raster[idx_for_xy(x, y)] = COLOR_DARKRED;
 		}
 	}
 
@@ -185,11 +175,11 @@ void render_window(InternalWindow* window) {
 	double scale = (TITLE_BAR_HEIGHT * (1.0 - paddingpc)) / chr.height;
 	int padding = TITLE_BAR_HEIGHT * paddingpc * 0.5;
 
-	int x = window->x + ((TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2) + padding;
-	int y = window->y + padding;
+	int x = ((TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2) + padding;
+	int y = padding;
 	for (size_t i = 0; i < strlen(window->title); i++) {
 		FontChar chr = fontchar_for_char(window->title[i]);
-		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY);
+		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY, window->raster, chr.width);
 		x += (chr.width * scale) + 1;
 	}
 
@@ -220,47 +210,48 @@ void render_cursor_to_swapbuffer() {
 	for (int x = -1; x <= 1; x++) {
 		for (int y = -1; y <= 1; y++) {
 			int idx = idx_for_xy(x0 + x, y0 + y);
-			data[idx].raw = COLOR_RED.raw;
+			data[idx] = COLOR_RED;
+		}
+	}
+}
+
+void render_window_to_swapbuffer(InternalWindow* window) {
+	for (int y = 0; y < window->height; y++) {
+		int outoffset = idx_for_xy(window->x, y + window->y);
+		int offset = idx_for_xyw(0, y, SUPPORTED_WIDTH);
+		for (int x = 0; x < window->width; x++) {
+			data[outoffset + x] = window->raster[offset + x];
 		}
 	}
 }
 
 void render() {
-	clear();
+	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
+		data[idx] = desktopBackground;
+	}
+
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
 		if (windows[i].present) {
-			render_window(&windows[i]);
-		}
-	}
-	for (int x = 0; x < info.width; x++) {
-		for (int y = 0; y < info.height; y++) {
-			int idx = idx_for_xy(x, y);
-			if (data[idx].a == 0) {
-				data[idx].raw = desktopBackground.raw;
-			}
+			render_window_to_swapbuffer(&windows[i]);
 		}
 	}
 
 	render_cursor_to_swapbuffer();
-	blit();
+	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
+		framebuffer[idx] = data[idx];
+	}
 }
 
 void update_cursor() {
 	MousePacket packet;
 	unsigned length = read(mouse_socket, &packet, sizeof(MousePacket));
-	char has_changed = 0;
 	
 	while (length != 0) {
 		assert(length == sizeof(MousePacket));
 		mouse_x = clamp(mouse_x + packet.x_delta, 0, info.width);
 		mouse_y = clamp(mouse_y - packet.y_delta, 0, info.height);
-		has_changed = 1;
 
 		length = read(mouse_socket, &packet, sizeof(MousePacket));
-	}
-
-	if (has_changed) {
-		render(); // ideally just blit
 	}
 }
 
@@ -284,14 +275,13 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 					win->x = createwindow->x;
 					win->y = createwindow->y;
 					win->background = createwindow->background;
-
 					res.handle = win->handle;
+					render_window(win);
 					break;
 				}
 			}
 
 			send_ipc_message(sender, &res, sizeof(res));
-			render();
 			return;
 		}
 		case WSUpdateElement: {
@@ -325,6 +315,7 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 										labelElements[i].x = labelreq->x;
 										labelElements[i].y = labelreq->y;
 										labelElements[i].scale = labelreq->scale;
+										render_window(window);
 
 										res.elementId = i;
 										break;
@@ -377,6 +368,7 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 						element->y = labelreq->y;
 						element->scale = labelreq->scale;
 						res.elementId = element->elementID;
+						render_window(window);
 						break;
 					}
 					default: {
@@ -387,7 +379,6 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 			}
 
 			send_ipc_message(sender, &res, sizeof(res));
-			render();
 			return;
 		}
 		default: {
@@ -398,19 +389,23 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 }
 
 char rawrequest[1024];
-void recieve_message() {
+void recieve_messages() {
 	unsigned sender;
+
 
 	while (1) {
 		update_cursor();
 		
 		int status = read_ipc_message(rawrequest, 1024, &sender);
-		if (status < 0) continue;
+		while (status >= 0) {
+			WindowServerAction action = ((WindowServerRequest*) rawrequest)->action;
+			handle_request(action, sender, rawrequest);
+			memset(rawrequest, 0, 1024);
 
-		WindowServerAction action = ((WindowServerRequest*) rawrequest)->action;
-		handle_request(action, sender, rawrequest);
-		memset(rawrequest, 0, 1024);
-		return;
+			status = read_ipc_message(rawrequest, 1024, &sender);
+		}
+		
+		render();
 	}
 }
 
@@ -420,9 +415,10 @@ int main() {
 
 	assert(info.width == SUPPORTED_WIDTH);
 	assert(info.height == SUPPORTED_HEIGHT);
+	// Why 2 times? Is the second half a swapbuffer?
 	assert(info.size == SUPPORTED_SIZE * sizeof(unsigned) * 2);
 
-	framebuffer = info.framebuffer;
+	framebuffer = (Pixel*) info.framebuffer;
 
 	desktopBackground = pixel_from_hex(0xffffff);
 
@@ -432,9 +428,7 @@ int main() {
 
 	exec("/usr/bin/guiapp");
 
-	while (1) {
-		recieve_message();		
-	}
+	recieve_messages();
 
 	return 0;
 }
