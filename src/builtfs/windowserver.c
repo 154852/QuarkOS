@@ -66,6 +66,7 @@ void blit() {
 #define idx_for_xy(x, y) (((int) (y) * info.width) + (int) (x))
 #define idx_for_xyw(x, y, w) (((int) (y) * (int) (w)) + (int) (x))
 #define mix(a, b, frac) ((((float) (b) - (float) (a)) * (float) (frac)) + (float) (a))
+#define rect_contains(rx, ry, rw, rh, x, y) ((x) >= (rx) && (x) <= ((rx) + (rw)) && (y) >= (ry) && (y) <= ((ry) + (rh)))
 
 void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color, Pixel* out, int memw) {
 	for (int x = 0; x < w; x++) {
@@ -216,10 +217,10 @@ void render_cursor_to_swapbuffer() {
 }
 
 void render_window_to_swapbuffer(InternalWindow* window) {
-	for (int y = 0; y < window->height; y++) {
+	for (int y = 0; y < (int) window->height; y++) {
 		int outoffset = idx_for_xy(window->x, y + window->y);
 		int offset = idx_for_xyw(0, y, SUPPORTED_WIDTH);
-		for (int x = 0; x < window->width; x++) {
+		for (int x = 0; x < (int) window->width; x++) {
 			data[outoffset + x] = window->raster[offset + x];
 		}
 	}
@@ -242,6 +243,25 @@ void render() {
 	}
 }
 
+char window_contains(InternalWindow* window, int x, int y) {
+	return rect_contains(window->x, window->y, window->width, window->height, x, y);
+}
+
+void window_resolve_click(InternalWindow* window, int x, int y) {
+	// X button
+	if (rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
+		window->present = 0;
+	}
+}
+
+void resolve_click(int x, int y) {
+	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
+		if (windows[i].present && window_contains(&windows[i], x, y)) {
+			window_resolve_click(&windows[i], x - windows[i].x, y - windows[i].y);
+		}
+	}
+}
+
 void update_cursor() {
 	MousePacket packet;
 	unsigned length = read(mouse_socket, &packet, sizeof(MousePacket));
@@ -250,6 +270,10 @@ void update_cursor() {
 		assert(length == sizeof(MousePacket));
 		mouse_x = clamp(mouse_x + packet.x_delta, 0, info.width);
 		mouse_y = clamp(mouse_y - packet.y_delta, 0, info.height);
+
+		if (packet.flags.left_button) {
+			resolve_click(mouse_x, mouse_y);
+		}
 
 		length = read(mouse_socket, &packet, sizeof(MousePacket));
 	}
@@ -264,6 +288,7 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 			for (int i = 0; i < WINDOWS_CAPACITY; i++) {
 				if (!windows[i].present) {
 					InternalWindow* win = &windows[i];
+					memset(win, 0, sizeof(InternalWindow));
 
 					win->present = 1;
 					win->handle = i;
@@ -284,6 +309,26 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 			send_ipc_message(sender, &res, sizeof(res));
 			return;
 		}
+		case WSDestroyWindow: {
+			DestroyWindowRequest* req = (DestroyWindowRequest*) raw;
+			
+			if (req->window >= WINDOWS_CAPACITY) {
+				debugf("Invalid window ID\n");
+				return;
+			}
+			InternalWindow* window = &windows[req->window];
+			if (!window->present) {
+				debugf("Window does not exist\n");
+				return;
+			}
+
+			if (window->creatorpid != sender) {
+				debugf("Invalid permissions for window\n");
+				return;
+			}
+			window->present = 0;
+			return;
+		}
 		case WSUpdateElement: {
 			WindowServerElementUpdateRequest* req = (WindowServerElementUpdateRequest*) raw;
 			WindowServerElementUpdateResponse res;
@@ -300,6 +345,11 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 						InternalWindow* window = &windows[req->window];
 						if (window->creatorpid != sender) {
 							debugf("Invalid permissions for window\n");
+							return;
+						}
+
+						if (!window->present) {
+							debugf("Window does not exist\n");
 							return;
 						}
 
@@ -341,6 +391,11 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 							return;
 						}
 						InternalWindow* window = &windows[req->window];
+						if (!window->present) {
+							debugf("Window does not exist\n");
+							return;
+						}
+
 						if (window->creatorpid != sender) {
 							debugf("Invalid permissions for window\n");
 							return;
@@ -379,6 +434,38 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 			}
 
 			send_ipc_message(sender, &res, sizeof(res));
+			return;
+		}
+		case WSWindowStatus: {
+			WindowStatusRequest* req = (WindowStatusRequest*) raw;
+			WindowStatusResponse res;
+			
+			if (req->window >= WINDOWS_CAPACITY) {
+				res.present = 0;
+				send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
+				return;
+			}
+			InternalWindow* window = &windows[req->window];
+
+			if (!window->present) {
+				res.present = 0;
+				send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
+				return;
+			}
+			res.present = 1;
+
+			if (window->creatorpid != sender) {
+				send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
+				return;
+			}
+			
+			res.present = 1;
+			res.x = window->x;
+			res.y = window->y;
+			res.width = window->width;
+			res.height = window->height;
+
+			send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
 			return;
 		}
 		default: {

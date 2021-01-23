@@ -23,6 +23,7 @@ typedef struct {
 	KeyName name;
 	char is_shifted;
 	char is_caps_locked;
+    char is_ctrl;
 } __attribute__((packed)) KeyEvent;
 
 // TODO: Move out of .h, and into .c

@@ -40,6 +40,40 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	}
 }
 
+void destroy_window(WindowHandle handle) {
+	DestroyWindowRequest req;
+	memset(&req, 0, sizeof(req));
+	req.action = WSDestroyWindow;
+	req.window = handle;
+
+	send_ipc_message(windowserver, (char*) &req, sizeof(DestroyWindowRequest));
+}
+
+WindowStatusResponse query_status(WindowHandle handle) {
+	WindowStatusRequest req;
+	memset(&req, 0, sizeof(req));
+	req.action = WSWindowStatus;
+	req.window = handle;
+
+	send_ipc_message(windowserver, (char*) &req, sizeof(WindowStatusRequest));
+
+	WindowStatusResponse res;
+	unsigned senderpid;
+
+	while (1) {
+		int status = read_ipc_message((char*) &res, sizeof(WindowStatusResponse), &senderpid);
+
+		if (status < 0) continue;
+
+		if (senderpid != windowserver) {
+			debugf("Unexpected message from pid = %d\n", senderpid);
+			exit(1);
+		}
+		
+		return res;
+	}
+}
+
 ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y) {
 	WindowServerLabelUpdateRequest req;
 	memset(&req, 0, sizeof(req));
@@ -87,20 +121,18 @@ int main() {
 	int textidx = 1;
 	ElementID labelID = create_label(windowhandle, text, 0, 5, 5);
 
-	// unsigned stdint2 = open("/usr/include/stdint2.h", FILE_FLAG_R);
-	// char content[100];
-	// unsigned int used = read(stdint2, content, 100);
-	// debugf("(%d) %.*s\n", used, used, content);
-
 	unsigned fd = open("/dev/keyboard", FILE_FLAG_R | FILE_FLAG_SOCK);
 	char data[sizeof(KeyEvent)];
-	while (1) {
+	while (query_status(windowhandle).present) {
 		unsigned len = read(fd, data, sizeof(KeyEvent));
 		if (len != 0) {
 			KeyEvent* state = (KeyEvent*) data;
 			if (state->action == KEY_PRESS && state->name == KEY_BACKSPACE) {
 				text[textidx - 1] = 0;
 				textidx--;
+			} else if (state->action == KEY_PRESS && state->name == KEY_C && state->is_ctrl) {
+				destroy_window(windowhandle);
+				break;
 			} else {
 				char chr = scan_code_to_char(state);
 				if (chr == 0) continue;

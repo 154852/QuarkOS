@@ -10,6 +10,7 @@ namespace Keyboard {
 	struct KeyboardState {
 		bool is_shifted;
 		bool is_caps_locked;
+		bool is_ctrl;
 	};
 
 	char scan_code_to_char(const ScanCode* scancode, KeyboardState* state);

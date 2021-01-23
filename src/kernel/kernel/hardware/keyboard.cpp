@@ -107,6 +107,10 @@ __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITReg
         global_keyboard_state.is_shifted = code->action == KEY_PRESS;
     }
 
+    if (code->name == KEY_LEFT_CONTROL) {
+        global_keyboard_state.is_ctrl = code->action == KEY_PRESS;
+    }
+
     if (code->name == KEY_CAPS_LOCK) {
         global_keyboard_state.is_caps_locked = code->action == KEY_PRESS;
     }
