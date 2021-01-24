@@ -1,3 +1,4 @@
+#include <ckeyboard.h>
 #include <windowserver/color.h>
 #include <windowserver/config.h>
 
@@ -41,14 +42,27 @@ typedef struct {
 } WindowStatusRequest;
 
 typedef enum {
-	WSEvButtonClick
+	WSEvButtonClick,
+	WSEvKeyPress
 } WindowServerEventType;
+
+#define EVENT_DATA_SIZE 32
 
 typedef struct {
 	char present;
 	unsigned element;
 	WindowServerEventType type;
+	char zero[EVENT_DATA_SIZE];
 } WindowServerEvent;
+
+typedef struct {
+	char present;
+	unsigned element;
+	WindowServerEventType type;
+
+	KeyEvent event;
+	char zero[EVENT_DATA_SIZE - sizeof(KeyEvent)];
+} WindowServerKeyboardEvent;
 
 typedef struct {
 	char present;

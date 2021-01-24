@@ -14,6 +14,7 @@ void recieve_messages() {
 
 	while (1) {
 		update_cursor();
+		update_keyboard();
 		
 		int status = read_ipc_message(rawrequest, 1024, &sender);
 		while (status >= 0) {
@@ -31,6 +32,7 @@ void recieve_messages() {
 int main() {
 	initialise_buffers();
 	initialise_mouse();
+	initialise_keyboard();
 	render();
 
 	exec("/usr/bin/dock");

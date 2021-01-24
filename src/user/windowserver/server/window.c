@@ -22,7 +22,7 @@ InternalButtonElement* get_button_elements() {
 	return buttonElements;
 }
 
-InternalEvent* allocate_event(InternalWindow* window) {
+WindowServerEvent* allocate_event(InternalWindow* window) {
 	for (int i = 0; i < WINDOW_EVENTS_CAPACITY; i++) {
 		if (!window->events[i].present) {
 			window->events[i].present = 1;
@@ -117,4 +117,14 @@ void render_window(InternalWindow* window) {
 			}
 		}
 	}
+}
+
+static InternalWindow* focused_window = 0;
+
+InternalWindow* get_focused() {
+	return focused_window;
+}
+
+void set_focused(InternalWindow* window) {
+	focused_window = window;
 }

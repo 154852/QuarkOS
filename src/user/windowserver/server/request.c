@@ -6,8 +6,25 @@
 #include <syscall.h>
 #include <stdio.h>
 
+void find_xy(int* x, int* y) {
+	InternalWindow* windows = get_windows();
+
+	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
+		if (windows[i].present && windows[i].x == *x && windows[i].y == *y) {
+			*x += 15;
+			*y += 15;
+
+			find_xy(x, y);
+		}
+	}
+}
+
 void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 	InternalWindow* windows = get_windows();
+
+	int x = createwindow->x;
+	int y = createwindow->y;
+	find_xy(&x, &y);
 	
 	CreateWindowResponse res;
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
@@ -22,12 +39,13 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 			memcpy(win->title, createwindow->title, 64);
 			win->width = createwindow->width;
 			win->height = createwindow->height;
-			win->x = createwindow->x;
-			win->y = createwindow->y;
+			win->x = x;
+			win->y = y;
 			win->background = createwindow->background;
 			win->has_title_bar = createwindow->has_title_bar;
 			res.handle = win->handle;
 			render_window(win);
+			set_focused(win);
 			break;
 		}
 	}
@@ -53,6 +71,10 @@ void destroy_window_handler(unsigned sender, DestroyWindowRequest* req) {
 		return;
 	}
 	window->present = 0;
+	
+	if (get_focused() == window) {
+		set_focused(0);
+	}
 }
 
 WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
@@ -247,11 +269,8 @@ void window_status_handler(unsigned sender, WindowStatusRequest* req) {
 	res.last_event.present = 0;
 	for (int i = WINDOW_EVENTS_CAPACITY - 1; i >= 0; i--) {
 		if (window->events[i].present) {
-			window->events[i].present = 0;
-
-			res.last_event.present = 1;
-			res.last_event.element = window->events[i].element;
-			res.last_event.type = window->events[i].type;
+			res.last_event = window->events[i];
+			memset(&window->events[i], 0, sizeof(WindowServerEvent));
 			break;
 		}
 	}

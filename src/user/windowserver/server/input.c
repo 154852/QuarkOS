@@ -1,4 +1,5 @@
 #include "input.h"
+#include <ckeyboard.h>
 #include "window.h"
 #include <syscall.h>
 #include <cmouse.h>
@@ -13,14 +14,50 @@ void initialise_mouse() {
 	mouse_socket = open("/dev/mouse", FILE_FLAG_R | FILE_FLAG_SOCK);
 }
 
+static unsigned keyboard_socket;
+static char keydata[sizeof(KeyEvent)];
+
+InternalWindow* dragging;
+
+void initialise_keyboard() {
+	keyboard_socket = open("/dev/keyboard", FILE_FLAG_R | FILE_FLAG_SOCK);
+
+	assert(sizeof(WindowServerKeyboardEvent) == sizeof(WindowServerEvent));
+}
+
+void update_keyboard() {
+	unsigned len = read(keyboard_socket, keydata, sizeof(KeyEvent));
+	while (len != 0) {
+		KeyEvent* state = (KeyEvent*) keydata;
+
+		if (get_focused() != 0) {
+			WindowServerKeyboardEvent* event = (WindowServerKeyboardEvent*) allocate_event(get_focused());
+			assert(event);
+			event->element = 0;
+			event->type = WSEvKeyPress;
+			event->event = *state;
+		}
+
+		len = read(keyboard_socket, keydata, sizeof(KeyEvent));
+	}
+}
+
 char window_contains(InternalWindow* window, int x, int y) {
 	return rect_contains(window->x, window->y, (int) window->width, (int) window->height, x, y);
 }
 
 void window_resolve_click(InternalWindow* window, int x, int y) {
+	set_focused(window);
+
 	// X button
 	if (window->has_title_bar && rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
 		window->present = 0;
+		if (get_focused() == window) set_focused(0);
+		return;
+	}
+
+	if (window->has_title_bar && y < TITLE_BAR_HEIGHT) {
+		dragging = window;
 		return;
 	}
 
@@ -28,7 +65,7 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 		if (window->elements[i]->present && window->elements[i]->type == WSButtonElement) {
 			InternalButtonElement* button = (InternalButtonElement*) window->elements[i];
 			if (rect_contains(button->x, button->y + window_title_bar_height(window), (int) button->width, (int) button->height, x, y)) {
-				InternalEvent* event = allocate_event(window);
+				WindowServerEvent* event = allocate_event(window);
 				assert(event);
 				event->element = button->elementID;
 				event->type = WSEvButtonClick;
@@ -39,10 +76,15 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 }
 
 void resolve_click(int x, int y) {
-	InternalWindow* windows = get_windows();
+	InternalWindow* focused = get_focused();
+	if (focused != 0 && window_contains(focused, x, y)) {
+		window_resolve_click(focused, x - focused->x, y - focused->y);
+		return;
+	}
 
+	InternalWindow* windows = get_windows();
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
-		if (windows[i].present && window_contains(&windows[i], x, y)) {
+		if (windows[i].present && &windows[i] != focused && window_contains(&windows[i], x, y)) {
 			window_resolve_click(&windows[i], x - windows[i].x, y - windows[i].y);
 			return;
 		}
@@ -63,6 +105,13 @@ void update_cursor() {
 				resolve_click(mouse_x, mouse_y);
 			}
 			is_clicking = packet.flags.left_button;
+		}
+
+		if (packet.flags.left_button && dragging != 0) {
+			dragging->x += packet.x_delta;
+			dragging->y -= packet.y_delta;
+		} else if (!packet.flags.left_button && dragging != 0) {
+			dragging = 0;
 		}
 
 		length = read(mouse_socket, &packet, sizeof(MousePacket));

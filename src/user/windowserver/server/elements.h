@@ -35,12 +35,6 @@ typedef struct {
 
 typedef struct {
 	char present;
-	WindowServerEventType type;
-	unsigned element;
-} InternalEvent;
-
-typedef struct {
-	char present;
 	unsigned handle;
 	unsigned creatorpid;
 
@@ -52,7 +46,7 @@ typedef struct {
 	int x;
 	int y;
 
-	InternalEvent events[WINDOW_EVENTS_CAPACITY];
+	WindowServerEvent events[WINDOW_EVENTS_CAPACITY];
 
 	Pixel background;
 	Pixel raster[SUPPORTED_SIZE];

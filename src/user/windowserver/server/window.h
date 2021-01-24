@@ -10,11 +10,14 @@ InternalWindow* get_windows();
 InternalLabelElement* get_label_elements();
 InternalButtonElement* get_button_elements();
 
-InternalEvent* allocate_event(InternalWindow* window);
+WindowServerEvent* allocate_event(InternalWindow* window);
 
 void render_label(InternalWindow* window, InternalLabelElement* label);
 void render_button(InternalWindow* window, InternalButtonElement* button);
 void render_window(InternalWindow* window);
+
+InternalWindow* get_focused();
+void set_focused(InternalWindow* window);
 
 #define window_title_bar_height(window) ((window)->has_title_bar? TITLE_BAR_HEIGHT:0)
 

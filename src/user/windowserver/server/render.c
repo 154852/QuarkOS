@@ -7,8 +7,8 @@
 #include "windowserver/color.h"
 
 void render_cursor_to_swapbuffer() {
-	int x0 = clamp(get_mouse_x(), 1, SUPPORTED_WIDTH - 1);
-	int y0 = clamp(get_mouse_y(), 1, SUPPORTED_HEIGHT - 1);
+	int x0 = clamp(get_mouse_x(), 2, SUPPORTED_WIDTH - 2);
+	int y0 = clamp(get_mouse_y(), 2, SUPPORTED_HEIGHT - 2);
 
 	Pixel* swapbuffer = get_swapbuffer();
 	
@@ -43,10 +43,13 @@ void render() {
 	}
 
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
-		if (windows[i].present) {
+		if (windows[i].present && &windows[i] != get_focused()) {
 			render_window_to_swapbuffer(&windows[i]);
 		}
 	}
+
+	if (get_focused() != 0)
+		render_window_to_swapbuffer(get_focused());
 
 	render_cursor_to_swapbuffer();
 	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
