@@ -1,19 +1,12 @@
-#include <windowserver/wsmsg.h>
 #include <syscall.h>
 #include <stdio.h>
 #include <assertions.h>
 #include <string.h>
-#include <windowserver/fontchars.h>
-#include <windowserver/client.h>
-#include "buffer.h"
-#include "elements.h"
-#include "window.h"
-#include "render.h"
-#include "request.h"
+
 #include "input.h"
-#include "windowserver/color.h"
-#include <windowserver/image.h>
-#include <windowserver/config.h>
+#include "request.h"
+#include "render.h"
+#include "buffer.h"
 
 char rawrequest[1024];
 void recieve_messages() {

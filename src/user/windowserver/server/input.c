@@ -1,4 +1,5 @@
 #include "input.h"
+#include "window.h"
 #include <syscall.h>
 #include <cmouse.h>
 #include <assertions.h>
@@ -21,6 +22,19 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 	if (rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
 		window->present = 0;
 		return;
+	}
+
+	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+		if (window->elements[i]->present && window->elements[i]->type == WSButtonElement) {
+			InternalButtonElement* button = (InternalButtonElement*) window->elements[i];
+			if (rect_contains(button->x, button->y + TITLE_BAR_HEIGHT, (int) button->width, (int) button->height, x, y)) {
+				InternalEvent* event = allocate_event(window);
+				assert(event);
+				event->element = button->elementID;
+				event->type = WSEvButtonClick;
+				return;
+			}
+		}
 	}
 }
 

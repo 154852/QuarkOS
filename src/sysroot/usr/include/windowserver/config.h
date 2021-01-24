@@ -8,6 +8,10 @@
 
 #define WINDOWS_CAPACITY 32
 #define LABELS_CAPACITY 32
+#define BUTTONS_CAPACITY 32
+
+#define WINDOW_ELEMENTS_CAPACITY 32
+#define WINDOW_EVENTS_CAPACITY 32
 
 #define DESKTOP_BACKGROUND pixel_from_rgb(0xff, 0xff, 0xff)
 

@@ -35,6 +35,7 @@ server/input.o \
 
 CLIENTOBJS=\
 client/main.o \
+client/mainloop.o \
  
 OBJS=\
 $(SERVEROBJS) \

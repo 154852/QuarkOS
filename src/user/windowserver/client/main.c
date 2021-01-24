@@ -116,3 +116,39 @@ ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixe
 ElementID create_label(unsigned windowid, const char* content, Pixel* color, int x, int y) {
 	return update_label(windowid, -1, content, color, x, y);
 }
+
+ElementID update_button(unsigned windowid, unsigned id, int x, int y, unsigned width, unsigned height, Pixel* background) {
+	WindowServerButtonUpdateRequest req;
+	memset(&req, 0, sizeof(req));
+	req.window = windowid;
+	req.action = WSUpdateElement;
+	req.elementId = id;
+	req.elementType = WSButtonElement;
+	req.x = x;
+	req.y = y;
+	req.width = width;
+	req.height = height;
+	req.background = background == 0? (Pixel) { .r = 0x0, .g = 0x0, .b = 0x0, .a = 0xff }:*background;
+
+	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerButtonUpdateRequest));
+
+	WindowServerElementUpdateResponse res;
+	unsigned senderpid;
+
+	while (1) {
+		int status = read_ipc_message((char*) &res, sizeof(WindowServerElementUpdateResponse), &senderpid);
+
+		if (status < 0) continue;
+
+		if (senderpid != get_windowserver_pid()) {
+			debugf("Unexpected message from pid = %d\n", senderpid);
+			exit(1);
+		}
+		
+		return res.elementId;
+	}
+}
+
+ElementID create_button(unsigned windowid, int x, int y, unsigned width, unsigned height, Pixel* background) {
+	return update_button(windowid, -1, x, y, width, height, background);
+}

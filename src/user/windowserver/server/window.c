@@ -8,6 +8,7 @@
 
 static InternalWindow windows[WINDOWS_CAPACITY];
 static InternalLabelElement labelElements[LABELS_CAPACITY];
+static InternalButtonElement buttonElements[BUTTONS_CAPACITY];
 
 InternalWindow* get_windows() {
 	return windows;
@@ -15,6 +16,21 @@ InternalWindow* get_windows() {
 
 InternalLabelElement* get_label_elements() {
 	return labelElements;
+}
+
+InternalButtonElement* get_button_elements() {
+	return buttonElements;
+}
+
+InternalEvent* allocate_event(InternalWindow* window) {
+	for (int i = 0; i < WINDOW_EVENTS_CAPACITY; i++) {
+		if (!window->events[i].present) {
+			window->events[i].present = 1;
+			return &window->events[i];
+		}
+	}
+	
+	return 0;
 }
 
 void render_label(InternalWindow* window, InternalLabelElement* label) {
@@ -25,6 +41,20 @@ void render_label(InternalWindow* window, InternalLabelElement* label) {
 		FontChar chr = fontchar_for_char(label->content[i]);
 		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &label->color, window->raster, chr.width);
 		x += (chr.width * scale) + 1;
+	}
+}
+
+void render_button(InternalWindow* window, InternalButtonElement* button) {
+	int x0 = button->x;
+	int x1 = x0 + button->width;
+
+	int y0 = TITLE_BAR_HEIGHT + button->y;
+	int y1 = y0 + button->height;
+	
+	for (int y = y0; y < y1; y++) {
+		for (int x = x0; x < x1; x++) {
+			window->raster[idx_for_xy(x, y)] = button->background;
+		}
 	}
 }
 
@@ -71,6 +101,10 @@ void render_window(InternalWindow* window) {
 			switch (window->elements[i]->type) {
 				case WSLabelElement: {
 					render_label(window, (InternalLabelElement*) window->elements[i]);
+					break;
+				}
+				case WSButtonElement: {
+					render_button(window, (InternalButtonElement*) window->elements[i]);
 					break;
 				}
 				default: {

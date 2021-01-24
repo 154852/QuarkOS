@@ -39,8 +39,21 @@ typedef struct {
 	unsigned window;
 } WindowStatusRequest;
 
+typedef enum {
+	WSEvButtonClick
+} WindowServerEventType;
+
 typedef struct {
 	char present;
+	unsigned element;
+	WindowServerEventType type;
+} WindowServerEvent;
+
+typedef struct {
+	char present;
+
+	WindowServerEvent last_event;
+
 	int x;
 	int y;
 	unsigned width;
@@ -49,6 +62,7 @@ typedef struct {
 
 typedef enum {
 	WSLabelElement,
+	WSButtonElement
 } WindowServerElementType;
 
 typedef struct {
@@ -63,6 +77,7 @@ typedef struct {
 	unsigned elementId;
 } WindowServerElementUpdateResponse;
 
+
 typedef struct {
 	WindowServerAction action;
 	WindowServerElementType elementType;
@@ -75,5 +90,18 @@ typedef struct {
 	Pixel color;
 	float scale;
 } WindowServerLabelUpdateRequest;
+
+typedef struct {
+	WindowServerAction action;
+	WindowServerElementType elementType;
+	unsigned window;
+	unsigned elementId;
+	
+	int x;
+	int y;
+	unsigned width;
+	unsigned height;
+	Pixel background;
+} WindowServerButtonUpdateRequest;
 
 #endif

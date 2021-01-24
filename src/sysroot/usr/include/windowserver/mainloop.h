@@ -1,0 +1,27 @@
+#ifndef _WINDOWSERVER_MAINLOOP_H
+#define _WINDOWSERVER_MAINLOOP_H
+
+#include <windowserver/client.h>
+#include <ckeyboard.h>
+
+#define ONCLICK_LISTENERS_CAPACITY 5
+#define ONKEYPRESS_LISTENERS_CAPACITY 5
+
+typedef struct {
+	char present;
+	ElementID buttonID;
+	void(*cb)();
+} OnClickListener;
+
+typedef struct {
+	char present;
+	void(*cb)(KeyEvent* event);
+} OnKeyPressListener;
+
+void mainloop(WindowHandle windowhandle);
+void set_should_close(char should_close);
+
+void onkeydown(void(*cb)(KeyEvent* event));
+void onclick(ElementID buttonID, void(*cb)());
+
+#endif

@@ -16,4 +16,7 @@ WindowStatusResponse query_status(WindowHandle handle);
 ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y);
 ElementID create_label(unsigned windowid, const char* content, Pixel* color, int x, int y);
 
+ElementID update_button(unsigned windowid, unsigned id, int x, int y, unsigned width, unsigned height, Pixel* background);
+ElementID create_button(unsigned windowid, int x, int y, unsigned width, unsigned height, Pixel* background);
+
 #endif

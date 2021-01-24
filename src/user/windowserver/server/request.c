@@ -1,5 +1,6 @@
 #include "request.h"
 #include "window.h"
+#include "windowserver/config.h"
 #include <windowserver/wsmsg.h>
 #include <string.h>
 #include <syscall.h>
@@ -140,11 +141,57 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 	return (WindowServerElementUpdateResponse) { element->elementID };
 }
 
+WindowServerElementUpdateResponse create_element_button_handler(unsigned sender, WindowServerButtonUpdateRequest* buttonreq) {
+	InternalWindow* windows = get_windows();
+	InternalButtonElement* buttonElements = get_button_elements();
+
+	if (buttonreq->window >= WINDOWS_CAPACITY) {
+		debugf("Invalid window ID\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+	InternalWindow* window = &windows[buttonreq->window];
+	if (window->creatorpid != sender) {
+		debugf("Invalid permissions for window\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (!window->present) {
+		debugf("Window does not exist\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+		if (window->elements[i] == 0) {
+			for (int j = 0; j < BUTTONS_CAPACITY; j++) {
+				if (!buttonElements[i].present) {
+					window->elements[i] = (InternalElement*) &buttonElements[i];
+					window->elements[i]->present = 1;
+					window->elements[i]->type = WSButtonElement;
+					buttonElements[i].background = buttonreq->background;
+					buttonElements[i].x = buttonreq->x;
+					buttonElements[i].y = buttonreq->y;
+					buttonElements[i].width = buttonreq->width;
+					buttonElements[i].height = buttonreq->height;
+					render_window(window);
+
+					return (WindowServerElementUpdateResponse) { i };
+				}
+			}
+		}
+	}
+
+	debugf("No capacity for label\n");
+	return (WindowServerElementUpdateResponse) { -1 };
+}
+
 WindowServerElementUpdateResponse update_element_handler(unsigned sender, WindowServerElementUpdateRequest* req) {
 	if ((int) req->elementId == -1) {
 		switch (req->elementType) {
 			case WSLabelElement: {
 				return create_element_label_handler(sender, (WindowServerLabelUpdateRequest*) req);
+			}
+			case WSButtonElement: {
+				return create_element_button_handler(sender, (WindowServerButtonUpdateRequest*) req);
 			}
 			default: {
 				debugf("Unknown element type 0x%.8x\n", req->elementType);
@@ -192,6 +239,18 @@ void window_status_handler(unsigned sender, WindowStatusRequest* req) {
 	res.y = window->y;
 	res.width = window->width;
 	res.height = window->height;
+
+	res.last_event.present = 0;
+	for (int i = WINDOW_EVENTS_CAPACITY - 1; i >= 0; i--) {
+		if (window->events[i].present) {
+			window->events[i].present = 0;
+
+			res.last_event.present = 1;
+			res.last_event.element = window->events[i].element;
+			res.last_event.type = window->events[i].type;
+			break;
+		}
+	}
 
 	send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
 }

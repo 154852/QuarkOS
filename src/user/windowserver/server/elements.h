@@ -21,7 +21,24 @@ typedef struct {
 	float scale;
 } InternalLabelElement;
 
-#define WINDOW_ELEMENTS_CAPACITY 32
+typedef struct {
+	char present;
+	WindowServerElementType type;
+	unsigned elementID;
+	
+	int x;
+	int y;
+	unsigned width;
+	unsigned height;
+	Pixel background;
+} InternalButtonElement;
+
+typedef struct {
+	char present;
+	WindowServerEventType type;
+	unsigned element;
+} InternalEvent;
+
 typedef struct {
 	char present;
 	unsigned handle;
@@ -32,6 +49,8 @@ typedef struct {
 	unsigned height;
 	int x;
 	int y;
+
+	InternalEvent events[WINDOW_EVENTS_CAPACITY];
 
 	Pixel background;
 	Pixel raster[SUPPORTED_SIZE];
