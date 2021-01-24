@@ -1,5 +1,5 @@
-SYSTEM_HEADER_PROJECTS="libc kernel"
-PROJECTS="libc kernel builtfs"
+SYSTEM_HEADER_PROJECTS="libc kernel user/windowserver"
+PROJECTS="libc kernel user/windowserver user"
  
 export MAKE=${MAKE:-make}
 export HOST=${HOST:-$(./default-host.sh)}

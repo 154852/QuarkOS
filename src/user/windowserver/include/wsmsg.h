@@ -1,3 +1,6 @@
+#ifndef _WINDOWSERVER_WSMSG_H
+#define _WINDOWSERVER_WSMSG_H
+
 typedef enum {
 	WSCreateWindow,
 	WSDestroyWindow,
@@ -80,3 +83,5 @@ typedef struct {
 	Pixel color;
 	float scale;
 } WindowServerLabelUpdateRequest;
+
+#endif

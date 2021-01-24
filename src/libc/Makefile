@@ -43,6 +43,7 @@ string/memmove.o \
 string/memset.o \
 string/strlen.o\
 string/strcmp.o \
+keyboard.o
  
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS)

@@ -1,9 +1,10 @@
-#include "wsmsg.h"
+#include <windowserver/wsmsg.h>
 #include <syscall.h>
 #include <stdio.h>
 #include <assertions.h>
 #include <string.h>
-#include "fontchars.h"
+#include <windowserver/fontchars.h>
+#include <windowserver/client.h>
 #include <kernel/cmouse.h>
 
 #define SUPPORTED_WIDTH 1024
@@ -244,7 +245,7 @@ void render() {
 }
 
 char window_contains(InternalWindow* window, int x, int y) {
-	return rect_contains(window->x, window->y, window->width, window->height, x, y);
+	return rect_contains(window->x, window->y, (int) window->width, (int) window->height, x, y);
 }
 
 void window_resolve_click(InternalWindow* window, int x, int y) {

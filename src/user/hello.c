@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int main() {
-	printf("What is your name? ");
+	debugf("What is your name? ");
 	// yield();
 
 	char name[10];
@@ -13,8 +13,8 @@ int main() {
 		printf("%c", next);
 		name[i] = next;
 	}
-	printf("\n");
+	debugf("\n");
 
-	printf("Hello %s!\n", name);
+	debugf("Hello %s!\n", name);
 	return 0;
 }

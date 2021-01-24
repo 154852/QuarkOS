@@ -27,7 +27,6 @@ OBJS=\
 hello.o \
 shell.o \
 ps.o \
-windowserver.o \
 guiapp.o
 
 LINK_LIST=\
@@ -38,28 +37,24 @@ BINARIES=\
 hello \
 shell \
 ps \
-windowserver \
 guiapp
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello shell ps windowserver guiapp
+all: hello shell ps guiapp
 
-hello: hello.o link.ld crt0.o
-	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
+hello: hello.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
-shell: shell.o link.ld crt0.o
-	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
+shell: shell.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
-ps: ps.o link.ld crt0.o
-	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
+ps: ps.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
-windowserver: windowserver.o link.ld crt0.o
-	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
-
-guiapp: guiapp.o link.ld crt0.o
-	$(CC) -o $@ crt0.o $(CFLAGS) $< $(LINK_LIST)
+guiapp: guiapp.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
@@ -76,7 +71,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello shell ps windowserver guiapp
+install-executable: hello shell ps guiapp
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

@@ -67,7 +67,6 @@ namespace MemoryManagement {
 		return (void*) ((entry.page_addr << 12) + page_frame_offset);
 	}
 
-	// TODO: Currently, we exit the program by returning into MultiProcess::ret, which is a part of the kernel, which means any program currently needs to be able to access and execute kernel code
 	PageTableEntry* allocate_page(PageDirectory* dir, u32 vaddr, u32 frame, bool __attribute__((unused)) is_kernel, bool __attribute__((unused)) is_writable) {
 		assert(dir);
 

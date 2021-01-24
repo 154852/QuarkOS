@@ -10,7 +10,7 @@
 #define SCAN_CODE_PORT 0x60
 #define INTERRUPT_ID 0x01
 
-static Keyboard::KeyboardState global_keyboard_state = { false, false };
+static Keyboard::KeyboardState global_keyboard_state = { false, false, false };
 #define CHAR_BUFFER_CAPACITY 64
 static volatile char buffer[CHAR_BUFFER_CAPACITY];
 static volatile u32 buffer_size = 0;
@@ -50,7 +50,7 @@ char Keyboard::scan_code_to_char(const Keyboard::ScanCode* code, Keyboard::Keybo
         switch (code->name) {
             case KEY_1: return '!';
             case KEY_2: return '@';
-            case KEY_3: return 0;
+            case KEY_3: return '?';
             case KEY_4: return '$';
             case KEY_5: return '%';
             case KEY_6: return '^';
