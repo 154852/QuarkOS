@@ -85,7 +85,7 @@ void render_window(InternalWindow* window) {
 		}
 
 		FontChar chr = fontchar_for_char('A');
-		double paddingpc = 0.6;
+		double paddingpc = 0.5;
 		double scale = (TITLE_BAR_HEIGHT * (1.0 - paddingpc)) / chr.height;
 		int padding = TITLE_BAR_HEIGHT * paddingpc * 0.5;
 

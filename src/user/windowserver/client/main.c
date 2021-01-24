@@ -88,7 +88,7 @@ ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixe
 	req.action = WSUpdateElement;
 	req.elementId = id;
 	req.elementType = WSLabelElement;
-	req.scale = 0.5;
+	req.scale = 0.45;
 	size_t titlelen = strlen(content);
 	memcpy(req.content, content, titlelen > 256? 256:titlelen);
 	req.x = x;
