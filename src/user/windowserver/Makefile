@@ -20,15 +20,26 @@ CPPFLAGS:=$(CPPFLAGS) -Iinclude -I/usr/include
 CFLAGS:=$(CFLAGS) $(ARCH_CFLAGS)
 CPPFLAGS:=$(CPPFLAGS) $(ARCH_CPPFLAGS)
  
+UTILOBJS=\
+utils/color.o \
+utils/image.o \
+utils/fontchars.o
+
 SERVEROBJS=\
-server/main.o
+server/main.o \
+server/window.o \
+server/buffer.o \
+server/render.o \
+server/request.o \
+server/input.o \
 
 CLIENTOBJS=\
-client/main.o
+client/main.o \
  
 OBJS=\
 $(SERVEROBJS) \
-$(CLIENTOBJS)
+$(CLIENTOBJS) \
+$(UTILOBJS) 
  
 EXECUTABLES=windowserver
 LIBS=libwindowserver.a
@@ -38,11 +49,11 @@ LIBS=libwindowserver.a
  
 all: $(EXECUTABLES)
  
-windowserver: $(SERVEROBJS)
-	$(CC) $(SERVEROBJS) -o $@ $(CFLAGS) $(CPPFLAGS)
+windowserver: $(UTILOBJS) $(SERVEROBJS)
+	$(CC) $(UTILOBJS) $(SERVEROBJS) -o $@ $(CFLAGS) $(CPPFLAGS)
 
-libwindowserver.a: $(CLIENTOBJS)
-	$(AR) rcs $@ $(CLIENTOBJS)
+libwindowserver.a: $(UTILOBJS) $(CLIENTOBJS)
+	$(AR) rcs $@ $(UTILOBJS) $(CLIENTOBJS)
  
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
@@ -71,4 +82,3 @@ install-libs: $(LIBS)
 	cp $(LIBS) $(DESTDIR)$(LIBDIR)
  
 -include $(OBJS:.o=.d)
--include $(LIBK_OBJS:.o=.d)

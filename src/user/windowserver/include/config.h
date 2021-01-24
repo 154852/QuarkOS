@@ -1,0 +1,14 @@
+#ifndef _WINDOWSERVER_CONFIG_H
+#define _WINDOWSERVER_CONFIG_H
+
+#define SUPPORTED_WIDTH 1024
+#define SUPPORTED_HEIGHT 768
+#define SUPPORTED_SIZE (SUPPORTED_WIDTH * SUPPORTED_HEIGHT)
+#define FULL_SIZE (SUPPORTED_SIZE * sizeof(unsigned))
+
+#define WINDOWS_CAPACITY 32
+#define LABELS_CAPACITY 32
+
+#define DESKTOP_BACKGROUND pixel_from_rgb(0xff, 0xff, 0xff)
+
+#endif

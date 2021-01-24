@@ -1,3 +1,6 @@
+#include <windowserver/color.h>
+#include <windowserver/config.h>
+
 #ifndef _WINDOWSERVER_WSMSG_H
 #define _WINDOWSERVER_WSMSG_H
 
@@ -7,17 +10,6 @@ typedef enum {
 	WSUpdateElement,
 	WSWindowStatus
 } WindowServerAction;
-
-typedef union {
-	struct {
-		unsigned char b;
-		unsigned char g;
-		unsigned char r;
-		unsigned char a;
-	};
-
-	unsigned raw;
-} Pixel;
 
 typedef struct {
 	WindowServerAction action;
