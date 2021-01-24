@@ -4,6 +4,7 @@
 #include "buffer.h"
 #include "window.h"
 #include "input.h"
+#include "windowserver/color.h"
 
 void render_cursor_to_swapbuffer() {
 	int x0 = clamp(get_mouse_x(), 1, SUPPORTED_WIDTH - 1);
@@ -14,7 +15,7 @@ void render_cursor_to_swapbuffer() {
 	for (int x = -1; x <= 1; x++) {
 		for (int y = -1; y <= 1; y++) {
 			int idx = idx_for_xy(x0 + x, y0 + y);
-			swapbuffer[idx] = COLOR_RED;
+			swapbuffer[idx] = (x == 0 && y == 0)? COLOR_LIGHTGREY:COLOR_BLACK;
 		}
 	}
 }

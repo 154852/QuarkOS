@@ -44,6 +44,8 @@ typedef struct {
 	unsigned handle;
 	unsigned creatorpid;
 
+	char has_title_bar;
+
 	char title[64];
 	unsigned width;
 	unsigned height;

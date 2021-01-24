@@ -184,6 +184,8 @@ void Mouse::init() {
 void __attribute__((interrupt)) Mouse::mouse_interrupt(struct IRQ::CSITRegisters*) {
 	PIC::send_EOI(12);
 
+	if (!(inb(I8042_STATUS) & I8042_BUFFER_FULL)) return;
+
 	MousePacket packet = {
 		.flags = MousePacketFlags { .raw = inb(I8042_BUFFER) },
 		.x_delta = inb(I8042_BUFFER),

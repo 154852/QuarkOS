@@ -23,6 +23,7 @@ typedef struct {
 	int x;
 	int y;
 	Pixel background;
+	char has_title_bar;
 } CreateWindowRequest;
 
 typedef struct {

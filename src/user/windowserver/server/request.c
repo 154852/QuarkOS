@@ -25,6 +25,7 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 			win->x = createwindow->x;
 			win->y = createwindow->y;
 			win->background = createwindow->background;
+			win->has_title_bar = createwindow->has_title_bar;
 			res.handle = win->handle;
 			render_window(win);
 			break;
@@ -80,6 +81,7 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 					window->elements[i] = (InternalElement*) &labelElements[i];
 					window->elements[i]->present = 1;
 					window->elements[i]->type = WSLabelElement;
+					window->elements[i]->elementID = i;
 					memcpy(labelElements[i].content, labelreq->content, 256);
 					labelElements[i].color = labelreq->color;
 					labelElements[i].x = labelreq->x;
@@ -167,6 +169,7 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 					window->elements[i] = (InternalElement*) &buttonElements[i];
 					window->elements[i]->present = 1;
 					window->elements[i]->type = WSButtonElement;
+					window->elements[i]->elementID = i;
 					buttonElements[i].background = buttonreq->background;
 					buttonElements[i].x = buttonreq->x;
 					buttonElements[i].y = buttonreq->y;
@@ -214,6 +217,7 @@ WindowServerElementUpdateResponse update_element_handler(unsigned sender, Window
 void window_status_handler(unsigned sender, WindowStatusRequest* req) {
 	InternalWindow* windows = get_windows();
 	WindowStatusResponse res;
+	memset(&res, 0, sizeof(res));
 			
 	if (req->window >= WINDOWS_CAPACITY) {
 		res.present = 0;

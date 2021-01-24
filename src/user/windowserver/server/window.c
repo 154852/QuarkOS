@@ -35,7 +35,7 @@ InternalEvent* allocate_event(InternalWindow* window) {
 
 void render_label(InternalWindow* window, InternalLabelElement* label) {
 	int x = label->x;
-	int y = TITLE_BAR_HEIGHT + label->y;
+	int y = window_title_bar_height(window) + label->y;
 	double scale = label->scale;
 	for (size_t i = 0; i < strlen(label->content); i++) {
 		FontChar chr = fontchar_for_char(label->content[i]);
@@ -48,7 +48,7 @@ void render_button(InternalWindow* window, InternalButtonElement* button) {
 	int x0 = button->x;
 	int x1 = x0 + button->width;
 
-	int y0 = TITLE_BAR_HEIGHT + button->y;
+	int y0 = window_title_bar_height(window) + button->y;
 	int y1 = y0 + button->height;
 	
 	for (int y = y0; y < y1; y++) {
@@ -67,9 +67,9 @@ void render_window(InternalWindow* window) {
 			if (y + window->y >= SUPPORTED_HEIGHT) continue;
 
 			int idx = idx_for_xy(x, y);
-			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == TITLE_BAR_HEIGHT || y == 0) {
+			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == window_title_bar_height(window) || y == 0) {
 				window->raster[idx] = COLOR_VERYLIGHTGREY;
-			} else if (y < TITLE_BAR_HEIGHT) {
+			} else if (y < window_title_bar_height(window)) {
 				window->raster[idx] = COLOR_LIGHTGREY;
 			} else {
 				window->raster[idx] = window->background;
@@ -77,23 +77,26 @@ void render_window(InternalWindow* window) {
 		}
 	}
 
-	for (int x = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; x < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; x++) {
-		for (int y = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; y < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; y++) {
-			window->raster[idx_for_xy(x, y)] = COLOR_DARKRED;
+	if (window->has_title_bar) {
+		for (int x = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; x < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; x++) {
+			for (int y = (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2; y < (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2; y++) {
+				window->raster[idx_for_xy(x, y)] = COLOR_DARKRED;
+			}
 		}
-	}
 
-	FontChar chr = fontchar_for_char('A');
-	double paddingpc = 0.6;
-	double scale = (TITLE_BAR_HEIGHT * (1.0 - paddingpc)) / chr.height;
-	int padding = TITLE_BAR_HEIGHT * paddingpc * 0.5;
+		FontChar chr = fontchar_for_char('A');
+		double paddingpc = 0.6;
+		double scale = (TITLE_BAR_HEIGHT * (1.0 - paddingpc)) / chr.height;
+		int padding = TITLE_BAR_HEIGHT * paddingpc * 0.5;
 
-	int x = ((TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2) + padding;
-	int y = padding;
-	for (size_t i = 0; i < strlen(window->title); i++) {
-		FontChar chr = fontchar_for_char(window->title[i]);
-		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY, window->raster, chr.width);
-		x += (chr.width * scale) + 1;
+		int x = ((TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2) + padding;
+		int y = padding;
+		for (size_t i = 0; i < strlen(window->title); i++) {
+			FontChar chr = fontchar_for_char(window->title[i]);
+			if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY, window->raster, chr.width);
+			x += (chr.width * scale) + 1;
+		}
+
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {

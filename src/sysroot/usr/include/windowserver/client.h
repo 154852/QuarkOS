@@ -8,7 +8,7 @@ typedef unsigned ElementID;
 
 unsigned get_windowserver_pid();
 
-WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y);
+WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar);
 void destroy_window(WindowHandle handle);
 
 WindowStatusResponse query_status(WindowHandle handle);

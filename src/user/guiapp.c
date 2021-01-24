@@ -37,7 +37,7 @@ void onclickme() {
 }
 
 int main() {
-	windowhandle = create_window("Hello World!", 400, 300, 100, 100);
+	windowhandle = create_window("Hello World!", 400, 300, 100, 100, 1);
 	button = create_button(windowhandle, 100, 100, 50, 20, &COLOR_RED);
 	labelID = create_label(windowhandle, text, 0, 5, 5);
 	

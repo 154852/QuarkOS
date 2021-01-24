@@ -16,4 +16,6 @@ void render_label(InternalWindow* window, InternalLabelElement* label);
 void render_button(InternalWindow* window, InternalButtonElement* button);
 void render_window(InternalWindow* window);
 
+#define window_title_bar_height(window) ((window)->has_title_bar? TITLE_BAR_HEIGHT:0)
+
 #endif

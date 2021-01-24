@@ -27,7 +27,8 @@ OBJS=\
 hello.o \
 shell.o \
 ps.o \
-guiapp.o
+guiapp.o \
+dock.o
 
 LINK_LIST=\
 $(LDFLAGS) \
@@ -37,12 +38,13 @@ BINARIES=\
 hello \
 shell \
 ps \
-guiapp
+guiapp \
+dock
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello shell ps guiapp
+all: hello shell ps guiapp dock
 
 hello: hello.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
@@ -54,6 +56,9 @@ ps: ps.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 guiapp: guiapp.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
+
+dock: dock.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 .c.o:
@@ -71,7 +76,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello shell ps guiapp
+install-executable: hello shell ps guiapp dock
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

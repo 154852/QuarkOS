@@ -15,7 +15,7 @@ unsigned get_windowserver_pid() {
 	return pid;
 }
 
-WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y) {
+WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar) {
 	CreateWindowRequest req;
 	memset(&req, 0, sizeof(req));
 	req.action = WSCreateWindow;
@@ -25,6 +25,7 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	req.height = height;
 	req.x = x;
 	req.y = y;
+	req.has_title_bar = has_title_bar;
 	req.background = (Pixel) { .r = 0xf0, .g = 0xf0, .b = 0xf0, .a = 0xff };
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(CreateWindowRequest));

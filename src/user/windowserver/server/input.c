@@ -19,7 +19,7 @@ char window_contains(InternalWindow* window, int x, int y) {
 
 void window_resolve_click(InternalWindow* window, int x, int y) {
 	// X button
-	if (rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
+	if (window->has_title_bar && rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
 		window->present = 0;
 		return;
 	}
@@ -27,7 +27,7 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i]->present && window->elements[i]->type == WSButtonElement) {
 			InternalButtonElement* button = (InternalButtonElement*) window->elements[i];
-			if (rect_contains(button->x, button->y + TITLE_BAR_HEIGHT, (int) button->width, (int) button->height, x, y)) {
+			if (rect_contains(button->x, button->y + window_title_bar_height(window), (int) button->width, (int) button->height, x, y)) {
 				InternalEvent* event = allocate_event(window);
 				assert(event);
 				event->element = button->elementID;

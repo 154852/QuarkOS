@@ -33,7 +33,7 @@ int main() {
 	initialise_mouse();
 	render();
 
-	exec("/usr/bin/guiapp");
+	exec("/usr/bin/dock");
 
 	recieve_messages();
 
