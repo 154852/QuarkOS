@@ -13,7 +13,7 @@ ElementID labelID;
 const char* alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=*/\?()[]{}'\"<>,.#!";
 
 int main() {
-	windowhandle = create_window("Font", 800, 70, 100, 100, 1);
+	windowhandle = create_window("Font", 820, 60, 100, 100, 1);
 	labelID = create_label(windowhandle, alpha, 0, 5, 5);
 	
 	mainloop(windowhandle);

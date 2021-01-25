@@ -4,8 +4,8 @@
 #include <windowserver/client.h>
 #include <ckeyboard.h>
 
-#define ONCLICK_LISTENERS_CAPACITY 5
-#define ONKEYPRESS_LISTENERS_CAPACITY 5
+#define ONCLICK_LISTENERS_CAPACITY 32
+#define ONKEYPRESS_LISTENERS_CAPACITY 32
 
 typedef struct {
 	char present;

@@ -100,7 +100,7 @@ void render_window(InternalWindow* window) {
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
-		if (window->elements[i] != 0) {
+		if (window->elements[i] != 0 && window->elements[i]->present) {
 			switch (window->elements[i]->type) {
 				case WSLabelElement: {
 					render_label(window, (InternalLabelElement*) window->elements[i]);

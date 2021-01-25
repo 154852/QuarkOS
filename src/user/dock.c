@@ -13,7 +13,6 @@ typedef struct {
 	char name[64];
 	char path[64];
 	Pixel color;
-	void(*cb)();
 } DockApp;
 
 #define DOCK_APP_COUNT 3
@@ -41,21 +40,18 @@ int main() {
 		.name="guiapp",
 		.path="/usr/bin/guiapp",
 		.color=darkgray,
-		.cb=open_app
 	};
 
 	dockApps[1] = (DockApp) {
 		.name="font",
 		.path="/usr/bin/font",
 		.color=darkgray,
-		.cb=open_app
 	};
 
 	dockApps[2] = (DockApp) {
-		.name="also guiapp2",
-		.path="/usr/bin/guiapp",
+		.name="calc",
+		.path="/usr/bin/calc",
 		.color=darkgray,
-		.cb=open_app
 	};
 
 	int width = ((SUPPORTED_WIDTH - (2*BUTTON_PADDING)) / DOCK_APP_COUNT) - BUTTON_PADDING;
@@ -64,8 +60,8 @@ int main() {
 	for (int i = 0; i < DOCK_APP_COUNT; i++) {
 		int x = BUTTON_PADDING + (i * (width + BUTTON_PADDING));
 		buttons[i] = create_button(windowhandle, x, y, width, BUTTON_HEIGHT, (Pixel*) &dockApps[i].color);
-		labels[i] = create_label(windowhandle, dockApps[i].name, 0, x + 5, 20);
-		onclick(buttons[i], i, dockApps[i].cb);
+		labels[i] = create_label(windowhandle, dockApps[i].name, 0, x + 5, 15);
+		onclick(buttons[i], i, open_app);
 	}
 
 	mainloop(windowhandle);

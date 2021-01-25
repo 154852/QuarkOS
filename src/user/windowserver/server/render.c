@@ -5,6 +5,7 @@
 #include "window.h"
 #include "input.h"
 #include "windowserver/color.h"
+#include <stdio.h>
 
 void render_cursor_to_swapbuffer() {
 	int x0 = clamp(get_mouse_x(), 2, SUPPORTED_WIDTH - 2);

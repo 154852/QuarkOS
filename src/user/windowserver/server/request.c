@@ -99,21 +99,24 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] == 0) {
 			for (int j = 0; j < LABELS_CAPACITY; j++) {
-				if (!labelElements[i].present) {
-					window->elements[i] = (InternalElement*) &labelElements[i];
+				if (!labelElements[j].present) {
+					window->elements[i] = (InternalElement*) &labelElements[j];
 					window->elements[i]->present = 1;
 					window->elements[i]->type = WSLabelElement;
 					window->elements[i]->elementID = i;
-					memcpy(labelElements[i].content, labelreq->content, 256);
-					labelElements[i].color = labelreq->color;
-					labelElements[i].x = labelreq->x;
-					labelElements[i].y = labelreq->y;
-					labelElements[i].scale = labelreq->scale;
+					memcpy(labelElements[j].content, labelreq->content, 256);
+					labelElements[j].color = labelreq->color;
+					labelElements[j].x = labelreq->x;
+					labelElements[j].y = labelreq->y;
+					labelElements[j].scale = labelreq->scale;
 					render_window(window);
 
 					return (WindowServerElementUpdateResponse) { i };
 				}
 			}
+
+			debugf("No capacity for label\n");
+			return (WindowServerElementUpdateResponse) { -1 };
 		}
 	}
 
@@ -187,16 +190,16 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] == 0) {
 			for (int j = 0; j < BUTTONS_CAPACITY; j++) {
-				if (!buttonElements[i].present) {
-					window->elements[i] = (InternalElement*) &buttonElements[i];
+				if (!buttonElements[j].present) {
+					window->elements[i] = (InternalElement*) &buttonElements[j];
 					window->elements[i]->present = 1;
 					window->elements[i]->type = WSButtonElement;
 					window->elements[i]->elementID = i;
-					buttonElements[i].background = buttonreq->background;
-					buttonElements[i].x = buttonreq->x;
-					buttonElements[i].y = buttonreq->y;
-					buttonElements[i].width = buttonreq->width;
-					buttonElements[i].height = buttonreq->height;
+					buttonElements[j].background = buttonreq->background;
+					buttonElements[j].x = buttonreq->x;
+					buttonElements[j].y = buttonreq->y;
+					buttonElements[j].width = buttonreq->width;
+					buttonElements[j].height = buttonreq->height;
 					render_window(window);
 
 					return (WindowServerElementUpdateResponse) { i };
@@ -205,7 +208,7 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 		}
 	}
 
-	debugf("No capacity for label\n");
+	debugf("No capacity for button\n");
 	return (WindowServerElementUpdateResponse) { -1 };
 }
 

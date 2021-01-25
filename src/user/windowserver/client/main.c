@@ -36,7 +36,10 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	while (1) {
 		int status = read_ipc_message((char*) &res, sizeof(CreateWindowResponse), &senderpid);
 
-		if (status < 0) continue;
+		if (status < 0) {
+			yield();
+			continue;
+		}
 
 		if (senderpid != get_windowserver_pid()) {
 			debugf("Unexpected message from pid = %d\n", senderpid);
@@ -70,7 +73,10 @@ WindowStatusResponse query_status(WindowHandle handle) {
 	while (1) {
 		int status = read_ipc_message((char*) &res, sizeof(WindowStatusResponse), &senderpid);
 
-		if (status < 0) continue;
+		if (status < 0) {
+			yield();
+			continue;
+		}
 
 		if (senderpid != get_windowserver_pid()) {
 			debugf("Unexpected message from pid = %d\n", senderpid);
@@ -103,7 +109,10 @@ ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixe
 	while (1) {
 		int status = read_ipc_message((char*) &res, sizeof(WindowServerElementUpdateResponse), &senderpid);
 
-		if (status < 0) continue;
+		if (status < 0) {
+			yield();
+			continue;
+		}
 
 		if (senderpid != get_windowserver_pid()) {
 			debugf("Unexpected message from pid = %d\n", senderpid);
@@ -139,7 +148,10 @@ ElementID update_button(unsigned windowid, unsigned id, int x, int y, unsigned w
 	while (1) {
 		int status = read_ipc_message((char*) &res, sizeof(WindowServerElementUpdateResponse), &senderpid);
 
-		if (status < 0) continue;
+		if (status < 0) {
+			yield();
+			continue;
+		}
 
 		if (senderpid != get_windowserver_pid()) {
 			debugf("Unexpected message from pid = %d\n", senderpid);

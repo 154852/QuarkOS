@@ -57,6 +57,8 @@ void onkeydown(void(*cb)(KeyEvent* event)) {
 			return;
 		}
 	}
+
+	debugf("Out of onkeydown capacity\n");
 }
 
 void onclick(ElementID buttonID, int id, void(*cb)(int id)) {
@@ -69,4 +71,6 @@ void onclick(ElementID buttonID, int id, void(*cb)(int id)) {
 			return;
 		}
 	}
+
+	debugf("Out of onclick capacity\n");
 }
