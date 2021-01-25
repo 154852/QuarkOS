@@ -34,7 +34,7 @@ void BXVGA::initialise() {
 	kdebugf("[BXVGA] framebuffer_address = %.8x\n", framebuffer_address);
 
 	BXVGA::disable();
-	set_resolution(1024, 768);
+	set_resolution(1024, 600);
 }
 
 void BXVGA::set_register(u16 index, u16 data) {
