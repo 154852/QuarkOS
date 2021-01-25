@@ -1,6 +1,6 @@
 # QuarkOS
 
-A simple 32 bit, graphical, OS written in C++.
+A simple 32 bit, graphical OS written in C++.
 
 
 ## Building
