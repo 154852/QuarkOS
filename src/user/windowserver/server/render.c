@@ -25,9 +25,12 @@ void render_window_to_swapbuffer(InternalWindow* window) {
 	Pixel* swapbuffer = get_swapbuffer();
 
 	for (int y = 0; y < (int) window->height; y++) {
+		if (y + window->y < 0 || y + window->y >= SUPPORTED_HEIGHT) continue;
+
 		int outoffset = idx_for_xy(window->x, y + window->y);
 		int offset = idx_for_xyw(0, y, SUPPORTED_WIDTH);
 		for (int x = 0; x < (int) window->width; x++) {
+			if (x + window->x < 0 || x + window->x >= SUPPORTED_WIDTH) continue;
 			swapbuffer[outoffset + x] = window->raster[offset + x];
 		}
 	}
