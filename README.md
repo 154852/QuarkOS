@@ -1,12 +1,12 @@
 # QuarkOS
 
-A simple 32 bit, graphical OS written in C++.
+A simple 32 bit graphical OS written in C++.
 
 
 ## Building
 1. Install python3, make
 2. You will need to build a i686-elf-gcc cross compiler. There are not fixed requirements for it, so long as the commands `i686-elf-gcc`, `i686-elf-ar`, `qemu-system-i386` are in the `PATH`
-See [here](https://wiki.osdev.org/GCC_Cross-Compiler) for building 
+See [this page](https://wiki.osdev.org/GCC_Cross-Compiler) on how to do that.
 3. `cd src`
 4. Run `./build.sh` to build, `./qemu.sh` to build and run, `./start.sh` to run or `./build.sh` to build
 
@@ -38,3 +38,23 @@ src - The root of all source code
   shell.c - A shell for the command line interface
  buildtar.py - Creates the .tar file which acts as the file system (for now)
 ```
+
+## Code Walkthrough
+1. After building, you should see a folder (in the src directory) called sysroot, and a file named sysroot.img. Sysroot is effectively the root filesystem - it was populated by various programs, headers and any other files by the build process (`make install*`). [buildtar.py](../blob/master/src/buildtar.py) then created a [tar](https://wiki.osdev.org/USTAR) file of this (and removes the `sysroot` root directory name).
+2. QEMU will start the kernel in sysroot/boot/quarkos.kernel
+3. The very first line of kernel code is in [kernel/arch/i386/boot.S](../blob/master/src/kernel/arch/i386/boot.S), which pretty much immediately calls `kernel_main`, defined in [kernel/kernel/kernel.cpp](../blob/master/src/kernel/kernel/kernel.cpp). This is the kernel entry point.
+4. Ignoring logging, the first things we do are set up interrupts.
+	1. First we [PIC](https://wiki.osdev.org/PIC)::remap in [kernel/kernel/hardware/pic.cpp](../blob/master/src/kernel/kernel/hardware/pic.cpp), pushing hardware interrupts into the range 0x20-0x30
+	2. We then create the [GDT](https://wiki.osdev.org/GDT)
+	3. Now we can create the interrupt handlers, most of them are defaults, with a few exceptions for specfic actions, which we send to be loaded into the CPU [kernel/kernel/hardware/interrupts.cpp](../blob/master/src/kernel/kernel/hardware/interrupts.cpp)
+	4. After this we can create the syscall_table, where the syscall implementations can be seen in [kernel/kernel/syscalls](../blob/master/src/kernel/kernel/syscalls.hpp)
+5. Moving onto the initialisation of other things:
+	1. [PCI](https://wiki.osdev.org/PCI) is a means of communication between hardware devices and the OS - [kernel/kernel/hardware/pci.cpp](../blob/master/src/kernel/kernel/hardware/pci.cpp)
+	2. [BXVGA](https://wiki.osdev.org/BGA) will provide the monitor support - [kernel/kernel/hardware/BXVGA.cpp](../blob/master/src/kernel/kernel/hardware/BXVGA.cpp)
+	3. The disk - [kernel/kernel/hardware/disk.cpp](../blob/master/src/kernel/kernel/hardware/disk.cpp) (although the filesystem itself is handled by [kernel/kernel/ustar.cpp](../blob/master/src/kernel/kernel/ustar.cpp))
+	4. The PS2 [mouse](../blob/master/src/kernel/kernel/hardware/mouse.cpp) and [keyboard](../blob/master/src/kernel/kernel/hardware/keyboard.cpp) (though the keyboard doesn't really need to do anything) 
+6. Initialise memory [paging](https://wiki.osdev.org/Paging) - [kernel/kernel/paging.cpp](../blob/master/src/kernel/kernel/paging.cpp)
+7. Set up Multiprocessing - [kernel/kernel/multiprocess.cpp](../blob/master/src/kernel/kernel/multiprocess.cpp)
+8. Setup the terminal (only exists until the windowserver process has started, and not even before in this case) - [kernel/kernel/tty.cpp](../blob/master/src/kernel/kernel/tty.cpp)
+9. We can finally read the windowserver from disk, decode it as an elf process, setup it's memory and schedule it as the first process
+10. Now we start the [PIT](https://wiki.osdev.org/PIT), and the kernel has finished it's initialisation
