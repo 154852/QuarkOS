@@ -11,7 +11,7 @@ See [this page](https://wiki.osdev.org/GCC_Cross-Compiler) on how to do that.
 4. Run `./build.sh` to build, `./qemu.sh` to build and run, `./start.sh` to run or `./build.sh` to build
 
 ## Note
-The system is by no means well tested, it works on my machine and that's about as much as I can guarantee :)
+The system is by no means well tested, it works on my machine and that's about as much as I can guarantee :) It also comes originally from [here](https://wiki.osdev.org/Meaty_Skeleton), which may be of interest if something does not make perfect sense, as I may not have written it.
 
 ## Structure
 ```
