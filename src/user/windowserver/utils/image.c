@@ -1,10 +1,19 @@
 #include <windowserver/image.h>
 
+// TODO: We really need anti-aliasing
 void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color, Pixel* out, int memw) {
-	for (int x = 0; x < w; x++) {
-		for (int y = 0; y < h; y++) {
-			int image_idx = idx_for_xyw(x, y, memw);
-			int framebuffer_idx = idx_for_xy((x * scale) + x0, (y * scale) + y0);
+	int xs = w * scale;
+	int ys = h * scale;
+
+	float invscale = 1.0 / scale;
+
+	for (int x = 0; x < xs; x++) {
+		for (int y = 0; y < ys; y++) {
+			int framebuffer_idx = idx_for_xy(x + x0, y + y0);
+			int imx = x * invscale;
+			int imy = y * invscale;
+
+			int image_idx = idx_for_xyw(imx, imy, memw);
 
 			Pixel pixel = image[image_idx];
 			if (color != 0) pixel = *color;

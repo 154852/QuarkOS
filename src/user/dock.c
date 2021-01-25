@@ -28,8 +28,8 @@ WindowHandle windowhandle;
 #define BUTTON_PADDING 15
 #define BUTTON_HEIGHT 30
 
-void open_guiapp() {
-	exec(dockApps[0].path);
+void open_app(int x) {
+	exec(dockApps[x].path);
 }
 
 int main() {
@@ -41,21 +41,21 @@ int main() {
 		.name="guiapp",
 		.path="/usr/bin/guiapp",
 		.color=darkgray,
-		.cb=open_guiapp
+		.cb=open_app
 	};
 
 	dockApps[1] = (DockApp) {
-		.name="also guiapp",
-		.path="/usr/bin/guiapp",
+		.name="font",
+		.path="/usr/bin/font",
 		.color=darkgray,
-		.cb=open_guiapp
+		.cb=open_app
 	};
 
 	dockApps[2] = (DockApp) {
 		.name="also guiapp2",
 		.path="/usr/bin/guiapp",
 		.color=darkgray,
-		.cb=open_guiapp
+		.cb=open_app
 	};
 
 	int width = ((SUPPORTED_WIDTH - (2*BUTTON_PADDING)) / DOCK_APP_COUNT) - BUTTON_PADDING;
@@ -65,7 +65,7 @@ int main() {
 		int x = BUTTON_PADDING + (i * (width + BUTTON_PADDING));
 		buttons[i] = create_button(windowhandle, x, y, width, BUTTON_HEIGHT, (Pixel*) &dockApps[i].color);
 		labels[i] = create_label(windowhandle, dockApps[i].name, 0, x + 5, 20);
-		onclick(buttons[i], dockApps[i].cb);
+		onclick(buttons[i], i, dockApps[i].cb);
 	}
 
 	mainloop(windowhandle);

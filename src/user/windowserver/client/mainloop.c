@@ -16,19 +16,6 @@ void mainloop(WindowHandle windowhandle) {
 	WindowStatusResponse res;
 	res = query_status(windowhandle);
 	while (res.present && !should_close) {
-		// unsigned len = read(fd, keydata, sizeof(KeyEvent));
-		// while (len != 0) {
-		// 	KeyEvent* state = (KeyEvent*) keydata;
-
-			// for (int i = 0; i < ONKEYPRESS_LISTENERS_CAPACITY; i++) {
-			// 	if (onkeypresslisteners[i].present) {
-			// 		onkeypresslisteners[i].cb(state);
-			// 	}
-			// }
-
-		// 	len = read(fd, keydata, sizeof(KeyEvent));
-		// }
-
 		res = query_status(windowhandle);
 
 		if (res.last_event.present) {
@@ -36,7 +23,7 @@ void mainloop(WindowHandle windowhandle) {
 				case WSEvButtonClick: {
 					for (int i = 0; i < ONCLICK_LISTENERS_CAPACITY; i++) {
 						if (onclicklisteners[i].present && onclicklisteners[i].buttonID == res.last_event.element) {
-							onclicklisteners[i].cb();
+							onclicklisteners[i].cb(onclicklisteners[i].id);
 						}
 					}
 					break;
@@ -72,11 +59,12 @@ void onkeydown(void(*cb)(KeyEvent* event)) {
 	}
 }
 
-void onclick(ElementID buttonID, void(*cb)()) {
+void onclick(ElementID buttonID, int id, void(*cb)(int id)) {
 	for (int i = 0; i < ONCLICK_LISTENERS_CAPACITY; i++) {
 		if (!onclicklisteners[i].present) {
 			onclicklisteners[i].present = 1;
 			onclicklisteners[i].buttonID = buttonID;
+			onclicklisteners[i].id = id;
 			onclicklisteners[i].cb = cb;
 			return;
 		}

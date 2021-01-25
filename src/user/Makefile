@@ -23,28 +23,25 @@ CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
 LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 
+LINK_LIST=\
+$(LDFLAGS) \
+$(LIBS) \
+
 OBJS=\
 hello.o \
 shell.o \
 ps.o \
 guiapp.o \
-dock.o
+dock.o \
+calc.o \
+font.o
 
-LINK_LIST=\
-$(LDFLAGS) \
-$(LIBS) \
-
-BINARIES=\
-hello \
-shell \
-ps \
-guiapp \
-dock
+BINARIES=$(OBJS:.o=)
 
 .PHONY: all clean install install-headers install-executable
 .SUFFIXES: .o .c
 
-all: hello shell ps guiapp dock
+all: $(BINARIES)
 
 hello: hello.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
@@ -59,6 +56,12 @@ guiapp: guiapp.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 dock: dock.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
+
+calc: calc.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
+
+font: font.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 .c.o:
@@ -76,7 +79,7 @@ install: install-executable
 
 install-headers:
 
-install-executable: hello shell ps guiapp dock
+install-executable: $(BINARIES)
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(BINARIES) $(DESTDIR)$(BINDIR)
 

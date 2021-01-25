@@ -30,7 +30,7 @@ void keypress(KeyEvent* state) {
 	update_label(windowhandle, labelID, text, 0, 5, 5);
 }
 
-void onclickme() {
+void onclickme(int x) {
 	memcpy(text, "Clicked", 8);
 	textidx = 7;
 	update_label(windowhandle, labelID, text, 0, 5, 5);
@@ -42,7 +42,7 @@ int main() {
 	labelID = create_label(windowhandle, text, 0, 5, 5);
 	
 	onkeydown(keypress);
-	onclick(button, onclickme);
+	onclick(button, 0, onclickme);
 
 	mainloop(windowhandle);
 

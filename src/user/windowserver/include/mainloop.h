@@ -10,7 +10,8 @@
 typedef struct {
 	char present;
 	ElementID buttonID;
-	void(*cb)();
+	int id;
+	void(*cb)(int id);
 } OnClickListener;
 
 typedef struct {
@@ -22,6 +23,6 @@ void mainloop(WindowHandle windowhandle);
 void set_should_close(char should_close);
 
 void onkeydown(void(*cb)(KeyEvent* event));
-void onclick(ElementID buttonID, void(*cb)());
+void onclick(ElementID buttonID, int id, void(*cb)(int id));
 
 #endif
