@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 void render_cursor_to_swapbuffer() {
-	int x0 = clamp(get_mouse_x(), 2, SUPPORTED_WIDTH - 2);
-	int y0 = clamp(get_mouse_y(), 2, SUPPORTED_HEIGHT - 2);
+	int x0 = clamp(get_mouse_x(), 1, SUPPORTED_WIDTH - 2);
+	int y0 = clamp(get_mouse_y(), 1, SUPPORTED_HEIGHT - 2);
 
 	Pixel* swapbuffer = get_swapbuffer();
 	

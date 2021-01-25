@@ -11,9 +11,9 @@
 WindowHandle windowhandle;
 ElementID textField;
 #define TEXT_SIZE 32
-char text[TEXT_SIZE] = "";
+char text[TEXT_SIZE] = "0.0";
 int textIdx = 0;
-char textneedsclear = 0;
+char textneedsclear = 1;
 const int gridsize = 50;
 char hasans;
 float ans;
@@ -244,6 +244,8 @@ void oncalcbuttonclick(int buttonIdx) {
 	} else if (strcmp(btn->text, "AC") == 0) {
 		memset(text, 0, TEXT_SIZE);
 		textIdx = 0;
+		memcpy(text, "0.0", 3);
+		textneedsclear = 1;
 	} else if (btn->text[0] == '=') {
 		char err;
 		float value = evaluate(text, &err);

@@ -59,9 +59,10 @@ print(alpha)
 FONT_SIZE = 32
 
 font = ImageFont.truetype("fontchars/JetBrains_Mono/static/JetBrainsMono-Regular.ttf", FONT_SIZE)
+h = font.getsize(alpha)[1]
 
 for char in alpha:
-	image = Image.new("RGBA", font.getsize(char))
+	image = Image.new("RGBA", (font.getsize(char)[0], h))
 	draw = ImageDraw.Draw(image)
 	draw.text((0, 0), char, (255, 255, 255, 255), font=font)
 

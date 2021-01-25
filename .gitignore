@@ -1,0 +1,5 @@
+./.gitignore
+./bin/
+./compile_flags/
+./src/sysroot.img
+./src/sysroot/
