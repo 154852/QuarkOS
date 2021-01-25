@@ -71,8 +71,8 @@ clean:
 install: install-headers install-libs install-exec
  
 install-headers:
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)/windowserver
-	cp -R include/. $(DESTDIR)$(INCLUDEDIR)/windowserver
+	mkdir -p $(DESTDIR)$(INCLUDEDIR)
+	cp -R include/. $(DESTDIR)$(INCLUDEDIR)
 
 install-exec: $(EXECUTABLES)
 	mkdir -p $(DESTDIR)$(BINDIR)
