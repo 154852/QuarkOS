@@ -1,7 +1,0 @@
--I
-src/kernel/include
--I
-src/libc/include
--I
-src/sysroot/usr/include
--m32
