@@ -1,5 +1,7 @@
 ./.gitignore
-./bin/
-./compile_flags.txt
-./src/sysroot.img
-./src/sysroot/
+bin/
+compile_flags.txt
+src/sysroot.img
+src/sysroot/
+./**/.DS_Store
+./.DS_Store
