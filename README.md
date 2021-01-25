@@ -44,7 +44,7 @@ src - The root of all source code
 2. QEMU will start the kernel in sysroot/boot/quarkos.kernel
 3. The very first line of kernel code is in [kernel/arch/i386/boot.S](../blob/master/src/kernel/arch/i386/boot.S), which pretty much immediately calls `kernel_main`, defined in [kernel/kernel/kernel.cpp](../blob/master/src/kernel/kernel/kernel.cpp). This is the kernel entry point.
 4. Ignoring logging, the first things we do are set up interrupts.
-	1. First we [PIC](https://wiki.osdev.org/PIC)::remap in [kernel/kernel/hardware/pic.cpp](/blob/master/src/kernel/kernel/hardware/pic.cpp), pushing hardware interrupts into the range 0x20-0x30
+	1. First we [PIC](https://wiki.osdev.org/PIC)::remap in [kernel/kernel/hardware/pic.cpp](/src/kernel/kernel/hardware/pic.cpp), pushing hardware interrupts into the range 0x20-0x30
 	2. We then create the [GDT](https://wiki.osdev.org/GDT)
 	3. Now we can create the interrupt handlers, most of them are defaults, with a few exceptions for specfic actions, which we send to be loaded into the CPU [kernel/kernel/hardware/interrupts.cpp](../blob/master/src/kernel/kernel/hardware/interrupts.cpp)
 	4. After this we can create the syscall_table, where the syscall implementations can be seen in [kernel/kernel/syscalls](../blob/master/src/kernel/kernel/syscalls.hpp)
