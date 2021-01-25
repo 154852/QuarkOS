@@ -16,25 +16,25 @@ The system is by no means well tested, it works on my machine and that's about a
 ## Structure
 ```
 src - The root of all source code
-	kernel
-		arch/i386 - Mostly boot code for the kernel.
-		include/kernel - Mapped into sysroot/usr/include/kernel on build
-		kernel - Kernel C++ source
-			hardware - Code relating specifically to interacting with hardware devices, whether that is the CPU, keyboard, mouse, monitor or something lower level
-	libc
-		arch/i386 - At the time of writing contains only the crt0
-		include - Mapped into sysroot/usr/include on build
-	user - All userspace code goes in here
-		windowserver
-			server - The server process
-			client - The client windowserver library
-			utils - Code accessible by both the server and the client
-		calc.c - A simple GUI calculator
-		dock.c - An application started by the windowserver which opens other apps
-		font.c - Font viewer
-		guiapp.c - A demonstration of windowserver code
-		hello.c - Probably won't work any more, was made for the command line interface which no longer exists
-		ps.c - Lists all running processes
-		shell.c - A shell for the command line interface
-	buildtar.py - Creates the .tar file which acts as the file system (for now)
+ kernel
+  arch/i386 - Mostly boot code for the kernel.
+  include/kernel - Mapped into sysroot/usr/include/kernel on build
+  kernel - Kernel C++ source
+   hardware - Code relating specifically to interacting with hardware devices, whether that is the CPU, keyboard, mouse, monitor or something lower level
+ libc
+  arch/i386 - At the time of writing contains only the crt0
+  include - Mapped into sysroot/usr/include on build
+ user - All userspace code goes in here
+  windowserver
+   server - The server process
+   client - The client windowserver library
+   utils - Code accessible by both the server and the client
+  calc.c - A simple GUI calculator
+  dock.c - An application started by the windowserver which opens other apps
+  font.c - Font viewer
+  guiapp.c - A demonstration of windowserver code
+  hello.c - Probably won't work any more, was made for the command line interface which no longer exists
+  ps.c - Lists all running processes
+  shell.c - A shell for the command line interface
+ buildtar.py - Creates the .tar file which acts as the file system (for now)
 ```
