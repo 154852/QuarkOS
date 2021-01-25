@@ -86,5 +86,5 @@ for char in alpha:
 outh = outh.format(GENERATION_MESSAGE, "\n".join(values), FONT_SIZE)
 outc = outc.format(GENERATION_MESSAGE, "\n".join(switch_values))
 
-with open("src/user/windowserver/include/fontchars.h", "w") as f: f.write(outh)
+with open("src/user/windowserver/include/windowserver/fontchars.h", "w") as f: f.write(outh)
 with open("src/user/windowserver/utils/fontchars.c", "w") as f: f.write(outc)
