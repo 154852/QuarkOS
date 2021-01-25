@@ -1,4 +1,5 @@
 #include "window.h"
+#include "windowserver/client.h"
 #include "windowserver/config.h"
 #include <windowserver/image.h>
 #include <windowserver/wsmsg.h>
@@ -20,6 +21,18 @@ InternalLabelElement* get_label_elements() {
 
 InternalButtonElement* get_button_elements() {
 	return buttonElements;
+}
+
+void destroy_internal_window(InternalWindow* window) {
+	window->present = 0;
+	
+	if (get_focused() == window) { set_focused(0); }
+
+	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+		if (window->elements[i] != 0) {
+			window->elements[i]->present = 0;
+		}
+	}
 }
 
 WindowServerEvent* allocate_event(InternalWindow* window) {

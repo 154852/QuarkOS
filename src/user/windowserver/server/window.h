@@ -6,6 +6,8 @@
 #define TITLE_BAR_HEIGHT 30
 #define WINDOW_BUTTON_SIZE 15
 
+void destroy_internal_window(InternalWindow* window);
+
 InternalWindow* get_windows();
 InternalLabelElement* get_label_elements();
 InternalButtonElement* get_button_elements();

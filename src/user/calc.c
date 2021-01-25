@@ -261,7 +261,14 @@ void oncalcbuttonclick(int buttonIdx) {
 			hasans = 1;
 		}
 	} else {
-		if (btn->isspecial) text[textIdx++] = ' ';
+		if (btn->isspecial) {
+			if (textIdx == 0 && hasans) {
+				memcpy(text, "ANS", sizeof("ANS") - 1);
+				textIdx += 3;
+			}
+
+			text[textIdx++] = ' ';
+		}
 		text[textIdx++] = btn->text[0];
 		if (btn->isspecial) text[textIdx++] = ' ';
 	}

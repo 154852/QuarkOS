@@ -1,6 +1,7 @@
 #include "input.h"
 #include <ckeyboard.h>
 #include "window.h"
+#include "windowserver/client.h"
 #include <syscall.h>
 #include <cmouse.h>
 #include <assertions.h>
@@ -51,8 +52,7 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 
 	// X button
 	if (window->has_title_bar && rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
-		window->present = 0;
-		if (get_focused() == window) set_focused(0);
+		destroy_internal_window(window);
 		return;
 	}
 

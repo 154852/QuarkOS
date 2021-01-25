@@ -1,5 +1,6 @@
 #include "request.h"
 #include "window.h"
+#include "windowserver/client.h"
 #include "windowserver/config.h"
 #include <windowserver/wsmsg.h>
 #include <string.h>
@@ -70,11 +71,8 @@ void destroy_window_handler(unsigned sender, DestroyWindowRequest* req) {
 		debugf("Invalid permissions for window\n");
 		return;
 	}
-	window->present = 0;
-	
-	if (get_focused() == window) {
-		set_focused(0);
-	}
+
+	destroy_internal_window(window);
 }
 
 WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
