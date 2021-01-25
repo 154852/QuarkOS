@@ -15,6 +15,8 @@ char text[TEXT_SIZE] = "";
 int textIdx = 0;
 char textneedsclear = 0;
 const int gridsize = 50;
+char hasans;
+float ans;
 
 typedef struct {
 	ElementID button;
@@ -35,8 +37,10 @@ typedef struct {
 
 CalcButton buttons[] = {
 	(CalcButton) {
-		.text="",
-		.x=0, .y=0
+		.text="ANS",
+		.x=0, .y=0,
+		.isspecial=1,
+		.xoff=-9
 	},
 	(CalcButton) {
 		.text="",
@@ -135,14 +139,24 @@ char is_num(const char chr) {
 	return chr >= '0' && chr <= '9';
 }
 
-float evaluate(const char* string) {
+#define EVAL_ERR_SYNTAX 1
+#define EVAL_ERR_MATH 2
+
+float evaluate(const char* string, char* error) {
 	const char* end = string + strlen(string);
+	if (end <= string) {
+		*error = EVAL_ERR_SYNTAX;
+		return 0;
+	}
 	while (string[0] == ' ') {
 		string++;
 	}
 
 	float left;
-	if (is_num(string[0])) {
+	if (memcmp(string, "ANS", 3) == 0) {
+		left = ans;
+		string += 3;
+	} else if (is_num(string[0])) {
 		float integer = 0;
 		while (is_num(string[0])) {
 			integer *= 10;
@@ -165,22 +179,38 @@ float evaluate(const char* string) {
 		}
 
 		left = integer;
+	} else {
+		*error = EVAL_ERR_SYNTAX;
+		return 0;
+	}
+
+	while (string[0] == ' ') {
+		string++;
 	}
 
 	if (string >= end) return left;
 
-	if (string[0] == ' ') {
-		char operator;
-		operator = string[1];
-		string += 3;
+	char operator;
+	operator = string[0];
+	string += 2; // '+ '
 
-		float right = evaluate(string);
-		
-		switch (operator) {
+	float right = evaluate(string, error);
+	if (*error) return 0;
+	
+	switch (operator) {
 		case '+': return left + right;
 		case '*': return left * right;
-		case '/': return left / right;
+		case '/': {
+			if (right == 0) {
+				*error = EVAL_ERR_MATH;
+				return 0;
+			}
+			return left / right;
+		}
 		case '-': return left - right;
+		default: {
+			*error = EVAL_ERR_SYNTAX;
+			return 0;
 		}
 	}
 
@@ -203,16 +233,33 @@ void oncalcbuttonclick(int buttonIdx) {
 	}
 
 	if (strcmp(btn->text, "DEL") == 0) {
-		text[--textIdx] = 0;
+		if (textIdx != 0) text[--textIdx] = 0;
+	} else if (strcmp(btn->text, "ANS") == 0) {
+		if (hasans) {
+			memcpy(text + textIdx, "ANS", sizeof("ANS") - 1);
+			textIdx += 3;
+		} else {
+			return;
+		}
 	} else if (strcmp(btn->text, "AC") == 0) {
 		memset(text, 0, TEXT_SIZE);
 		textIdx = 0;
 	} else if (btn->text[0] == '=') {
-		float value = evaluate(text);
+		char err;
+		float value = evaluate(text, &err);
 		memset(text, 0, TEXT_SIZE);
 		textIdx = 0;
-		printf_(str_putchar, "%f", value);
 		textneedsclear = 1;
+
+		if (err == EVAL_ERR_SYNTAX) {
+			memcpy(text, "Syntax Error", sizeof("Syntax Error"));
+		} else if (err == EVAL_ERR_MATH) {
+			memcpy(text, "Math Error", sizeof("Math Error"));
+		} else {
+			printf_(str_putchar, "= %f", value);
+			ans = value;
+			hasans = 1;
+		}
 	} else {
 		if (btn->isspecial) text[textIdx++] = ' ';
 		text[textIdx++] = btn->text[0];
