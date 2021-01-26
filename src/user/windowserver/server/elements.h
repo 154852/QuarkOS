@@ -34,7 +34,6 @@ typedef struct {
 } InternalButtonElement;
 
 typedef struct {
-	char present;
 	unsigned handle;
 	unsigned creatorpid;
 

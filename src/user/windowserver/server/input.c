@@ -82,10 +82,10 @@ void resolve_click(int x, int y) {
 		return;
 	}
 
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
-		if (windows[i].present && &windows[i] != focused && window_contains(&windows[i], x, y)) {
-			window_resolve_click(&windows[i], x - windows[i].x, y - windows[i].y);
+		if (windows[i] && windows[i] != focused && window_contains(windows[i], x, y)) {
+			window_resolve_click(windows[i], x - windows[i]->x, y - windows[i]->y);
 			return;
 		}
 	}

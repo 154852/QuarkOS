@@ -2,10 +2,10 @@
 #include <stdio.h>
 
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3) {
-	#ifdef DEBUG_INT
+#ifdef DEBUG_INT
 	debugf("[LibC] SYSCALL\n");
 	debugf("EAX=%u\nEBX=%u\nECX=%u\nEDX=%u\n\n", type, v1, v2, v3);
-	#endif
+#endif
 
 	unsigned int ret;
 	asm volatile(
@@ -16,6 +16,10 @@ unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsi
 	);
 
 	return ret;
+}
+
+void mmap(void* addr, unsigned long pages) {
+	syscall(SC_MMap, (unsigned long) addr, pages, 0);
 }
 
 void proc_info(ProcessInfo *info) {

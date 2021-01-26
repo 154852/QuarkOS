@@ -1,4 +1,5 @@
 #include "windowserver/server/window.h"
+#include <stdlib.h>
 #include <string.h>
 #include <syscall.h>
 #include <stdio.h>

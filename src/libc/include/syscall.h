@@ -32,6 +32,7 @@ typedef enum {
 	SC_Yield = 0x0c,
 	SC_Exit = 0x0d,
 	SC_Exec = 0x0e,
+	SC_MMap = 0x0f
 } Syscall;
 
 #define FILE_FLAG_R (1)
@@ -39,6 +40,9 @@ typedef enum {
 #define FILE_FLAG_SOCK (1 << 2)
 
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
+
+// TODO: Ideally this would be a size in bytes
+void mmap(void* addr, unsigned long pages);
 
 void write(unsigned fd, const void *string, unsigned long length);
 unsigned read(unsigned fd, void *string, unsigned long length);

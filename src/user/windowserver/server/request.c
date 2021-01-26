@@ -2,16 +2,17 @@
 #include "window.h"
 #include "windowserver/client.h"
 #include "windowserver/config.h"
+#include <stdlib.h>
 #include <windowserver/wsmsg.h>
 #include <string.h>
 #include <syscall.h>
 #include <stdio.h>
 
 void find_xy(int* x, int* y) {
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
-		if (windows[i].present && windows[i].x == *x && windows[i].y == *y) {
+		if (windows[i] && windows[i]->x == *x && windows[i]->y == *y) {
 			*x += 15;
 			*y += 15;
 
@@ -21,7 +22,7 @@ void find_xy(int* x, int* y) {
 }
 
 void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 
 	int x = createwindow->x;
 	int y = createwindow->y;
@@ -29,11 +30,12 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 	
 	CreateWindowResponse res;
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
-		if (!windows[i].present) {
-			InternalWindow* win = &windows[i];
+		if (windows[i] == 0) {
+			InternalWindow* win = malloc(sizeof(InternalWindow));
+			windows[i] = win;
+
 			memset(win, 0, sizeof(InternalWindow));
 
-			win->present = 1;
 			win->handle = i;
 			win->creatorpid = sender;
 
@@ -55,14 +57,14 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 }
 
 void destroy_window_handler(unsigned sender, DestroyWindowRequest* req) {
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 
 	if (req->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
 		return;
 	}
-	InternalWindow* window = &windows[req->window];
-	if (!window->present) {
+	InternalWindow* window = windows[req->window];
+	if (!window) {
 		debugf("Window does not exist\n");
 		return;
 	}
@@ -76,45 +78,47 @@ void destroy_window_handler(unsigned sender, DestroyWindowRequest* req) {
 }
 
 WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
-	InternalWindow* windows = get_windows();
-	InternalLabelElement* labelElements = get_label_elements();
+	InternalWindow** windows = get_windows();
+	// InternalLabelElement* labelElements = get_label_elements();
 
 	if (labelreq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
-	InternalWindow* window = &windows[labelreq->window];
+	InternalWindow* window = windows[labelreq->window];
 	if (window->creatorpid != sender) {
 		debugf("Invalid permissions for window\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
 
-	if (!window->present) {
+	if (!window) {
 		debugf("Window does not exist\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] == 0) {
-			for (int j = 0; j < LABELS_CAPACITY; j++) {
-				if (!labelElements[j].present) {
-					window->elements[i] = (InternalElement*) &labelElements[j];
-					window->elements[i]->present = 1;
-					window->elements[i]->type = WSLabelElement;
-					window->elements[i]->elementID = i;
-					memcpy(labelElements[j].content, labelreq->content, 256);
-					labelElements[j].color = labelreq->color;
-					labelElements[j].x = labelreq->x;
-					labelElements[j].y = labelreq->y;
-					labelElements[j].scale = labelreq->scale;
-					render_window(window);
+			// for (int j = 0; j < LABELS_CAPACITY; j++) {
+			// 	if (!labelElements[j].present) {
+			
+			InternalLabelElement* label = malloc(sizeof(InternalLabelElement));
+			window->elements[i] = (InternalElement*) label;
+			window->elements[i]->present = 1;
+			window->elements[i]->type = WSLabelElement;
+			window->elements[i]->elementID = i;
+			memcpy(label->content, labelreq->content, 256);
+			label->color = labelreq->color;
+			label->x = labelreq->x;
+			label->y = labelreq->y;
+			label->scale = labelreq->scale;
+			render_window(window);
 
-					return (WindowServerElementUpdateResponse) { i };
-				}
-			}
+			return (WindowServerElementUpdateResponse) { i };
+				// }
+			// }
 
-			debugf("No capacity for label\n");
-			return (WindowServerElementUpdateResponse) { -1 };
+			// debugf("No capacity for label\n");
+			// return (WindowServerElementUpdateResponse) { -1 };
 		}
 	}
 
@@ -123,14 +127,14 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 }
 
 WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 
 	if (labelreq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
-	InternalWindow* window = &windows[labelreq->window];
-	if (!window->present) {
+	InternalWindow* window = windows[labelreq->window];
+	if (!window) {
 		debugf("Window does not exist\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
@@ -151,7 +155,7 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
 
-	if (!element->present) {
+	if (!element) {
 		debugf("Invalid element ID (not present)\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
@@ -167,42 +171,43 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 }
 
 WindowServerElementUpdateResponse create_element_button_handler(unsigned sender, WindowServerButtonUpdateRequest* buttonreq) {
-	InternalWindow* windows = get_windows();
-	InternalButtonElement* buttonElements = get_button_elements();
+	InternalWindow** windows = get_windows();
+	// InternalButtonElement* buttonElements = get_button_elements();
 
 	if (buttonreq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
-	InternalWindow* window = &windows[buttonreq->window];
+	InternalWindow* window = windows[buttonreq->window];
 	if (window->creatorpid != sender) {
 		debugf("Invalid permissions for window\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
 
-	if (!window->present) {
+	if (!window) {
 		debugf("Window does not exist\n");
 		return (WindowServerElementUpdateResponse) { -1 };
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] == 0) {
-			for (int j = 0; j < BUTTONS_CAPACITY; j++) {
-				if (!buttonElements[j].present) {
-					window->elements[i] = (InternalElement*) &buttonElements[j];
-					window->elements[i]->present = 1;
-					window->elements[i]->type = WSButtonElement;
-					window->elements[i]->elementID = i;
-					buttonElements[j].background = buttonreq->background;
-					buttonElements[j].x = buttonreq->x;
-					buttonElements[j].y = buttonreq->y;
-					buttonElements[j].width = buttonreq->width;
-					buttonElements[j].height = buttonreq->height;
-					render_window(window);
+			// for (int j = 0; j < BUTTONS_CAPACITY; j++) {
+			// 	if (!buttonElements[j].present) {
+			InternalButtonElement* button = malloc(sizeof(InternalButtonElement));
+			window->elements[i] = (InternalElement*) button;
+			window->elements[i]->present = 1;
+			window->elements[i]->type = WSButtonElement;
+			window->elements[i]->elementID = i;
+			button->background = buttonreq->background;
+			button->x = buttonreq->x;
+			button->y = buttonreq->y;
+			button->width = buttonreq->width;
+			button->height = buttonreq->height;
+			render_window(window);
 
-					return (WindowServerElementUpdateResponse) { i };
-				}
-			}
+			return (WindowServerElementUpdateResponse) { i };
+				// }
+		// 	}
 		}
 	}
 
@@ -238,7 +243,7 @@ WindowServerElementUpdateResponse update_element_handler(unsigned sender, Window
 }
 
 void window_status_handler(unsigned sender, WindowStatusRequest* req) {
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 	WindowStatusResponse res;
 	memset(&res, 0, sizeof(res));
 			
@@ -247,9 +252,9 @@ void window_status_handler(unsigned sender, WindowStatusRequest* req) {
 		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
 		return;
 	}
-	InternalWindow* window = &windows[req->window];
+	InternalWindow* window = windows[req->window];
 
-	if (!window->present) {
+	if (!window) {
 		res.present = 0;
 		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
 		return;

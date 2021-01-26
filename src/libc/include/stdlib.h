@@ -10,7 +10,7 @@ extern "C" {
  
 __attribute__((__noreturn__)) void abort(void);
 void* malloc(size_t size);
-void free(void* addr);
+void free_sized(void* addr, size_t size);
  
 #ifdef __cplusplus
 }

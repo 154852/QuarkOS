@@ -37,7 +37,7 @@ void render_window_to_swapbuffer(InternalWindow* window) {
 }
 
 void render() {
-	InternalWindow* windows = get_windows();
+	InternalWindow** windows = get_windows();
 
 	Pixel* swapbuffer = get_swapbuffer();
 	Pixel* framebuffer = get_framebuffer();
@@ -47,8 +47,8 @@ void render() {
 	}
 
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
-		if (windows[i].present && &windows[i] != get_focused()) {
-			render_window_to_swapbuffer(&windows[i]);
+		if (windows[i] && windows[i] != get_focused()) {
+			render_window_to_swapbuffer(windows[i]);
 		}
 	}
 

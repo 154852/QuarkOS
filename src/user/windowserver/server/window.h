@@ -8,9 +8,9 @@
 
 void destroy_internal_window(InternalWindow* window);
 
-InternalWindow* get_windows();
-InternalLabelElement* get_label_elements();
-InternalButtonElement* get_button_elements();
+InternalWindow** get_windows();
+// InternalLabelElement* get_label_elements();
+// InternalButtonElement* get_button_elements();
 
 WindowServerEvent* allocate_event(InternalWindow* window);
 

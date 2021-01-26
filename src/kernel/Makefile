@@ -64,6 +64,7 @@ kernel/syscalls/proc_info.o \
 kernel/syscalls/read_ipc_message.o \
 kernel/syscalls/send_ipc_message.o \
 kernel/syscalls/yield.o \
+kernel/syscalls/mmap.o \
  
 OBJS=\
 $(ARCHDIR)/crti.o \

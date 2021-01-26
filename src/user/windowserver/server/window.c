@@ -5,34 +5,38 @@
 #include <windowserver/wsmsg.h>
 #include <windowserver/fontchars.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-static InternalWindow windows[WINDOWS_CAPACITY];
-static InternalLabelElement labelElements[LABELS_CAPACITY];
-static InternalButtonElement buttonElements[BUTTONS_CAPACITY];
+static InternalWindow* windows[WINDOWS_CAPACITY];
 
-InternalWindow* get_windows() {
+InternalWindow** get_windows() {
 	return windows;
 }
 
-InternalLabelElement* get_label_elements() {
-	return labelElements;
-}
-
-InternalButtonElement* get_button_elements() {
-	return buttonElements;
-}
-
 void destroy_internal_window(InternalWindow* window) {
-	window->present = 0;
-	
-	if (get_focused() == window) { set_focused(0); }
+	if (get_focused() == window) set_focused(0);
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] != 0) {
-			window->elements[i]->present = 0;
+			switch (window->elements[i]->type) {
+				case WSLabelElement: {
+					free_sized(window->elements[i], sizeof(InternalLabelElement));
+					break;
+				}
+				case WSButtonElement: {
+					free_sized(window->elements[i], sizeof(InternalButtonElement));
+					break;
+				}
+				default: {
+					debugf("Unknown element type in window destroy %d\n", window->elements[i]->type);
+				}
+			}
 		}
 	}
+
+	windows[window->handle] = 0;
+	free_sized(window, sizeof(InternalWindow));
 }
 
 WindowServerEvent* allocate_event(InternalWindow* window) {
