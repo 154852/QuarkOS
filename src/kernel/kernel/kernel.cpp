@@ -198,6 +198,8 @@ u32 stack_top;
 extern "C" void kernel_main(void) {
     asm volatile("mov %%esp, %0" : "=m"(stack_top));
 
+    Terminal::initialize();
+
     kdebugf("[Core] Starting QuarkOS\n");
 
     PIC::remap(0x20, 0x28);
@@ -275,9 +277,6 @@ extern "C" void kernel_main(void) {
     PIC::irq_clear_mask(12);
     // PIT::set_reload_value(PIT_CHANNEL_0, PIT::get_reload_value_for(20));
     PIT::attempt_to_set_frequency(400);
-
-    Terminal::initialize();
-    kdebugf("[Core] Initialized terminal\n");
 
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
     MultiProcess::tss_set_stack(0x10, stack_top);

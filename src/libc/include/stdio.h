@@ -14,6 +14,11 @@ int printf_(void(*_putchar)(char character), const char* format, ...);
 void putchar(char ch);
 void debug_putchar(char ch);
 
+#ifdef __is_kernel
+void terminal_putchar(char ch);
+#define tprintf(fmt, args...) printf_(terminal_putchar, fmt, ##args)
+#endif
+
 #define printf(fmt, args...) printf_(putchar, fmt, ##args)
 #define debugf(fmt, args...) printf_(debug_putchar, fmt, ##args)
 

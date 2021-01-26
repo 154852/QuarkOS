@@ -13,6 +13,10 @@ static u32 terminal_column;
 static u8 terminal_color;
 static u16* terminal_buffer;
 
+extern "C" void terminal_putchar(char c) {
+	Terminal::putchar(c);
+}
+
 void Terminal::initialize(void) {
 	terminal_row = 0;
 	terminal_column = 0;

@@ -36,6 +36,8 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 	u32 entry = get_le_u32(header->entry);
 
+	size_t pages = 0;
+
 	u32 program_header_entry_size = get_le_u16(header->program_header_entry_size);
 	assert(program_header_entry_size == sizeof(ProgramHeader));
 	u32 program_header_entry_count = get_le_u16(header->program_header_entry_count);
@@ -53,7 +55,7 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 		assert((u32) &process < KERNEL_SIZE);
 		assert(begin >= KERNEL_SIZE);
-		MemoryManagement::allocate_region(process->page_dir, begin, size, false, true);
+		pages += MemoryManagement::allocate_region(process->page_dir, begin, size, false, true);
 
 		MemoryManagement::load_page_dir(process->page_dir);
 		memcpy((void*) begin, (const void*) (content + fbegin), (size_t) fsize);
@@ -65,7 +67,7 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	}
 
 	const int EBP = 0xC0000000;
-	MemoryManagement::allocate_region(process->page_dir, EBP, STACK_SIZE, false, true);
+	pages += MemoryManagement::allocate_region(process->page_dir, EBP, STACK_SIZE, false, true);
 
     process->registers.ebp = EBP;
 	process->registers.esp = EBP + STACK_SIZE;
@@ -77,6 +79,14 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	MemoryManagement::load_page_dir(old);
 
 	MemoryManagement::identity_map_region(process->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true);
+
+	if (pages * 4 < 1024) {
+		kdebugf("[ELF] Loaded process %s, using %d pages (%dKB)\n", process->name, pages, pages * 4);
+	} else if (pages * 4 < 1024 * 1024) {
+		kdebugf("[ELF] Loaded process %s, using %d pages (%dMB)\n", process->name, pages, (pages * 4) / 1024);
+	} else {
+		kdebugf("[ELF] Loaded process %s, using %d pages (%dGB)\n", process->name, pages, (pages * 4) / (1024 * 1024));
+	}
 
 	return process;
 }

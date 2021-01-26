@@ -140,12 +140,14 @@ namespace MemoryManagement {
 		active_page_dir = dir;
 	}
 
-	void allocate_region(PageDirectory* dir, u32 vaddr, u32 size, bool is_kernel, bool is_writable) {
+	size_t allocate_region(PageDirectory* dir, u32 vaddr, u32 size, bool is_kernel, bool is_writable) {
 		for (u32 i = 0; i < size; i += 4 * KB) {
 			u32 block = allocate_block();
 			u32 addr = (block * PAGE_SIZE) + mem_start;
 			allocate_page(dir, vaddr + i, addr, is_kernel, is_writable);
 		}
+
+		return (size % PAGE_SIZE == 0)? (size / PAGE_SIZE):((size / PAGE_SIZE) + 1);
 	}
 
 	void init_paging() {
