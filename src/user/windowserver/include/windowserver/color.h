@@ -23,6 +23,7 @@ Pixel pixel_from_hex(unsigned hex);
 
 #define COLOR_BLACK pixel_from_rgb(0, 0, 0)
 #define COLOR_DARKGREY pixel_from_rgb(0x60, 0x60, 0x60)
+#define COLOR_VERYDARKGREY pixel_from_rgb(0x40, 0x40, 0x40)
 #define COLOR_LIGHTGREY pixel_from_rgb(0xe0, 0xe0, 0xe0)
 #define COLOR_VERYLIGHTGREY pixel_from_rgb(0xc0, 0xc0, 0xc0)
 #define COLOR_RED pixel_from_rgb(0xff, 0, 0)

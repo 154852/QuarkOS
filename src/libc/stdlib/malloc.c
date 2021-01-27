@@ -10,7 +10,7 @@
 
 #define MALLOC_START (void*) 0xD0000000
 #define PAGE_SIZE 0x1000
-size_t malloc_used = 0; // measured in pages
+size_t malloc_used = 0;
 
 typedef struct {
 	void* addr;

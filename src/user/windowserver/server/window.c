@@ -1,5 +1,6 @@
 #include "window.h"
 #include "windowserver/client.h"
+#include "windowserver/color.h"
 #include "windowserver/config.h"
 #include <windowserver/image.h>
 #include <windowserver/wsmsg.h>
@@ -50,15 +51,21 @@ WindowServerEvent* allocate_event(InternalWindow* window) {
 	return 0;
 }
 
-void render_label(InternalWindow* window, InternalLabelElement* label) {
-	int x = label->x;
-	int y = window_title_bar_height(window) + label->y;
-	double scale = label->scale;
-	for (size_t i = 0; i < strlen(label->content); i++) {
-		FontChar chr = fontchar_for_char(label->content[i]);
-		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &label->color, window->raster, chr.width);
+void render_text(InternalWindow* window, const char* text, int x, int y, float scale, Pixel* color) {
+	int x0 = x;
+	int height = 0;
+	for (size_t i = 0; i < strlen(text); i++) {
+		FontChar chr = fontchar_for_char(text[i]);
+		if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, color, window->raster, chr.width);
 		x += (chr.width * scale) + 1;
+		height = max(height, chr.height * scale);
 	}
+
+	antialias(window->raster, x - x0, height, x0, y, SUPPORTED_WIDTH, SUPPORTED_HEIGHT);
+}
+
+void render_label(InternalWindow* window, InternalLabelElement* label) {
+	render_text(window, label->content, label->x, window_title_bar_height(window) + label->y, label->scale, &label->color);
 }
 
 void render_button(InternalWindow* window, InternalButtonElement* button) {
@@ -108,12 +115,7 @@ void render_window(InternalWindow* window) {
 
 		int x = ((TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2) + padding;
 		int y = padding;
-		for (size_t i = 0; i < strlen(window->title); i++) {
-			FontChar chr = fontchar_for_char(window->title[i]);
-			if (chr.raw != 0) copy_image(x, y, (Pixel*) chr.raw, chr.width, chr.height, scale, &COLOR_DARKGREY, window->raster, chr.width);
-			x += (chr.width * scale) + 1;
-		}
-
+		render_text(window, window->title, x, y, scale, &COLOR_VERYDARKGREY);
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
@@ -134,6 +136,8 @@ void render_window(InternalWindow* window) {
 			}
 		}
 	}
+
+	// antialias(window->raster, window->width, window->height, SUPPORTED_WIDTH, SUPPORTED_HEIGHT);
 }
 
 static InternalWindow* focused_window = 0;
