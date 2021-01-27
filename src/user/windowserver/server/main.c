@@ -3,6 +3,7 @@
 #include <assertions.h>
 #include <string.h>
 
+#include "themes/theme.h"
 #include "input.h"
 #include "request.h"
 #include "render.h"
@@ -33,6 +34,13 @@ int main() {
 	initialise_buffers();
 	initialise_mouse();
 	initialise_keyboard();
+
+#if ACTIVE_THEME_GRAY
+	set_theme(create_gray_theme());
+#else
+	set_theme(create_hacker_theme());
+#endif
+	
 	render();
 
 	exec("/usr/bin/dock");

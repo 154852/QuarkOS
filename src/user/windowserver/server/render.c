@@ -7,18 +7,14 @@
 #include "windowserver/color.h"
 #include <stdio.h>
 
-void render_cursor_to_swapbuffer() {
-	int x0 = clamp(get_mouse_x(), 1, SUPPORTED_WIDTH - 2);
-	int y0 = clamp(get_mouse_y(), 1, SUPPORTED_HEIGHT - 2);
+static Theme theme;
 
-	Pixel* swapbuffer = get_swapbuffer();
-	
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
-			int idx = idx_for_xy(x0 + x, y0 + y);
-			swapbuffer[idx] = (x == 0 && y == 0)? COLOR_LIGHTGREY:COLOR_BLACK;
-		}
-	}
+void set_theme(Theme theme_) {
+	theme = theme_;
+}
+
+Theme* get_theme() {
+	return &theme;
 }
 
 void render_window_to_swapbuffer(InternalWindow* window) {
@@ -42,9 +38,7 @@ void render() {
 	Pixel* swapbuffer = get_swapbuffer();
 	Pixel* framebuffer = get_framebuffer();
 
-	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
-		swapbuffer[idx] = DESKTOP_BACKGROUND;
-	}
+	theme.render_desktop_background();
 
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
 		if (windows[i] && windows[i] != get_focused()) {
@@ -55,7 +49,8 @@ void render() {
 	if (get_focused() != 0)
 		render_window_to_swapbuffer(get_focused());
 
-	render_cursor_to_swapbuffer();
+	// render_cursor_to_swapbuffer();
+	theme.render_cursor();
 	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
 		framebuffer[idx] = swapbuffer[idx];
 	}

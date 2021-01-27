@@ -1,4 +1,5 @@
 #include "windowserver/server/window.h"
+#include "windowserver/themes/color-active.h"
 #include <stdlib.h>
 #include <string.h>
 #include <syscall.h>
@@ -289,7 +290,7 @@ int main() {
 	for (int i = 0; i < buttonCount; i++) {
 		int x = (gridsize * buttons[i].x) + (gridsize * 0.1);
 		int y = (gridsize * buttons[i].y) + (gridsize * 0.1 * 2) + TEXT_FIELD_HEIGHT;
-		buttons[i].button = create_button(windowhandle, x, y, gridsize * 0.9, gridsize * 0.9, &pixel_from_rgb(0xe0, 0xe0, 0xe0));
+		buttons[i].button = create_button(windowhandle, x, y, gridsize * 0.9, gridsize * 0.9, &COLOR_SECONDARY_BACKGROUND);
 		int tx = buttons[i].xoff + (gridsize * 0.35);
 		buttons[i].label = create_label(windowhandle, buttons[i].text, 0, x + tx, y + (gridsize * 0.25));
 		onclick(buttons[i].button, i, oncalcbuttonclick);

@@ -11,6 +11,7 @@
 #define WINDOW_ELEMENTS_CAPACITY 64
 #define WINDOW_EVENTS_CAPACITY 32
 
-#define DESKTOP_BACKGROUND pixel_from_rgb(0xff, 0xff, 0xff)
+#define ACTIVE_THEME_HACKER 0
+#define ACTIVE_THEME_GRAY 1
 
 #endif

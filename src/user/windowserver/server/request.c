@@ -1,4 +1,5 @@
 #include "request.h"
+#include "render.h"
 #include "window.h"
 #include "windowserver/client.h"
 #include "windowserver/config.h"
@@ -47,7 +48,8 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 			win->background = createwindow->background;
 			win->has_title_bar = createwindow->has_title_bar;
 			res.handle = win->handle;
-			render_window(win);
+			// render_window(win);
+			
 			set_focused(win);
 			break;
 		}
@@ -111,7 +113,7 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 			label->x = labelreq->x;
 			label->y = labelreq->y;
 			label->scale = labelreq->scale;
-			render_window(window);
+			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
 				// }
@@ -165,7 +167,7 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 	element->x = labelreq->x;
 	element->y = labelreq->y;
 	element->scale = labelreq->scale;
-	render_window(window);
+	get_theme()->render_window(window);
 	
 	return (WindowServerElementUpdateResponse) { element->elementID };
 }
@@ -203,7 +205,7 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 			button->y = buttonreq->y;
 			button->width = buttonreq->width;
 			button->height = buttonreq->height;
-			render_window(window);
+			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
 				// }

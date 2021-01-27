@@ -1,4 +1,5 @@
 #include "windowserver/color.h"
+#include "windowserver/themes/color-active.h"
 #include "windowserver/config.h"
 #include <string.h>
 #include <syscall.h>
@@ -34,24 +35,22 @@ void open_app(int x) {
 int main() {
 	windowhandle = create_window("Dock", SUPPORTED_WIDTH, WINDOW_HEIGHT, 0, SUPPORTED_HEIGHT - WINDOW_HEIGHT, 0);
 
-	Pixel darkgray = pixel_from_rgb(0xe0, 0xe0, 0xe0);
-
 	dockApps[0] = (DockApp) {
 		.name="guiapp",
 		.path="/usr/bin/guiapp",
-		.color=darkgray,
+		.color=COLOR_SECONDARY_BACKGROUND,
 	};
 
 	dockApps[1] = (DockApp) {
 		.name="font",
 		.path="/usr/bin/font",
-		.color=darkgray,
+		.color=COLOR_SECONDARY_BACKGROUND,
 	};
 
 	dockApps[2] = (DockApp) {
 		.name="calc",
 		.path="/usr/bin/calc",
-		.color=darkgray,
+		.color=COLOR_SECONDARY_BACKGROUND,
 	};
 
 	int width = ((SUPPORTED_WIDTH - (2*BUTTON_PADDING)) / DOCK_APP_COUNT) - BUTTON_PADDING;

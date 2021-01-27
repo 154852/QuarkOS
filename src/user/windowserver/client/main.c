@@ -1,3 +1,4 @@
+#include "windowserver/themes/color-active.h"
 #include <string.h>
 #include <syscall.h>
 #include <stdio.h>
@@ -26,7 +27,7 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	req.x = x;
 	req.y = y;
 	req.has_title_bar = has_title_bar;
-	req.background = (Pixel) { .r = 0xf0, .g = 0xf0, .b = 0xf0, .a = 0xff };
+	req.background = DEFAULT_WINDOW_COLOR;
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(CreateWindowRequest));
 
@@ -99,7 +100,7 @@ ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixe
 	memcpy(req.content, content, titlelen > 256? 256:titlelen);
 	req.x = x;
 	req.y = y;
-	req.color = color == 0? (Pixel) { .r = 0x0, .g = 0x0, .b = 0x0, .a = 0xff }:*color;
+	req.color = color == 0? DEFAULT_TEXT_COLOR:*color;
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerLabelUpdateRequest));
 
