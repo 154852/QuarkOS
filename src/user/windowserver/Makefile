@@ -34,6 +34,7 @@ server/request.o \
 server/input.o \
 server/themes/gray.o \
 server/themes/hacker.o \
+server/themes/macos.o \
 
 CLIENTOBJS=\
 client/main.o \

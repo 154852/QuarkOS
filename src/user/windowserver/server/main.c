@@ -35,10 +35,12 @@ int main() {
 	initialise_mouse();
 	initialise_keyboard();
 
-#if ACTIVE_THEME_GRAY
-	set_theme(create_gray_theme());
-#else
+#if ACTIVE_THEME_HACKER
 	set_theme(create_hacker_theme());
+#elif ACTIVE_THEME_MACOS
+	set_theme(create_macos_theme());
+#else
+	set_theme(create_gray_theme());
 #endif
 	
 	render();

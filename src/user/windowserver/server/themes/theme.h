@@ -11,5 +11,6 @@ typedef struct {
 
 Theme create_gray_theme();
 Theme create_hacker_theme();
+Theme create_macos_theme();
 
 #endif
