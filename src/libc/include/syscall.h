@@ -19,9 +19,7 @@ extern "C" {
 
 typedef enum {
 	SC_Read = 0x00,
-	SC_ProcInfo = 0x01,
-	SC_LSProc = 0x02,
-	SC_FrameBufferInfo = 0x03,
+	SC_FrameBufferInfo = 0x03, // TODO: These need to replaced with some kind of /dev/fb0 operation
 	SC_FrameBufferSetState = 0x05,
 	SC_SendIPCMessage = 0x06,
 	SC_ReadIPCMessage = 0x07,
@@ -76,8 +74,6 @@ typedef struct {
 	char name[64];
 } ProcessInfo;
 
-void proc_info(ProcessInfo *info);
-
 typedef struct {
 	unsigned* framebuffer;
 	unsigned int size;
@@ -94,7 +90,6 @@ unsigned read_ipc_message(void* raw, unsigned length, unsigned* sender);
 
 unsigned get_pid();
 unsigned find_proc_pid(char* name);
-unsigned int list_process_pids(int *pids, unsigned long length);
 
 unsigned int exec(const char *path);
 void yield();

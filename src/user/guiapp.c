@@ -1,3 +1,5 @@
+// NOTE: This was just a file to test gui capabilities
+
 #include <string.h>
 #include <syscall.h>
 #include <stdio.h>
@@ -31,6 +33,7 @@ void keypress(KeyEvent* state) {
 }
 
 void onclickme(int x) {
+	(void) x;
 	memcpy(text, "Clicked", 8);
 	textidx = 7;
 	update_label(windowhandle, labelID, text, 0, 5, 5);

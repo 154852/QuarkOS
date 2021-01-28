@@ -1,3 +1,5 @@
+// NOTE: This will not currently work, it was made for the old terminal interface
+
 #include "syscall.h"
 #include <stdio.h>
 #include <assertions.h>
@@ -48,7 +50,7 @@ int main() {
 
 	char tmp_path[PWD_SIZE];
 
-	ProcessInfo info;
+	// ProcessInfo info;
 
 	while (1) {
 		printf("$ ");
@@ -69,11 +71,11 @@ int main() {
 			continue;
 		}
 
-		info.pid = pid;
-		do {
-			proc_info(&info);
-		} while (info.state == PSSC_Running);
-		printf("%s ended\n", tmp_path);
+		// info.pid = pid;
+		// do {
+		// 	proc_info(&info);
+		// } while (info.state == PSSC_Running);
+		// printf("%s ended\n", tmp_path);
 	}
 
 	printf("Session ended\n", tmp_path);

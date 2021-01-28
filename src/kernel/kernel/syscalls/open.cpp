@@ -42,7 +42,7 @@ void sys_open(IRQ::CSITRegisters2* frame) {
 		} else {
 			assert(false);
 		}
-		frame->eax = (socket->id << 8) | FD_SOCKET; // 0x00 for stdin, 0x01 for stdout, 0x02 for stderr, 0x03 for socket, 0x04 for file
+		frame->eax = (socket->id << 8) | FD_SOCKET;
 	} else {
 		MultiProcess::append_wait_task(open_syscall_wait_task);
 		MultiProcess::yield(frame);

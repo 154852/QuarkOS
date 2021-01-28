@@ -47,10 +47,9 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 			win->y = y;
 			win->background = createwindow->background;
 			win->has_title_bar = createwindow->has_title_bar;
-			res.handle = win->handle;
-			// render_window(win);
-			
+			res.handle = win->handle;			
 			set_focused(win);
+			get_theme()->render_window(win);
 			break;
 		}
 	}
@@ -81,7 +80,6 @@ void destroy_window_handler(unsigned sender, DestroyWindowRequest* req) {
 
 WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
 	InternalWindow** windows = get_windows();
-	// InternalLabelElement* labelElements = get_label_elements();
 
 	if (labelreq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
@@ -100,10 +98,9 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] == 0) {
-			// for (int j = 0; j < LABELS_CAPACITY; j++) {
-			// 	if (!labelElements[j].present) {
-			
 			InternalLabelElement* label = malloc(sizeof(InternalLabelElement));
+			memset(label, 0, sizeof(InternalLabelElement));
+
 			window->elements[i] = (InternalElement*) label;
 			window->elements[i]->present = 1;
 			window->elements[i]->type = WSLabelElement;
@@ -116,11 +113,6 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
-				// }
-			// }
-
-			// debugf("No capacity for label\n");
-			// return (WindowServerElementUpdateResponse) { -1 };
 		}
 	}
 
@@ -174,7 +166,6 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 
 WindowServerElementUpdateResponse create_element_button_handler(unsigned sender, WindowServerButtonUpdateRequest* buttonreq) {
 	InternalWindow** windows = get_windows();
-	// InternalButtonElement* buttonElements = get_button_elements();
 
 	if (buttonreq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
@@ -193,9 +184,9 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
 		if (window->elements[i] == 0) {
-			// for (int j = 0; j < BUTTONS_CAPACITY; j++) {
-			// 	if (!buttonElements[j].present) {
 			InternalButtonElement* button = malloc(sizeof(InternalButtonElement));
+			memset(button, 0, sizeof(InternalButtonElement));
+
 			window->elements[i] = (InternalElement*) button;
 			window->elements[i]->present = 1;
 			window->elements[i]->type = WSButtonElement;
@@ -208,8 +199,6 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
-				// }
-		// 	}
 		}
 	}
 

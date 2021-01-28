@@ -34,6 +34,7 @@ void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const 
 }
 
 void blur(Pixel* image, int w, int h, int x0, int y0, int square_diameter, int memw, int memh) {
+	(void) memh;
 	for (int x = 0; x < w; x++) {
 		for (int y = 0; y < h; y++) {
 			int r = 0;

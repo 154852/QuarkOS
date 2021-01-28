@@ -48,14 +48,14 @@ void readdir_syscall_wait_task() {
 
     size_t length; Socket::Socket* sockets = Socket::all(&length);
     
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         if (sockets[i].present) {
             char* name = sockets[i].name;
             if (!memcmp(name, dirname, len)) { // Note the lack of strlen + 1
                 size_t filenamelen = strlen(name);
 
-                for (int i = len; i < filenamelen; i++) {
-                    if (name[i] == '/') {
+                for (size_t j = len; j < filenamelen; j++) {
+                    if (name[j] == '/') {
                         goto entry_end;
                     }
                 }

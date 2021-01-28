@@ -21,7 +21,7 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	memset(&req, 0, sizeof(req));
 	req.action = WSCreateWindow;
 	size_t titlelen = strlen(title);
-	memcpy(req.title, title, titlelen > 64? 64:titlelen);
+	memcpy(req.title, title, titlelen > 63? 63:titlelen);
 	req.width = width;
 	req.height = height;
 	req.x = x;
@@ -38,7 +38,7 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 		int status = read_ipc_message((char*) &res, sizeof(CreateWindowResponse), &senderpid);
 
 		if (status < 0) {
-			yield();
+			yield(); // TODO: Does yield here actually improve performance? Or just take time from the next process to run?
 			continue;
 		}
 
@@ -97,7 +97,7 @@ ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixe
 	req.elementType = WSLabelElement;
 	req.scale = 0.5;
 	size_t titlelen = strlen(content);
-	memcpy(req.content, content, titlelen > 256? 256:titlelen);
+	memcpy(req.content, content, titlelen > 255? 255:titlelen);
 	req.x = x;
 	req.y = y;
 	req.color = color == 0? DEFAULT_TEXT_COLOR:*color;

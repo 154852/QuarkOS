@@ -177,6 +177,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	proc->state = MultiProcess::ProcessState::Runnable;
 
 	proc->registers.ss = 0x20 | 0x03;
+	// TODO: For now we will allow raised IOPL so we can use debugf from userspace programs
 	proc->registers.eflags = 0x0202;
 	proc->registers.cs = 0x18 | 0x03;
 	proc->registers.eip = (u32) entry;
@@ -184,7 +185,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	proc->wait_task.registers.ss = 0x20 | 0x03;
 	proc->wait_task.registers.eflags = 0x0202;
 	proc->wait_task.registers.cs = 0x18 | 0x03;
-	proc->wait_task.ebp = (u32) kmalloc(PAGE_SIZE);
+	proc->wait_task.ebp = (u32) kmalloc(PAGE_SIZE); // TODO: Fix double kmalloc
 
 	proc->pid = last_pid++;
 
@@ -201,16 +202,6 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	proc->handle = Socket::new_socket(pathstr);
 	proc->handle->generate = generate_process_info;
 	proc->handle->generation_id = proc;
-
-	// ProcessInfo info;
-	// memcpy(info.name, proc->name, 64);
-	// info.pid = proc->pid;
-	// info.state
-
-	// char data[128];
-	// memcpy(data, "name: ", sizeof("name: ") - 1);
-	// memcpy(data + sizeof("name: ") - 1, proc->name, strlen(proc->name));
-	// Socket::write_socket(proc->handle, 128, data);
 
 	return proc;
 }
@@ -267,6 +258,8 @@ void MultiProcess::exit(Process* process, u32 exit_code) {
 	if (process == 0) process = current_process;
 	
 	process->state = ProcessState::Exitting;
+	MemoryManagement::save_kernel_page_dir();
+	MemoryManagement::free_pages(process->page_dir);
 	kdebugf("[MultiProcess] Process %s quit with code: %d\n", process->name, exit_code);
 }
 

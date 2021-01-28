@@ -54,24 +54,7 @@ unsigned int USTAR::lookup_raw_pointer(const char* filename) {
 USTAR::FileParsed* USTAR::lookup_parsed(const char* filename) {
     unsigned int raw_address = USTAR::lookup_raw_pointer(filename);
     if (!raw_address) return 0;
-
-    USTAR::FileRaw* tmp_raw = (USTAR::FileRaw*) archive_pointer(raw_address);
-
-    FileParsed* parsed = (FileParsed*) kmalloc(sizeof(FileParsed));
-    size_t name_length = strlen(tmp_raw->name) + 1;
-    parsed->name = (char*) kmalloc(name_length);
-    memcpy(parsed->name, tmp_raw->name, name_length);
-
-    parsed->length = oct2bin((unsigned char*) tmp_raw->size, 11);
-    parsed->content = (unsigned char*) kmalloc(parsed->length + 1);
-    unsigned int raw_content_start = raw_address + 512;
-    for (u32 i = 0; i < parsed->length; i += 512) {
-        memcpy(parsed->content + i, archive_pointer(raw_content_start + i), min(512, parsed->length - i));
-    }
-
-    parsed->content[parsed->length] = 0;
-
-    return parsed;
+    return lookup_parsed_from_raw_pointer(raw_address);
 }
 
 USTAR::FileParsed* USTAR::lookup_parsed_from_raw_pointer(unsigned int raw_address) {
@@ -131,6 +114,7 @@ int USTAR::list_dir(const char* dirname, unsigned int* pointers, size_t capacity
             }
 
             pointers[used++] = ptr;
+            if (used - 1 == capacity) return exists? used:-1;
         }
 
         entry_end:

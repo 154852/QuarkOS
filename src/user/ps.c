@@ -1,3 +1,5 @@
+// NOTE: This will not currently work, it was made for the old terminal interface
+
 #include "syscall.h"
 #include <stdio.h>
 
@@ -29,5 +31,5 @@ int main() {
 	// 	printf("%.3u   %s   %.64s\n", pids[i], state_name(info.state), info.name);
 	// }
 
-	// return 0;
+	return 0;
 }

@@ -14,5 +14,5 @@ void sys_mmap(IRQ::CSITRegisters2* frame) {
 	}
 #endif
 
-	MemoryManagement::allocate_region(MultiProcess::get_current_task()->page_dir, frame->ebx, frame->ecx * PAGE_SIZE, false, true);
+	MemoryManagement::allocate_region(MultiProcess::get_current_task()->page_dir, frame->ebx, frame->ecx * PAGE_SIZE, false, true, false);
 }

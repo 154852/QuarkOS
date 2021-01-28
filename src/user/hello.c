@@ -1,9 +1,10 @@
+// NOTE: This will not currently work, it was made for the old terminal interface
+
 #include "syscall.h"
 #include <stdio.h>
 
 int main() {
 	debugf("What is your name? ");
-	// yield();
 
 	char name[10];
 	for (int i = 0; i < 9; i++) {

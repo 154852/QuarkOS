@@ -18,15 +18,11 @@ void io_wait() {
 
 unsigned short inw(unsigned short port) {
     unsigned short value;
-    // asm volatile("inw %1, %0"
-    //              : "=a"(value)
-    //              : "d"(port));
     asm("inw %%dx, %%ax":"=a"(value):"d"(port));
     return value;
 }
 
 void outw(unsigned short port, unsigned short value) {
-    // asm volatile("outw %0, %1" ::"a"(value), "d"(port));
      asm("outw %%ax, %%dx"::"d"(port), "a"(value));
 }
 

@@ -1,4 +1,4 @@
-/* A C++ program to implement itoa() */
+/* A C++ program to implement itoa() - not written by me */
 
 void swap(char* a, char* b) {
 	char tmp = *a;

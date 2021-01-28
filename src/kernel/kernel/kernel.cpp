@@ -132,7 +132,7 @@ extern "C" void page_fault_handle(IRQ::CSITRegisters regs) {
 
     u32 fault_addr; asm ("movl %%cr2, %%eax":"=a"(fault_addr));
 
-    debugf("Page Fault in attempt to access 0x%x\n", fault_addr);
+    debugf("Page Fault in attempt to access 0x%x : %s\n", fault_addr, MultiProcess::get_current_task()->name);
 
     debugf("exception code: %i\n", exception_code);
     debugf("pc=%x:%x\n", regs.cs, regs.eip);
@@ -209,7 +209,6 @@ extern "C" void kernel_main(void) {
     GDT::initialise();
     kdebugf("[Core] Initiliased GDT\n");
 
-    memset(specific_interrupt_handlers, 0, sizeof(specific_interrupt_handlers));
     specific_interrupt_handlers[0x00] = (void*) division_error;
     specific_interrupt_handlers[0x01] = (void*) debug_exception;
     specific_interrupt_handlers[0x02] = (void*) unknown_error;
@@ -237,8 +236,6 @@ extern "C" void kernel_main(void) {
     kdebugf("[Core] Initiliased interrupts\n");
 
     syscall_table[SC_Read] = sys_read;
-    syscall_table[SC_ProcInfo] = sys_proc_info;
-    syscall_table[SC_LSProc] = sys_list_procs;
     syscall_table[SC_FrameBufferInfo] = sys_framebuffer_info;
     syscall_table[SC_FrameBufferSetState] = sys_framebuffer_set_state;
     syscall_table[SC_SendIPCMessage] = sys_send_ipc_message;
@@ -277,7 +274,6 @@ extern "C" void kernel_main(void) {
 
     PIC::irq_clear_mask(1); // Keyboard
     PIC::irq_clear_mask(12);
-    // PIT::set_reload_value(PIT_CHANNEL_0, PIT::get_reload_value_for(20));
     PIT::attempt_to_set_frequency(400);
 
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
@@ -286,6 +282,8 @@ extern "C" void kernel_main(void) {
     USTAR::FileParsed* file = USTAR::lookup_parsed("/usr/bin/windowserver");
     assert(file);
     MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "/usr/bin/windowserver"));
+    // TODO: There's probably a neater way to do this - maybe with some kind /dev/fb0 or something?
+    MemoryManagement::identity_map_region(proc->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true, true);
     MultiProcess::append(proc);
 
     kdebugf("[Core] Starting clock...\n");

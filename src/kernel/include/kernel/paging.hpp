@@ -49,12 +49,15 @@ namespace MemoryManagement {
         PageTable* ref_tables[1024];
     };
 
-    PageTableEntry* allocate_page(PageDirectory* dir, u32 vaddr, u32 frame, bool is_kernel, bool is_writable);
-    void identity_map_region(PageDirectory* dir, u32 addr, size_t length, bool is_kernel, bool is_writable);
-    size_t allocate_region(PageDirectory* dir, u32 vaddr, u32 size, bool is_kernel, bool is_writable);
+    PageTableEntry* allocate_page(PageDirectory* dir, u32 vaddr, u32 frame, bool is_kernel, bool is_writable, bool global);
+    void identity_map_region(PageDirectory* dir, u32 addr, size_t length, bool is_kernel, bool is_writable, bool global);
+    size_t allocate_region(PageDirectory* dir, u32 vaddr, u32 size, bool is_kernel, bool is_writable, bool global);
     void init_paging();
     void load_page_dir(PageDirectory* dir);
     void save_kernel_page_dir();
+    void free_pages(PageDirectory* dir);
+
+    void mem_size_to_str(char string[16], size_t size);
     
     PageDirectory* get_active_page_dir();
     PageDirectory* get_kernel_page_dir();

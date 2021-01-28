@@ -32,7 +32,7 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 	if (process == nullptr) process = MultiProcess::create(0, "<unnamed elf loaded>");
 
-	MemoryManagement::identity_map_region(process->page_dir, 0, KERNEL_SIZE, true, true);
+	MemoryManagement::identity_map_region(process->page_dir, 0, KERNEL_SIZE, true, true, true);
 
 	u32 entry = get_le_u32(header->entry);
 
@@ -55,10 +55,13 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 		assert((u32) &process < KERNEL_SIZE);
 		assert(begin >= KERNEL_SIZE);
-		pages += MemoryManagement::allocate_region(process->page_dir, begin, size, false, true);
+		pages += MemoryManagement::allocate_region(process->page_dir, begin, size, false, true, false);
 
 		MemoryManagement::load_page_dir(process->page_dir);
 		memcpy((void*) begin, (const void*) (content + fbegin), (size_t) fsize);
+		if (fsize < size) {
+			memset((void*) (begin + fsize), 0, size - fsize);
+		}
 		MemoryManagement::save_kernel_page_dir();
 
 		if (flags & 1) {
@@ -67,7 +70,7 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	}
 
 	const int EBP = 0xC0000000;
-	pages += MemoryManagement::allocate_region(process->page_dir, EBP, STACK_SIZE, false, true);
+	pages += MemoryManagement::allocate_region(process->page_dir, EBP, STACK_SIZE, false, true, false);
 
     process->registers.ebp = EBP;
 	process->registers.esp = EBP + STACK_SIZE;
@@ -78,15 +81,10 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
 	MemoryManagement::load_page_dir(old);
 
-	MemoryManagement::identity_map_region(process->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true);
-
-	if (pages * 4 < 1024) {
-		kdebugf("[ELF] Loaded process %s, using %d pages (%dKB)\n", process->name, pages, pages * 4);
-	} else if (pages * 4 < 1024 * 1024) {
-		kdebugf("[ELF] Loaded process %s, using %d pages (%dMB)\n", process->name, pages, (pages * 4) / 1024);
-	} else {
-		kdebugf("[ELF] Loaded process %s, using %d pages (%dGB)\n", process->name, pages, (pages * 4) / (1024 * 1024));
-	}
+	char memsize[16];
+	memset(memsize, 0, sizeof(memsize));
+	MemoryManagement::mem_size_to_str(memsize, pages * PAGE_SIZE);
+	kdebugf("[ELF] Loaded process %s, using %d pages (%s)\n", process->name, pages, memsize);
 
 	return process;
 }
