@@ -50,6 +50,10 @@ unsigned int exec(const char* path) {
 	return syscall(SC_Exec, (unsigned long) path, 0, 0);
 }
 
+int read_dir(char* path, DirEntry* entries, unsigned long count) {
+	return (int) syscall(SC_ReadDir, (unsigned long) path, (unsigned long) entries, count);
+}
+
 void yield() {
 	 syscall(SC_Yield, 0, 0, 0);
 }

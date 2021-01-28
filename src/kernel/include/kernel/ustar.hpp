@@ -3,6 +3,14 @@
  
 #include <stddef.h>
 
+#define FILE_TYPE_NORMAL '0'
+#define FILE_TYPE_HARD_LINK '1'
+#define FILE_TYPE_SYMBOLIC_LINK '2'
+#define FILE_TYPE_CHARACTER_DEVICE '3'
+#define FILE_TYPE_BLOCK_DEVICE '4'
+#define FILE_TYPE_DIRECTORY '5'
+#define FILE_TYPE_NAMED_PIPE '6'
+
 namespace USTAR {
 	struct __attribute__((packed)) FileRaw {
 		char name[100];
@@ -30,9 +38,11 @@ namespace USTAR {
 	};
 
 	FileRaw* lookup_raw(const char* name);
+	FileRaw* lookup_raw_from_raw_pointer(unsigned int raw_address);
 	unsigned int lookup_raw_pointer(const char* name);
 	FileParsed* lookup_parsed(const char* name);
 	FileParsed* lookup_parsed_from_raw_pointer(unsigned int raw_address);
+	int list_dir(const char* dirname, unsigned int* pointers, size_t capacity);
 };
 
 #endif

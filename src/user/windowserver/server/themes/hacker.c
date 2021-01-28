@@ -45,11 +45,6 @@ void themehacker_render_button(InternalWindow* window, InternalButtonElement* bu
 void themehacker_render_window(InternalWindow* window) {
 	for (int x = 0; x < (int) window->width; x++) {
 		for (int y = 0; y < (int) window->height; y++) {
-			if (x + window->x < 0) continue;
-			if (y + window->y < 0) continue;
-			if (x + window->x >= SUPPORTED_WIDTH) continue;
-			if (y + window->y >= SUPPORTED_HEIGHT) continue;
-
 			int idx = idx_for_xy(x, y);
 			if (y < window_title_bar_height(window)) {
 				window->raster[idx] = COLOR_SECONDARY_BACKGROUND;

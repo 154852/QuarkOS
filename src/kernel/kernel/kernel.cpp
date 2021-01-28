@@ -251,6 +251,7 @@ extern "C" void kernel_main(void) {
     syscall_table[SC_Exit] = sys_exit;
     syscall_table[SC_Exec] = sys_exec;
     syscall_table[SC_MMap] = sys_mmap;
+    syscall_table[SC_ReadDir] = sys_readdir;
 
     PCI::load_hardware();
     kdebugf("[Core] Initialised PCI\n");

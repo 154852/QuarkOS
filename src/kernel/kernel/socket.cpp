@@ -36,6 +36,10 @@ Socket::Socket* Socket::new_socket(const char name[64]) {
 }
 
 unsigned Socket::read_socket(Socket* socket, unsigned length, void* data) {
+	if (socket->generate != 0) {
+		return socket->generate(socket->generation_id, data, length);
+	}
+
 	if (socket->length < length) {
 		memcpy(data, socket->data, socket->length);
 		unsigned length = socket->length;
@@ -52,10 +56,17 @@ unsigned Socket::read_socket(Socket* socket, unsigned length, void* data) {
 }
 
 void Socket::write_socket(Socket* socket, unsigned length, void* data) {
+	if (socket->generate != 0) return;
+
 	void* raw = kmalloc(socket->length + length);
 	if (socket->length != 0) memcpy(raw, socket->data, socket->length);
 	memcpy((void*) ((unsigned) raw + socket->length), data, length); // write to the end
 	// free socket->data
 	socket->length += length;
 	socket->data = raw;
+}
+
+Socket::Socket* Socket::all(size_t* count) {
+	*count = SOCKETS_CAPACITY;
+	return sockets;
 }

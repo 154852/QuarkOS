@@ -61,6 +61,8 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
         Socket::Socket stdin;
         Socket::Socket stdout;
         Socket::Socket stderr;
+
+        Socket::Socket* handle;
     };
 
     struct __attribute__((packed)) TSS {

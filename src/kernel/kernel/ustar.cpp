@@ -93,3 +93,49 @@ USTAR::FileParsed* USTAR::lookup_parsed_from_raw_pointer(unsigned int raw_addres
 
     return parsed;
 }
+
+USTAR::FileRaw* USTAR::lookup_raw_from_raw_pointer(unsigned int raw_address) {
+    return (USTAR::FileRaw*) archive_pointer(raw_address);
+}
+
+int USTAR::list_dir(const char* dirname, unsigned int* pointers, size_t capacity) {
+    unsigned int ptr = 0;
+    unsigned int used = 0;
+
+    int exists = 0;
+
+    size_t len = strlen(dirname);
+    if (dirname[0] == '/') {
+        len--;
+        dirname++;
+    }
+
+    while (!memcmp(archive_pointer(ptr + 257), "ustar", 5)) {
+        USTAR::FileRaw* raw = (USTAR::FileRaw*) archive_pointer(ptr);
+        int filesize = oct2bin((unsigned char*) raw->size, 11);
+
+        if (!memcmp(raw->name, dirname, len)) { // Note the lack of strlen + 1
+            size_t filenamelen = strlen(raw->name);
+            if (len == filenamelen || (raw->name[0] == '/' && filenamelen == 1 && len == 0)) {
+                exists = true;
+                goto entry_end;
+            }
+
+            int searchend = filenamelen;
+            if (raw->typeflag == FILE_TYPE_DIRECTORY) searchend--;
+            
+            for (int i = len; i < searchend; i++) {
+                if (raw->name[i] == '/') {
+                    goto entry_end;
+                }
+            }
+
+            pointers[used++] = ptr;
+        }
+
+        entry_end:
+        ptr += (((filesize + 511) / 512) + 1) * 512;
+    }
+
+    return exists? used:-1;
+}

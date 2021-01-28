@@ -1,3 +1,4 @@
+#include "kernel/socket.hpp"
 #include <kernel/multiprocess.hpp>
 #include <kernel/kernel.hpp>
 #include <assertions.h>
@@ -149,6 +150,24 @@ void _idle_code() {
 
 static volatile u32 last_pid = 0;
 
+unsigned generate_process_info(void* id, void* data, unsigned length) {
+	MultiProcess::Process* proc = reinterpret_cast<MultiProcess::Process*>(id);
+	ProcessInfo info;
+	memset(&info, 0, sizeof(info));
+	
+	size_t nl = strlen(proc->name);
+	memcpy(info.name, proc->name, nl > 63? 63:nl);
+	info.pid = proc->pid;
+
+	if (proc->state == MultiProcess::Exitting) info.state = ProcessStateSC::PSSC_Exitting;
+	else if (proc->state == MultiProcess::Idle) info.state = ProcessStateSC::PSSC_Idle;
+	else info.state = ProcessStateSC::PSSC_Running;
+
+	length = length > sizeof(ProcessInfo)? sizeof(ProcessInfo):length;
+	memcpy(data, &info, length);
+	return length;
+}
+
 MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	Process* proc = (Process*) kmalloc(sizeof(Process));
 	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc_aligned(sizeof(MemoryManagement::PageDirectory));
@@ -172,6 +191,26 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	proc->stdin.present = true;
 	proc->stdout.present = true;
 	proc->stderr.present = true;
+
+	char pidstr[16];
+	itoa(proc->pid, pidstr, 10);
+	
+	char pathstr[64];
+	memcpy(pathstr, "/dev/proc/", sizeof("/dev/proc/") - 1);
+	memcpy(pathstr + sizeof("/dev/proc/") - 1, pidstr, strlen(pidstr));
+	proc->handle = Socket::new_socket(pathstr);
+	proc->handle->generate = generate_process_info;
+	proc->handle->generation_id = proc;
+
+	// ProcessInfo info;
+	// memcpy(info.name, proc->name, 64);
+	// info.pid = proc->pid;
+	// info.state
+
+	// char data[128];
+	// memcpy(data, "name: ", sizeof("name: ") - 1);
+	// memcpy(data + sizeof("name: ") - 1, proc->name, strlen(proc->name));
+	// Socket::write_socket(proc->handle, 128, data);
 
 	return proc;
 }

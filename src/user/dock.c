@@ -16,7 +16,7 @@ typedef struct {
 	Pixel color;
 } DockApp;
 
-#define DOCK_APP_COUNT 3
+#define DOCK_APP_COUNT 4
 DockApp dockApps[DOCK_APP_COUNT];
 
 ElementID buttons[DOCK_APP_COUNT];
@@ -50,6 +50,12 @@ int main() {
 	dockApps[2] = (DockApp) {
 		.name="calc",
 		.path="/usr/bin/calc",
+		.color=COLOR_SECONDARY_BACKGROUND,
+	};
+
+	dockApps[3] = (DockApp) {
+		.name="tasks",
+		.path="/usr/bin/tasks",
 		.color=COLOR_SECONDARY_BACKGROUND,
 	};
 

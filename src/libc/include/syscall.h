@@ -32,7 +32,8 @@ typedef enum {
 	SC_Yield = 0x0c,
 	SC_Exit = 0x0d,
 	SC_Exec = 0x0e,
-	SC_MMap = 0x0f
+	SC_MMap = 0x0f,
+	SC_ReadDir = 0x10
 } Syscall;
 
 #define FILE_FLAG_R (1)
@@ -47,7 +48,19 @@ void mmap(void* addr, unsigned long pages);
 void write(unsigned fd, const void *string, unsigned long length);
 unsigned read(unsigned fd, void *string, unsigned long length);
 unsigned open(char *string, unsigned flags);
-unsigned int list_process_pids(int *pids, unsigned long length);
+
+typedef enum {
+	FT_Socket,
+	FT_File,
+	FT_Directory
+} FileType;
+
+typedef struct {
+	char name[64];
+	FileType type;
+} DirEntry;
+
+int read_dir(char* path, DirEntry* entries, unsigned long count);
 
 typedef enum {
 	PSSC_NotPresent,
@@ -81,6 +94,7 @@ unsigned read_ipc_message(void* raw, unsigned length, unsigned* sender);
 
 unsigned get_pid();
 unsigned find_proc_pid(char* name);
+unsigned int list_process_pids(int *pids, unsigned long length);
 
 unsigned int exec(const char *path);
 void yield();

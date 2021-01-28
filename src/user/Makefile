@@ -34,7 +34,8 @@ ps.o \
 guiapp.o \
 dock.o \
 calc.o \
-font.o
+font.o \
+tasks.o
 
 BINARIES=$(OBJS:.o=)
 
@@ -62,6 +63,9 @@ calc: calc.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 font: font.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
+
+tasks: tasks.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 .c.o:

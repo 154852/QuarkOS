@@ -45,11 +45,6 @@ void themegray_render_button(InternalWindow* window, InternalButtonElement* butt
 void themegray_render_window(InternalWindow* window) {
 	for (int x = 0; x < (int) window->width; x++) {
 		for (int y = 0; y < (int) window->height; y++) {
-			if (x + window->x < 0) continue;
-			if (y + window->y < 0) continue;
-			if (x + window->x >= SUPPORTED_WIDTH) continue;
-			if (y + window->y >= SUPPORTED_HEIGHT) continue;
-
 			int idx = idx_for_xy(x, y);
 			if (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == window_title_bar_height(window) || y == 0) {
 				window->raster[idx] = COLOR_VERYLIGHTGREY;
