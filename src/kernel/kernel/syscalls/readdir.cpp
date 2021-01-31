@@ -2,29 +2,28 @@
 #include <kernel/syscall.hpp>
 #include <kernel/socket.hpp>
 #include <kernel/multiprocess.hpp>
+#include <kernel/hardware/pic.hpp>
 #include <assertions.h>
 #include <string.h>
 #include <syscall.h>
 #include <kernel/kmalloc.hpp>
 
-void readdir_syscall_wait_task() {
-    MultiProcess::Process* task = MultiProcess::get_current_task();
+void sys_readdir(IRQ::CSITRegisters2* frame) {
+    PIC::irq_set_mask(0);
+    asm("sti");
 
-    const char* dirname = reinterpret_cast<const char*>(task->registers.ebx);
+    const char* dirname = reinterpret_cast<const char*>(frame->ebx);
     size_t len = strlen(dirname);
 
-    unsigned int* pointers = (unsigned int*) kmalloc(sizeof(unsigned int) * task->registers.edx);
-    int count = USTAR::list_dir(dirname, pointers, task->registers.edx);
+    unsigned int* pointers = (unsigned int*) kmalloc(sizeof(unsigned int) * frame->edx);
+    int count = USTAR::list_dir(dirname, pointers, frame->edx);
 
     if (count == -1) {
-        task->registers.eax = -EFILENOTFOUND;
-        task->state = MultiProcess::EndWaiting;
-        task->wait_task.has_wait_task = false;
-        yield();
+        frame->eax = -EFILENOTFOUND;
         return;
     }
 
-    DirEntry* entries = reinterpret_cast<DirEntry*>(task->registers.ecx);
+    DirEntry* entries = reinterpret_cast<DirEntry*>(frame->ecx);
 
     int lastentry = 0;
     for (int i = 0; i < count; i++) {
@@ -69,15 +68,8 @@ void readdir_syscall_wait_task() {
         }
     }
 
-    task->registers.eax = lastentry;
+    frame->eax = lastentry;
 
-    task->state = MultiProcess::EndWaiting;
-    task->wait_task.has_wait_task = false;
-    yield();
-}
-
-
-void sys_readdir(IRQ::CSITRegisters2* frame) {
-	MultiProcess::append_wait_task(readdir_syscall_wait_task);
-	MultiProcess::yield(frame);
+    asm("cli");
+    PIC::irq_clear_mask(0);
 }

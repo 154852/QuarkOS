@@ -76,7 +76,6 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	process->registers.esp = EBP + STACK_SIZE;
 	process->registers.esp -= 4; // leave 0 on the stack
 	MemoryManagement::load_page_dir(process->page_dir);
-	(*(u32*) process->registers.esp) = (u32) MultiProcess::end;
 	MemoryManagement::save_kernel_page_dir();
 
 	MemoryManagement::load_page_dir(old);

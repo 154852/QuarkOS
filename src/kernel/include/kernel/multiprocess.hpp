@@ -26,28 +26,10 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
         Running,
         Runnable,
         Exitting,
-        Waiting,
-        BeginWaiting,
-        EndWaiting,
         Idle,
     };
 
     struct Process;
-
-    typedef void(*WaitTaskCallback)();    
-    struct WaitTask {
-        bool has_wait_task;
-        u32 ebp;
-
-        IRQ::CSITRegisters registers;
-    };
-
-    typedef void(*Ring0TaskCallback)(void* data);
-    struct Ring0SyncRequest {
-        bool has_ring0_request;
-        Ring0TaskCallback callback;
-        void* data;
-    };
 
     struct Process {
         u32 pid;
@@ -55,14 +37,16 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
         Process* next;
         const char* name;
         ProcessState state;
+        bool is_kernel;
         MemoryManagement::PageDirectory* page_dir;
-        WaitTask wait_task;
-        Ring0SyncRequest ring0_request;
+
         Socket::Socket stdin;
         Socket::Socket stdout;
         Socket::Socket stderr;
 
         Socket::Socket* handle;
+        
+        char ring;
     };
 
     struct __attribute__((packed)) TSS {
@@ -100,9 +84,6 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
 
     Process* create(void* entry, const char* name);
     Process* get_current_task();
-    void append_wait_task(WaitTaskCallback callback);
-    void append_ring0_sync_request(MultiProcess::Ring0TaskCallback callback, void* data);
-    void end();
     void append(Process* process);
     void init(u32 ktss_idx, u32 kss, u32 kesp);
     void exit(Process* process, u32 exit_code);

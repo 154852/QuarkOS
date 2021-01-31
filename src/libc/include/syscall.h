@@ -31,7 +31,8 @@ typedef enum {
 	SC_Exit = 0x0d,
 	SC_Exec = 0x0e,
 	SC_MMap = 0x0f,
-	SC_ReadDir = 0x10
+	SC_ReadDir = 0x10,
+	SC_TEST = 0x11
 } Syscall;
 
 #define FILE_FLAG_R (1)

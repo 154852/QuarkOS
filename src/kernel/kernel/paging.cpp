@@ -90,8 +90,8 @@ namespace MemoryManagement {
 		if (!table->pages[page_tbl_idx].present) {
 			table->pages[page_tbl_idx].page_addr = frame >> 12;
 			table->pages[page_tbl_idx].present = 1;
-			table->pages[page_tbl_idx].rw = 1;
-			table->pages[page_tbl_idx].user = 1;
+			table->pages[page_tbl_idx].rw = is_writable? 1:0;
+			table->pages[page_tbl_idx].user = is_kernel? 0:1;
 			/*
 				Avail bits: abc
 				a: 1 if shared, 0 otherwise

@@ -49,7 +49,6 @@ void render() {
 	if (get_focused() != 0)
 		render_window_to_swapbuffer(get_focused());
 
-	// render_cursor_to_swapbuffer();
 	theme.render_cursor();
 	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
 		framebuffer[idx] = swapbuffer[idx];

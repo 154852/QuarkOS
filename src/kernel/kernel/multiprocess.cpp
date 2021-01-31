@@ -41,6 +41,12 @@ MultiProcess::Process* find_next_task() {
 }
 
 extern "C" int update_process(IRQ::CSITRegisters2* registers) {
+	if (current_process->ring == 0 && !current_process->is_kernel) {
+		// TODO: We need to allow context switches here
+		PIC::send_EOI(0);
+		return 0;
+	}
+
 	MultiProcess::yield(registers);
 	PIC::send_EOI(0);
 	return 0;
@@ -49,100 +55,60 @@ extern "C" int update_process(IRQ::CSITRegisters2* registers) {
 void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
 	IRQ::CSITRegisters* original_registers = (IRQ::CSITRegisters*) ((unsigned char*) registers + 4);
 
-	if (current_process->state != MultiProcess::ProcessState::Exitting && current_process->state != MultiProcess::ProcessState::EndWaiting) {
-		if (current_process->state == MultiProcess::ProcessState::BeginWaiting) {
-			memcpy(&current_process->registers, original_registers, sizeof(IRQ::CSITRegisters));
-			current_process->state = MultiProcess::ProcessState::Waiting;
-		} else if (current_process->state == MultiProcess::ProcessState::Waiting) {
-			memcpy(&current_process->wait_task.registers, original_registers, sizeof(IRQ::CSITRegisters));
-		} else {
-			memcpy(&current_process->registers, original_registers, sizeof(IRQ::CSITRegisters));
-		}
+	if (current_process->state != MultiProcess::ProcessState::Exitting) {
+		memcpy(&current_process->registers, original_registers, sizeof(IRQ::CSITRegisters));
 	}
 	/* current_process = */ find_next_task();
-	
-	if (current_process->state == MultiProcess::ProcessState::Waiting) {
-		memcpy(original_registers, &current_process->wait_task.registers, sizeof(IRQ::CSITRegisters));
-	} else if (current_process->state == MultiProcess::ProcessState::EndWaiting) {
-		current_process->state = MultiProcess::ProcessState::Running;
-		memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
-	} else {
-		if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
-		memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
-	}
+	if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
+	memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
 
 	MemoryManagement::load_page_dir(current_process->page_dir);
-
-	if (current_process->ring0_request.has_ring0_request) {
-		current_process->ring0_request.callback(current_process->ring0_request.data);
-	}
 }
 
 asm (
-	".globl context_switch_interrupt_trigger\n" \
-	"context_switch_interrupt_trigger:\n" \
-		"cli\n" \
-		"pushl %eax\n" \
-		"pushl %ebx\n" \
-		"pushl %ecx\n" \
-		"pushl %edx\n" \
-		"pushl %esi\n" \
-		"pushl %edi\n" \
-		"pushl %ebp\n" \
-        \
-		"movl $0x0, %eax\n" \
-        "mov %ds, %ax\n"\
-        "pushl %eax\n" \
-        \
-		"movl $0x0, %eax\n" \
-        "mov $0x10, %ax\n" \
-        "mov %ax, %ds\n" \
-        "mov %ax, %es\n" \
-        "mov %ax, %fs\n" \
-        "mov %ax, %gs\n" \
-		\
-        "pushl %esp\n" \
-		"call update_process\n" \
-        "popl %esp\n" \
-        \
-        "popl %ebx\n" \
-        "mov %bx, %ds\n" \
-        "mov %bx, %es\n" \
-        "mov %bx, %fs\n" \
-        "mov %bx, %gs\n" \
-        \
-		"popl %ebp\n" \
-		"popl %edi\n" \
-		"popl %esi\n" \
-		"popl %edx\n" \
-		"popl %ecx\n" \
-		"popl %ebx\n" \
-		"popl %eax\n" \
-		"sti\n" \
-        \
-		"iret\n" \
+	".globl context_switch_interrupt_trigger\n"
+	"context_switch_interrupt_trigger:\n"
+		"cli\n"
+		"pushl %eax\n"
+		"pushl %ebx\n"
+		"pushl %ecx\n"
+		"pushl %edx\n"
+		"pushl %esi\n"
+		"pushl %edi\n"
+		"pushl %ebp\n"
+        
+		"movl $0x0, %eax\n"
+        "mov %ds, %ax\n"
+        "pushl %eax\n"
+        
+		"movl $0x0, %eax\n"
+        "mov $0x10, %ax\n"
+        "mov %ax, %ds\n"
+        "mov %ax, %es\n"
+        "mov %ax, %fs\n"
+        "mov %ax, %gs\n"
+		
+        "pushl %esp\n"
+		"call update_process\n"
+        "popl %esp\n"
+        
+        "popl %ebx\n"
+        "mov %bx, %ds\n"
+        "mov %bx, %es\n"
+        "mov %bx, %fs\n"
+        "mov %bx, %gs\n"
+        
+		"popl %ebp\n"
+		"popl %edi\n"
+		"popl %esi\n"
+		"popl %edx\n"
+		"popl %ecx\n"
+		"popl %ebx\n"
+		"popl %eax\n"
+		"sti\n"
+        
+		"iret\n"
 );
-
-void MultiProcess::append_wait_task(MultiProcess::WaitTaskCallback callback) {
-	current_process->wait_task.has_wait_task = true;
-	current_process->wait_task.registers.eip = (u32) callback;
-	current_process->wait_task.registers.ebp = current_process->wait_task.ebp;
-	current_process->wait_task.registers.esp = current_process->wait_task.ebp + (4 * KB);
-	current_process->state = MultiProcess::ProcessState::BeginWaiting;
-}
-
-void MultiProcess::append_ring0_sync_request(MultiProcess::Ring0TaskCallback callback, void* data) {
-	current_process->ring0_request.has_ring0_request = true;
-	current_process->ring0_request.callback = callback;
-	current_process->ring0_request.data = data;
-}
-
-void MultiProcess::end() {
-	int exit_code;
-	asm volatile("movl %%eax, %0" :"=b"(exit_code));
-	MultiProcess::exit(current_process, exit_code);
-	hang;
-}
 
 void _idle_code() {
 	while (1);
@@ -172,20 +138,14 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	Process* proc = (Process*) kmalloc(sizeof(Process));
 	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc_aligned(sizeof(MemoryManagement::PageDirectory));
 	proc->name = name;
-	proc->wait_task.has_wait_task = false;
-	proc->ring0_request.has_ring0_request = false;
 	proc->state = MultiProcess::ProcessState::Runnable;
+	proc->ring = 3;
 
 	proc->registers.ss = 0x20 | 0x03;
 	// TODO: For now we will allow raised IOPL so we can use debugf from userspace programs
 	proc->registers.eflags = 0x0202;
 	proc->registers.cs = 0x18 | 0x03;
 	proc->registers.eip = (u32) entry;
-
-	proc->wait_task.registers.ss = 0x20 | 0x03;
-	proc->wait_task.registers.eflags = 0x0202;
-	proc->wait_task.registers.cs = 0x18 | 0x03;
-	proc->wait_task.ebp = (u32) kmalloc(PAGE_SIZE); // TODO: Fix double kmalloc
 
 	proc->pid = last_pid++;
 
@@ -242,11 +202,13 @@ void MultiProcess::init(u32 ktss_idx, u32 kss, u32 kesp) {
 	current_process->state = ProcessState::Exitting;
 	current_process->next = current_process;
 	current_process->page_dir = MemoryManagement::get_kernel_page_dir();
+	current_process->is_kernel = true;
+	current_process->ring = 0;
 
-	MultiProcess::Process* idle = MultiProcess::create((void*) _idle_code, "idle");
-	idle->page_dir = MemoryManagement::get_kernel_page_dir();
-	idle->state = MultiProcess::ProcessState::Idle;
-	MultiProcess::append(idle);
+	// MultiProcess::Process* idle = MultiProcess::create((void*) _idle_code, "idle");
+	// idle->page_dir = MemoryManagement::get_kernel_page_dir();
+	// idle->state = MultiProcess::ProcessState::Idle;
+	// MultiProcess::append(idle);
 }
 
 void MultiProcess::tss_set_stack(u32 kss, u32 kesp) {

@@ -5,31 +5,6 @@
 #include <assertions.h>
 #include <syscall.h>
 
-void open_syscall_wait_task() {
-    MultiProcess::Process* task = MultiProcess::get_current_task();
-
-    unsigned int file = USTAR::lookup_raw_pointer((const char*) task->registers.ebx);
-    if (file == 0) {
-        task->registers.eax = -EFILENOTFOUND;
-        task->state = MultiProcess::EndWaiting;
-        task->wait_task.has_wait_task = false;
-        yield();
-        return;
-    }
-
-	if (task->registers.ecx & FILE_FLAG_R) {
-		assert(file < 0xffffff); // TODO: this will not work pretty soon
-		task->registers.eax = (file << 8) | FD_FILE;
-	} else {
-		assert(0);
-	}
-
-    task->state = MultiProcess::EndWaiting;
-    task->wait_task.has_wait_task = false;
-    yield();
-}
-
-
 void sys_open(IRQ::CSITRegisters2* frame) {
 	if (frame->ecx & FILE_FLAG_SOCK) {
 		Socket::Socket* socket = Socket::open_socket(reinterpret_cast<char*>(frame->ebx));
@@ -44,7 +19,17 @@ void sys_open(IRQ::CSITRegisters2* frame) {
 		}
 		frame->eax = (socket->id << 8) | FD_SOCKET;
 	} else {
-		MultiProcess::append_wait_task(open_syscall_wait_task);
-		MultiProcess::yield(frame);
+		 unsigned int file = USTAR::lookup_raw_pointer((const char*) frame->ebx);
+		if (file == 0) {
+			frame->eax = -EFILENOTFOUND;
+			return;
+		}
+
+		if (frame->ecx & FILE_FLAG_R) {
+			assert(file < 0xffffff); // TODO: this will not work pretty soon
+			frame->eax = (file << 8) | FD_FILE;
+		} else {
+			assert(0);
+		}
 	}
 }

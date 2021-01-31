@@ -59,8 +59,6 @@ kernel/syscalls/find_proc_id.o \
 kernel/syscalls/framebuffer_info.o \
 kernel/syscalls/framebuffer_set_state.o \
 kernel/syscalls/get_pid.o \
-kernel/syscalls/list_procs.o \
-kernel/syscalls/proc_info.o \
 kernel/syscalls/read_ipc_message.o \
 kernel/syscalls/send_ipc_message.o \
 kernel/syscalls/yield.o \

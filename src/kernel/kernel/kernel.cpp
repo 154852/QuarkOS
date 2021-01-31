@@ -122,7 +122,17 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
         hang;
     }
 
+    assert(MultiProcess::get_current_task()->ring == 3);
+
+    PIC::irq_set_mask(0);
+    asm("sti");
+
+    MultiProcess::get_current_task()->ring = 0;
     syscall_table[frame->eax](frame);
+    MultiProcess::get_current_task()->ring = 3;
+
+    asm("cli");
+    PIC::irq_clear_mask(0);
     return 0;
 }
 full_state_dump_interrupt(syscall);
@@ -158,7 +168,7 @@ full_state_dump_interrupt_with_code(bounds_check);
 extern "C" void general_protection_fault_handle(IRQ::CSITRegisters regs) {
     IRQ::disable_irq();
 
-    debugf("General protection fault:\n");
+    debugf("General protection fault in : %s\n", MultiProcess::get_current_task()->name);
 
     debugf("exception code: %i\n", exception_code);
     debugf("pc=%x:%x\n", regs.cs, regs.eip);
