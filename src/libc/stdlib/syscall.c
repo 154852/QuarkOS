@@ -33,7 +33,7 @@ unsigned read(unsigned fd, void* string, unsigned long length) {
 	return syscall(SC_Read, fd, (unsigned long) string, length);
 }
 
-unsigned open(char *string, unsigned flags) {
+unsigned open(const char *string, unsigned flags) {
 	return syscall(SC_Open, (unsigned long) string, flags, 0);
 }
 

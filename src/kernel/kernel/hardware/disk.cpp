@@ -24,11 +24,11 @@ inline void enable_disk_irq() {
 inline void await_interrupt() {
 	assert(!is_busy);
 	is_busy = true;
-	bool is_kernel = MultiProcess::get_current_task()->is_kernel;
-	if (!is_kernel) PIC::irq_clear_mask(0);
+	// bool is_kernel = MultiProcess::get_current_task()->is_kernel;
+	// if (!is_kernel) PIC::irq_clear_mask(0);
 	while (!has_interrupted);
 	is_busy = false;
-	if (!is_kernel) PIC::irq_set_mask(0);
+	// if (!is_kernel) PIC::irq_set_mask(0);
 }
 
 void Disk::initialise() {

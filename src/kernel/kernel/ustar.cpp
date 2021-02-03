@@ -66,13 +66,11 @@ USTAR::FileParsed* USTAR::lookup_parsed_from_raw_pointer(unsigned int raw_addres
     memcpy(parsed->name, tmp_raw->name, name_length);
 
     parsed->length = oct2bin((unsigned char*) tmp_raw->size, 11);
-    parsed->content = (unsigned char*) kmalloc(parsed->length + 1);
+    parsed->content = (unsigned char*) kmalloc(parsed->length);
     unsigned int raw_content_start = raw_address + 512;
     for (u32 i = 0; i < parsed->length; i += 512) {
         memcpy(parsed->content + i, archive_pointer(raw_content_start + i), min(512, parsed->length - i));
     }
-
-    parsed->content[parsed->length] = 0;
 
     return parsed;
 }

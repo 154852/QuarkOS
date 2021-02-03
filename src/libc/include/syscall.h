@@ -46,7 +46,7 @@ void mmap(void* addr, unsigned long pages);
 
 void write(unsigned fd, const void *string, unsigned long length);
 unsigned read(unsigned fd, void *string, unsigned long length);
-unsigned open(char *string, unsigned flags);
+unsigned open(const char *string, unsigned flags);
 
 typedef enum {
 	FT_Socket,

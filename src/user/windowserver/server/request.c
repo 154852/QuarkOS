@@ -441,7 +441,7 @@ void load_image_handler(unsigned sender, ImageLoadRequest* req) {
 	}
 
 	Bitmap* bitmap = load_bmp(req->path);
-	if (bitmap->data == 0) {
+	if (bitmap == 0 || bitmap->data == 0) {
 		res.success = 0;
 		goto send;
 	}

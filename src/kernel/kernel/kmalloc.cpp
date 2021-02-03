@@ -14,8 +14,8 @@ void* _kmalloc(u32 size, int align) {
     }
 
     u32 tmp = placement_address;
-    assert(placement_address < KERNEL_SIZE);
     placement_address += size;
+    assert(placement_address < KERNEL_SIZE);
     return (void*) tmp;
 }
 

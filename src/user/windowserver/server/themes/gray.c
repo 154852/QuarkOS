@@ -2,6 +2,7 @@
 #include "../window.h"
 #include "../input.h"
 #include "../buffer.h"
+#include "windowserver/config.h"
 
 #include <windowserver/image.h>
 #include <windowserver/fontchars.h>
@@ -76,7 +77,35 @@ void themegray_render_rectangle(InternalWindow* window, InternalRectangleElement
 
 void themegray_render_image(InternalWindow* window, InternalImageElement* image) {
 	Bitmap* bitmap = window->bitmaps[image->image_id];
-	copy_image(image->x, image->y, (Pixel*) bitmap->data, bitmap->width, bitmap->height, 1, 0, window->raster, bitmap->width);
+
+	int xs = bitmap->width;
+	int ys = bitmap->height;
+
+	float invscale = 1.0;
+
+	for (int x = 0; x < xs; x++) {
+		for (int y = 0; y < ys; y++) {
+			if (x + image->x < 0 || x + image->x >= SUPPORTED_WIDTH || y + image->y < 0 || y + image->y >= SUPPORTED_HEIGHT) continue;
+			int framebuffer_idx = idx_for_xy(x + image->x, y + image->y);
+
+			int imx = x * invscale;
+			int imy = y * invscale;
+
+			int image_idx = idx_for_xyw(imx, imy, bitmap->width);
+
+			Pixel pixel = ((Pixel*) bitmap->data)[image_idx];
+
+			if (pixel.a == 0xff) {
+				window->raster[framebuffer_idx] = pixel;
+			} else if (pixel.a != 0) {
+				float frac = (float) pixel.a / (float) 0xff;
+				window->raster[framebuffer_idx].r = mix(window->raster[framebuffer_idx].r, pixel.r, frac);
+				window->raster[framebuffer_idx].g = mix(window->raster[framebuffer_idx].g, pixel.g, frac);
+				window->raster[framebuffer_idx].b = mix(window->raster[framebuffer_idx].b, pixel.b, frac);
+			}
+			window->raster[framebuffer_idx].a = 0xff;
+		}
+	}
 }
 
 void themegray_render_window(InternalWindow* window) {
