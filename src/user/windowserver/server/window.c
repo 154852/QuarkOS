@@ -29,10 +29,20 @@ void destroy_internal_window(InternalWindow* window) {
 					free_sized(window->elements[i], sizeof(InternalButtonElement));
 					break;
 				}
+				case WSRectangle: {
+					free_sized(window->elements[i], sizeof(InternalRectangleElement));
+					break;
+				}
 				default: {
 					debugf("Unknown element type in window destroy %d\n", window->elements[i]->type);
 				}
 			}
+		}
+	}
+
+	for (int i = 0; i < WINDOW_BITMAPS_CAPACITY; i++) {
+		if (window->bitmaps[i] != 0) {
+			free_sized(window->bitmaps[i], sizeof(Bitmap));
 		}
 	}
 

@@ -9,5 +9,4 @@ for PROJECT in $PROJECTS; do
 done
 
 echo "Building filesystem..."
-#tar -cf sysroot.img sysroot/
 python3 buildtar.py

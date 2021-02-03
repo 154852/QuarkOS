@@ -9,7 +9,8 @@ typedef enum {
 	WSCreateWindow,
 	WSDestroyWindow,
 	WSUpdateElement,
-	WSWindowStatus
+	WSWindowStatus,
+	WSLoadImage
 } WindowServerAction;
 
 typedef struct {
@@ -75,9 +76,25 @@ typedef struct {
 	unsigned height;
 } WindowStatusResponse;
 
+typedef struct {
+	WindowServerAction action;
+	unsigned window;
+
+	char path[64];
+} ImageLoadRequest;
+
+typedef struct {
+	char success;
+	int id;
+	int width;
+	int height;
+} ImageLoadResponse;
+
 typedef enum {
 	WSLabelElement,
-	WSButtonElement
+	WSButtonElement,
+	WSRectangle,
+	WSImageElement
 } WindowServerElementType;
 
 typedef struct {
@@ -118,5 +135,31 @@ typedef struct {
 	unsigned height;
 	Pixel background;
 } WindowServerButtonUpdateRequest;
+
+typedef struct {
+	WindowServerAction action;
+	WindowServerElementType elementType;
+	unsigned window;
+	unsigned elementId;
+	
+	int x;
+	int y;
+	unsigned width;
+	unsigned height;
+	Pixel background;
+} WindowServerRectangleUpdateRequest;
+
+typedef struct {
+	WindowServerAction action;
+	WindowServerElementType elementType;
+	unsigned window;
+	unsigned elementId;
+	
+	int x;
+	int y;
+	unsigned width;
+	unsigned height;
+	int image_id;
+} WindowServerImageUpdateRequest;
 
 #endif

@@ -62,7 +62,7 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
-		if (window->elements[i]->present && window->elements[i]->type == WSButtonElement) {
+		if (window->elements[i] && window->elements[i]->type == WSButtonElement) {
 			InternalButtonElement* button = (InternalButtonElement*) window->elements[i];
 			if (rect_contains(button->x, button->y + window_title_bar_height(window), (int) button->width, (int) button->height, x, y)) {
 				WindowServerEvent* event = allocate_event(window);

@@ -3,6 +3,7 @@
 #include "window.h"
 #include "windowserver/client.h"
 #include "windowserver/config.h"
+#include "windowserver/image.h"
 #include <stdlib.h>
 #include <windowserver/wsmsg.h>
 #include <string.h>
@@ -206,6 +207,139 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 	return (WindowServerElementUpdateResponse) { -1 };
 }
 
+WindowServerElementUpdateResponse update_element_rectangle_handler(unsigned sender, WindowServerRectangleUpdateRequest* rectanglereq) {
+	InternalWindow** windows = get_windows();
+
+	if (rectanglereq->window >= WINDOWS_CAPACITY) {
+		debugf("Invalid window ID\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+	InternalWindow* window = windows[rectanglereq->window];
+	if (!window) {
+		debugf("Window does not exist\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (window->creatorpid != sender) {
+		debugf("Invalid permissions for window\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (rectanglereq->elementId >= WINDOW_ELEMENTS_CAPACITY) {
+		debugf("Invalid element ID (does not exist)\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+	
+	InternalRectangleElement* element = (InternalRectangleElement*) window->elements[rectanglereq->elementId];
+	if (element->type != WSRectangle) {
+		debugf("Not a rectangle\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (!element) {
+		debugf("Invalid element ID (not present)\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	element->x = rectanglereq->x;
+	element->y = rectanglereq->y;
+	element->width = rectanglereq->width;
+	element->height = rectanglereq->height;
+	element->background = rectanglereq->background;
+	get_theme()->render_window(window);
+	
+	return (WindowServerElementUpdateResponse) { element->elementID };
+}
+
+WindowServerElementUpdateResponse create_element_rectangle_handler(unsigned sender, WindowServerRectangleUpdateRequest* rectanglereq) {
+	InternalWindow** windows = get_windows();
+
+	if (rectanglereq->window >= WINDOWS_CAPACITY) {
+		debugf("Invalid window ID\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+	InternalWindow* window = windows[rectanglereq->window];
+	if (window->creatorpid != sender) {
+		debugf("Invalid permissions for window\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (!window) {
+		debugf("Window does not exist\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+		if (window->elements[i] == 0) {
+			InternalRectangleElement* rectangle = malloc(sizeof(InternalRectangleElement));
+			memset(rectangle, 0, sizeof(InternalRectangleElement));
+
+			window->elements[i] = (InternalElement*) rectangle;
+			window->elements[i]->present = 1;
+			window->elements[i]->type = WSRectangle;
+			window->elements[i]->elementID = i;
+			rectangle->background = rectanglereq->background;
+			rectangle->x = rectanglereq->x;
+			rectangle->y = rectanglereq->y;
+			rectangle->width = rectanglereq->width;
+			rectangle->height = rectanglereq->height;
+			get_theme()->render_window(window);
+
+			return (WindowServerElementUpdateResponse) { i };
+		}
+	}
+
+	debugf("No capacity for rectangle\n");
+	return (WindowServerElementUpdateResponse) { -1 };
+}
+
+WindowServerElementUpdateResponse create_element_image_handler(unsigned sender, WindowServerImageUpdateRequest* imagereq) {
+	InternalWindow** windows = get_windows();
+
+	if (imagereq->window >= WINDOWS_CAPACITY) {
+		debugf("Invalid window ID\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+	InternalWindow* window = windows[imagereq->window];
+	if (window->creatorpid != sender) {
+		debugf("Invalid permissions for window\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (!window) {
+		debugf("Window does not exist\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	if (imagereq->image_id < 0 || imagereq->image_id >= WINDOW_BITMAPS_CAPACITY || window->bitmaps[imagereq->image_id] == 0) {
+		debugf("Bitmap does not exist\n");
+		return (WindowServerElementUpdateResponse) { -1 };
+	}
+
+	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
+		if (window->elements[i] == 0) {
+			InternalImageElement* image = malloc(sizeof(InternalImageElement));
+			memset(image, 0, sizeof(InternalImageElement));
+
+			window->elements[i] = (InternalElement*) image;
+			window->elements[i]->present = 1;
+			window->elements[i]->type = WSImageElement;
+			window->elements[i]->elementID = i;
+			image->image_id = imagereq->image_id;
+			image->x = imagereq->x;
+			image->y = imagereq->y;
+			image->width = imagereq->width;
+			image->height = imagereq->height;
+			get_theme()->render_window(window);
+
+			return (WindowServerElementUpdateResponse) { i };
+		}
+	}
+
+	debugf("No capacity for image element\n");
+	return (WindowServerElementUpdateResponse) { -1 };
+}
+
 WindowServerElementUpdateResponse update_element_handler(unsigned sender, WindowServerElementUpdateRequest* req) {
 	if ((int) req->elementId == -1) {
 		switch (req->elementType) {
@@ -214,6 +348,12 @@ WindowServerElementUpdateResponse update_element_handler(unsigned sender, Window
 			}
 			case WSButtonElement: {
 				return create_element_button_handler(sender, (WindowServerButtonUpdateRequest*) req);
+			}
+			case WSRectangle: {
+				return create_element_rectangle_handler(sender, (WindowServerRectangleUpdateRequest*) req);
+			}
+			case WSImageElement: {
+				return create_element_image_handler(sender, (WindowServerImageUpdateRequest*) req);
 			}
 			default: {
 				debugf("Unknown element type 0x%.8x\n", req->elementType);
@@ -224,6 +364,9 @@ WindowServerElementUpdateResponse update_element_handler(unsigned sender, Window
 		switch (req->elementType) {
 			case WSLabelElement: {
 				return update_element_label_handler(sender, (WindowServerLabelUpdateRequest*) req);
+			}
+			case WSRectangle: {
+				return update_element_rectangle_handler(sender, (WindowServerRectangleUpdateRequest*) req);
 			}
 			default: {
 				debugf("Unknown element type 0x%.8x\n", req->elementType);
@@ -275,6 +418,50 @@ void window_status_handler(unsigned sender, WindowStatusRequest* req) {
 	send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
 }
 
+void load_image_handler(unsigned sender, ImageLoadRequest* req) {
+	InternalWindow** windows = get_windows();
+	ImageLoadResponse res;
+	memset(&res, 0, sizeof(res));
+			
+	if (req->window >= WINDOWS_CAPACITY) {
+		res.success = 0;
+		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
+		return;
+	}
+	InternalWindow* window = windows[req->window];
+
+	if (!window) {
+		res.success = 0;
+		goto send;
+	}
+
+	if (window->creatorpid != sender) {
+		res.success = 0;
+		goto send;
+	}
+
+	Bitmap* bitmap = load_bmp(req->path);
+	if (bitmap->data == 0) {
+		res.success = 0;
+		goto send;
+	}
+	res.success = 1;
+
+	for (int i = 0; i < WINDOW_BITMAPS_CAPACITY; i++) {
+		if (window->bitmaps[i] == 0) {
+			window->bitmaps[i] = bitmap;
+			res.id = i;
+			break;
+		}
+	}
+
+	res.width = bitmap->width;
+	res.height = bitmap->height;
+
+	send:
+	send_ipc_message(sender, &res, sizeof(ImageLoadResponse));
+}
+
 void handle_request(unsigned action, unsigned sender, void* raw) {
 	switch (action) {
 		case WSCreateWindow: {
@@ -292,6 +479,10 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 		}
 		case WSWindowStatus: {
 			window_status_handler(sender, (WindowStatusRequest*) raw);
+			return;
+		}
+		case WSLoadImage: {
+			load_image_handler(sender, (ImageLoadRequest*) raw);
 			return;
 		}
 		default: {

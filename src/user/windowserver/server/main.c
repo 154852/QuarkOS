@@ -45,7 +45,7 @@ int main() {
 	
 	render();
 
-	exec("/usr/bin/dock");
+	exec("/usr/bin/desktop");
 
 	recieve_messages();
 

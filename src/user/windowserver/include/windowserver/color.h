@@ -20,6 +20,7 @@ typedef union {
 Pixel pixel_from_hex(unsigned hex);
 
 #define pixel_from_rgb(_r, _g, _b) (Pixel) { .r = _r, .g = _g, .b = _b, .a = 0xff }
+#define pixel_from_rgba(_r, _g, _b, _a) (Pixel) { .r = _r, .g = _g, .b = _b, .a = _a }
 
 #define COLOR_BLACK pixel_from_rgb(0, 0, 0)
 #define COLOR_DARKGREY pixel_from_rgb(0x60, 0x60, 0x60)

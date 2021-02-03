@@ -32,6 +32,7 @@ server/buffer.o \
 server/render.o \
 server/request.o \
 server/input.o \
+server/bmp.o \
 server/themes/gray.o \
 server/themes/hacker.o \
 server/themes/macos.o \

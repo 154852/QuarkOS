@@ -16,7 +16,7 @@ unsigned get_windowserver_pid() {
 	return pid;
 }
 
-WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar) {
+WindowHandle create_window_detailed(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar, Pixel background) {
 	CreateWindowRequest req;
 	memset(&req, 0, sizeof(req));
 	req.action = WSCreateWindow;
@@ -27,7 +27,7 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	req.x = x;
 	req.y = y;
 	req.has_title_bar = has_title_bar;
-	req.background = DEFAULT_WINDOW_COLOR;
+	req.background = background;
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(CreateWindowRequest));
 
@@ -51,6 +51,10 @@ WindowHandle create_window(char* title, unsigned width, unsigned height, unsigne
 	}
 }
 
+WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar) {
+	return create_window_detailed(title, width, height, x, y, has_title_bar, DEFAULT_WINDOW_COLOR);
+}
+
 void destroy_window(WindowHandle handle) {
 	DestroyWindowRequest req;
 	memset(&req, 0, sizeof(req));
@@ -58,6 +62,36 @@ void destroy_window(WindowHandle handle) {
 	req.window = handle;
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(DestroyWindowRequest));
+}
+
+ImageLoadResponse load_image(unsigned windowid, const char* path) {
+	ImageLoadRequest req;
+	memset(&req, 0, sizeof(req));
+	req.window = windowid;
+	req.action = WSLoadImage;
+	size_t pathlen = strlen(path);
+	memcpy(req.path, path, pathlen > 63? 63:pathlen);
+
+	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(ImageLoadRequest));
+
+	ImageLoadResponse res;
+	unsigned senderpid;
+
+	while (1) {
+		int status = read_ipc_message((char*) &res, sizeof(ImageLoadResponse), &senderpid);
+
+		if (status < 0) {
+			yield();
+			continue;
+		}
+
+		if (senderpid != get_windowserver_pid()) {
+			debugf("Unexpected message from pid = %d\n", senderpid);
+			exit(1);
+		}
+		
+		return res;
+	}
 }
 
 WindowStatusResponse query_status(WindowHandle handle) {
@@ -88,14 +122,14 @@ WindowStatusResponse query_status(WindowHandle handle) {
 	}
 }
 
-ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y) {
+ElementID update_label_detailed(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y, float scale) {
 	WindowServerLabelUpdateRequest req;
 	memset(&req, 0, sizeof(req));
 	req.window = windowid;
 	req.action = WSUpdateElement;
 	req.elementId = id;
 	req.elementType = WSLabelElement;
-	req.scale = 0.5;
+	req.scale = scale;
 	size_t titlelen = strlen(content);
 	memcpy(req.content, content, titlelen > 255? 255:titlelen);
 	req.x = x;
@@ -122,6 +156,10 @@ ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixe
 		
 		return res.elementId;
 	}
+}
+
+ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y) {
+	return update_label_detailed(windowid, id, content, color, x, y, 0.5);
 }
 
 ElementID create_label(unsigned windowid, const char* content, Pixel* color, int x, int y) {
@@ -165,4 +203,82 @@ ElementID update_button(unsigned windowid, unsigned id, int x, int y, unsigned w
 
 ElementID create_button(unsigned windowid, int x, int y, unsigned width, unsigned height, Pixel* background) {
 	return update_button(windowid, -1, x, y, width, height, background);
+}
+
+ElementID update_rectangle(unsigned windowid, unsigned id, int x, int y, unsigned width, unsigned height, Pixel background) {
+	WindowServerRectangleUpdateRequest req;
+	memset(&req, 0, sizeof(req));
+	req.window = windowid;
+	req.action = WSUpdateElement;
+	req.elementId = id;
+	req.elementType = WSRectangle;
+	req.x = x;
+	req.y = y;
+	req.width = width;
+	req.height = height;
+	req.background = background;
+
+	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerRectangleUpdateRequest));
+
+	WindowServerElementUpdateResponse res;
+	unsigned senderpid;
+
+	while (1) {
+		int status = read_ipc_message((char*) &res, sizeof(WindowServerElementUpdateResponse), &senderpid);
+
+		if (status < 0) {
+			yield();
+			continue;
+		}
+
+		if (senderpid != get_windowserver_pid()) {
+			debugf("Unexpected message from pid = %d\n", senderpid);
+			exit(1);
+		}
+		
+		return res.elementId;
+	}
+}
+
+ElementID create_rectangle(unsigned windowid, int x, int y, unsigned width, unsigned height, Pixel background) {
+	return update_rectangle(windowid, -1, x, y, width, height, background);
+}
+
+ElementID update_image(unsigned windowid, unsigned id, int x, int y, unsigned width, unsigned height, int image_id) {
+	WindowServerImageUpdateRequest req;
+	memset(&req, 0, sizeof(req));
+	req.window = windowid;
+	req.action = WSUpdateElement;
+	req.elementId = id;
+	req.elementType = WSImageElement;
+	req.x = x;
+	req.y = y;
+	req.width = width;
+	req.height = height;
+	req.image_id = image_id;
+
+	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerImageUpdateRequest));
+
+	WindowServerElementUpdateResponse res;
+	unsigned senderpid;
+
+	while (1) {
+		int status = read_ipc_message((char*) &res, sizeof(WindowServerElementUpdateResponse), &senderpid);
+
+		if (status < 0) {
+			yield();
+			continue;
+		}
+
+		if (senderpid != get_windowserver_pid()) {
+			debugf("Unexpected message from pid = %d\n", senderpid);
+			exit(1);
+		}
+		
+		return res.elementId;
+	}
+}
+
+ElementID create_image(unsigned windowid, int x, int y, unsigned width, unsigned height, int image_id) {
+	return update_image(windowid, -1, x, y, width, height, image_id);
 }

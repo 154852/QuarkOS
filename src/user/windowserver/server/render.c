@@ -27,7 +27,15 @@ void render_window_to_swapbuffer(InternalWindow* window) {
 		int offset = idx_for_xyw(0, y, SUPPORTED_WIDTH);
 		for (int x = 0; x < (int) window->width; x++) {
 			if (x + window->x < 0 || x + window->x >= SUPPORTED_WIDTH) continue;
-			swapbuffer[outoffset + x] = window->raster[offset + x];
+
+			if (window->raster[offset + x].a == 0xff) {
+				swapbuffer[outoffset + x] = window->raster[offset + x];
+			} else if (window->raster[offset + x].a != 0) {
+				float frac = (float) window->raster[offset + x].a / (float) 0xff;
+				swapbuffer[outoffset + x].r = mix(swapbuffer[outoffset + x].r, window->raster[offset + x].r, frac);
+				swapbuffer[outoffset + x].g = mix(swapbuffer[outoffset + x].g, window->raster[offset + x].g, frac);
+				swapbuffer[outoffset + x].b = mix(swapbuffer[outoffset + x].b, window->raster[offset + x].b, frac);
+			}
 		}
 	}
 }

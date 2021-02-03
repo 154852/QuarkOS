@@ -5,7 +5,7 @@ set -e
 echo "Initialising headers..."
  
 rm -rf sysroot
-mkdir -p "$SYSROOT"
+cp -r static sysroot
  
 for PROJECT in $SYSTEM_HEADER_PROJECTS; do
   (cd $PROJECT && DESTDIR="$SYSROOT" $MAKE install-headers -s)

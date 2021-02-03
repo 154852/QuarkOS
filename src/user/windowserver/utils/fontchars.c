@@ -174,6 +174,8 @@ FontChar fontchar_for_char(char chr) {
 		return (FontChar) { .width=FONTCHAR_23_W, .height=FONTCHAR_23_H, .raw=FONTCHAR_23_RAW };
 	case 0x21:
 		return (FontChar) { .width=FONTCHAR_21_W, .height=FONTCHAR_21_H, .raw=FONTCHAR_21_RAW };
+	case 0x3a:
+		return (FontChar) { .width=FONTCHAR_3a_W, .height=FONTCHAR_3a_H, .raw=FONTCHAR_3a_RAW };
 	default: return (FontChar) { .width=0, .height=0, .raw=0 };
 	}
 }

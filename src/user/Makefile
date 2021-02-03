@@ -32,7 +32,7 @@ hello.o \
 shell.o \
 ps.o \
 guiapp.o \
-dock.o \
+desktop.o \
 calc.o \
 font.o \
 tasks.o
@@ -56,7 +56,7 @@ ps: ps.o
 guiapp: guiapp.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
-dock: dock.o
+desktop: desktop.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 calc: calc.o

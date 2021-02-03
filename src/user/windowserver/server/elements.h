@@ -1,3 +1,5 @@
+#include "windowserver/config.h"
+#include "windowserver/image.h"
 #include <windowserver/wsmsg.h>
 
 #ifndef _WINDOWSERVER_ELEMENTS_H
@@ -34,6 +36,30 @@ typedef struct {
 } InternalButtonElement;
 
 typedef struct {
+	char present;
+	WindowServerElementType type;
+	unsigned elementID;
+	
+	int x;
+	int y;
+	unsigned width;
+	unsigned height;
+	Pixel background;
+} InternalRectangleElement;
+
+typedef struct {
+	char present;
+	WindowServerElementType type;
+	unsigned elementID;
+	
+	int x;
+	int y;
+	unsigned width;
+	unsigned height;
+	int image_id;
+} InternalImageElement;
+
+typedef struct {
 	unsigned handle;
 	unsigned creatorpid;
 
@@ -51,6 +77,7 @@ typedef struct {
 	Pixel raster[SUPPORTED_SIZE];
 
 	InternalElement* elements[WINDOW_ELEMENTS_CAPACITY];
+	Bitmap* bitmaps[WINDOW_BITMAPS_CAPACITY];
 } InternalWindow;
 
 #endif
