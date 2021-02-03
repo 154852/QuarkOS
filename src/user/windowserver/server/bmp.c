@@ -7,7 +7,6 @@
 
 char header[54];
 
-// #define read32(data, off) ((unsigned int) data[off] | ((unsigned int) data[off + 1] << 8) | ((unsigned int) data[off + 2] << 16) | ((unsigned int) data[off + 3] << 24))
 #define read32(data, off) *(unsigned int*) &header[off]
 #define read16(data, off) *(unsigned short*) &header[off]
 
@@ -18,7 +17,7 @@ Bitmap* load_bmp(const char* path) {
 		return 0;
 	}
 
-	size_t header_length = read(handle, header, sizeof(header));
+	read(handle, header, sizeof(header));
 	if (header[0] != 'B' || header[1] != 'M') {
 		debugf("Not a BMP\n");
 		return 0;
@@ -26,9 +25,6 @@ Bitmap* load_bmp(const char* path) {
 
 	size_t file_size = read32(header, 2);
 	size_t bitmap_start = read32(header, 10);
-
-	size_t headersize = read32(header, 14);
-	debugf("Headersize = %d, bitmapstart=%d\n", headersize, bitmap_start);
 
 	size_t width = read32(header, 18);
 	size_t height = read32(header, 22);

@@ -11,6 +11,10 @@ namespace PIT {
 	void set_reload_value(unsigned char channel, unsigned short reload_value);
 	bool can_have_frequency(unsigned int frequency);
 	bool attempt_to_set_frequency(unsigned int frequency);
+
+	void initialise_timer();
+	void tick();
+	u64 get_time();
 }
 
 #endif

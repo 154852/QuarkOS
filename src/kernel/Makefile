@@ -64,6 +64,8 @@ kernel/syscalls/send_ipc_message.o \
 kernel/syscalls/yield.o \
 kernel/syscalls/mmap.o \
 kernel/syscalls/readdir.o \
+kernel/syscalls/gettime.o \
+kernel/syscalls/getfulltime.o \
  
 OBJS=\
 $(ARCHDIR)/crti.o \

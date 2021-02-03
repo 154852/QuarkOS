@@ -28,7 +28,6 @@ void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const 
 				out[framebuffer_idx].g = mix(out[framebuffer_idx].g, pixel.g, frac);
 				out[framebuffer_idx].b = mix(out[framebuffer_idx].b, pixel.b, frac);
 			}
-			out[framebuffer_idx].a = 0xff;
 		}
 	}
 }

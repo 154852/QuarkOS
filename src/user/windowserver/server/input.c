@@ -47,18 +47,18 @@ char window_contains(InternalWindow* window, int x, int y) {
 	return rect_contains(window->x, window->y, (int) window->width, (int) window->height, x, y);
 }
 
-void window_resolve_click(InternalWindow* window, int x, int y) {
-	set_focused(window);
+char window_resolve_click(InternalWindow* window, int x, int y) {
+	if (window->has_title_bar) set_focused(window);
 
 	// X button
 	if (window->has_title_bar && rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
 		destroy_internal_window(window);
-		return;
+		return 1;
 	}
 
 	if (window->has_title_bar && y < TITLE_BAR_HEIGHT) {
 		dragging = window;
-		return;
+		return 1;
 	}
 
 	for (int i = 0; i < WINDOW_ELEMENTS_CAPACITY; i++) {
@@ -69,24 +69,25 @@ void window_resolve_click(InternalWindow* window, int x, int y) {
 				assert(event);
 				event->element = button->elementID;
 				event->type = WSEvButtonClick;
-				return;
+				set_focused(window);
+				return 1;
 			}
 		}
 	}
+
+	return window->has_title_bar;
 }
 
 void resolve_click(int x, int y) {
 	InternalWindow* focused = get_focused();
 	if (focused != 0 && window_contains(focused, x, y)) {
-		window_resolve_click(focused, x - focused->x, y - focused->y);
-		return;
+		if (window_resolve_click(focused, x - focused->x, y - focused->y)) return;
 	}
 
 	InternalWindow** windows = get_windows();
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {
 		if (windows[i] && windows[i] != focused && window_contains(windows[i], x, y)) {
-			window_resolve_click(windows[i], x - windows[i]->x, y - windows[i]->y);
-			return;
+			if (window_resolve_click(windows[i], x - windows[i]->x, y - windows[i]->y)) return;
 		}
 	}
 }

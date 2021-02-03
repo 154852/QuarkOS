@@ -5,6 +5,7 @@
 #include <kernel/kmalloc.hpp>
 #include <kernel/hardware/gdt.hpp>
 #include <kernel/hardware/pic.hpp>
+#include <kernel/hardware/pit.hpp>
 #include <string.h>
 #include <syscall.h>
 #include <stdio.h>
@@ -41,6 +42,7 @@ MultiProcess::Process* find_next_task() {
 }
 
 extern "C" int update_process(IRQ::CSITRegisters2* registers) {
+	PIT::tick();
 	if (current_process->ring == 0 && !current_process->is_kernel) {
 		// TODO: We need to allow context switches here
 		PIC::send_EOI(0);

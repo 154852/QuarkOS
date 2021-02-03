@@ -10,7 +10,8 @@ typedef enum {
 	WSDestroyWindow,
 	WSUpdateElement,
 	WSWindowStatus,
-	WSLoadImage
+	WSLoadImage,
+	WSRenderWindow
 } WindowServerAction;
 
 typedef struct {
@@ -36,6 +37,11 @@ typedef struct {
 	WindowServerAction action;
 	unsigned window;
 } DestroyWindowRequest;
+
+typedef struct {
+	WindowServerAction action;
+	unsigned window;
+} WindowRenderRequest;
 
 typedef struct {
 	WindowServerAction action;

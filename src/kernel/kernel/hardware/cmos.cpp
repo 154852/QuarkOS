@@ -59,3 +59,23 @@ u32 CMOS::read_years() {
 	while (update_in_progress());
 	return bcd_to_binary(read(0x09)) + 2000;
 }
+
+u32 CMOS::read_day_of_week() {
+	while (update_in_progress());
+	return bcd_to_binary(read(0x06));
+}
+
+// TODO: This is incredibly inaccurate
+u64 CMOS::secs_since_epoch() {
+	u32 year = CMOS::read_years();
+	u64 time = (365 * year) + (year / 4) - (year / 100) + (year / 400);
+
+	u32 month = CMOS::read_month();
+	time += (30 * month) + (3 * (month + 1) / 5) + CMOS::read_day_of_month();
+
+	time -= 719561;
+	time *= 86400;
+	
+	time += (3600 * CMOS::read_hours()) + (60 * CMOS::read_minutes()) + CMOS::read_seconds();;
+	return time;
+}

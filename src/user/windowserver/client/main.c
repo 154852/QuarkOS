@@ -64,6 +64,15 @@ void destroy_window(WindowHandle handle) {
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(DestroyWindowRequest));
 }
 
+void render_window(WindowHandle handle) {
+	WindowRenderRequest req;
+	memset(&req, 0, sizeof(req));
+	req.action = WSRenderWindow;
+	req.window = handle;
+
+	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowRenderRequest));
+}
+
 ImageLoadResponse load_image(unsigned windowid, const char* path) {
 	ImageLoadRequest req;
 	memset(&req, 0, sizeof(req));

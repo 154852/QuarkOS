@@ -13,7 +13,7 @@
 #define DESKTOP_BACKGROUND pixel_from_rgb(0xff, 0xff, 0xff)
 
 void themegray_render_text(InternalWindow* window, const char* text, int x, int y, float scale, Pixel* color) {
-	int x0 = x;
+	// int x0 = x;
 	int height = 0;
 	for (size_t i = 0; i < strlen(text); i++) {
 		FontChar chr = fontchar_for_char(text[i]);
@@ -112,9 +112,7 @@ void themegray_render_window(InternalWindow* window) {
 	for (int x = 0; x < (int) window->width; x++) {
 		for (int y = 0; y < (int) window->height; y++) {
 			int idx = idx_for_xy(x, y);
-			if (window->has_title_bar && (x == 0 || x == (int) window->width - 1 || y == (int) window->height - 1 || y == window_title_bar_height(window) || y == 0)) {
-				window->raster[idx] = COLOR_VERYLIGHTGREY;
-			} else if (y < window_title_bar_height(window)) {
+			if (y < window_title_bar_height(window)) {
 				window->raster[idx] = COLOR_LIGHTGREY;
 			} else {
 				window->raster[idx] = window->background;

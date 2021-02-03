@@ -11,6 +11,10 @@ namespace CMOS {
 	u32 read_day_of_month();
 	u32 read_month();
 	u32 read_years();
+
+	u32 read_day_of_week();
+
+	u64 secs_since_epoch();
 }
 
 #endif

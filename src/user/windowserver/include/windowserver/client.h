@@ -11,6 +11,7 @@ unsigned get_windowserver_pid();
 WindowHandle create_window(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar);
 WindowHandle create_window_detailed(char* title, unsigned width, unsigned height, unsigned x, unsigned y, char has_title_bar, Pixel background);
 void destroy_window(WindowHandle handle);
+void render_window(WindowHandle handle);
 
 WindowStatusResponse query_status(WindowHandle handle);
 

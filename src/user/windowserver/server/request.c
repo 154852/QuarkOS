@@ -50,7 +50,6 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 			win->has_title_bar = createwindow->has_title_bar;
 			res.handle = win->handle;			
 			set_focused(win);
-			get_theme()->render_window(win);
 			break;
 		}
 	}
@@ -111,7 +110,6 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 			label->x = labelreq->x;
 			label->y = labelreq->y;
 			label->scale = labelreq->scale;
-			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
 		}
@@ -160,7 +158,6 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 	element->x = labelreq->x;
 	element->y = labelreq->y;
 	element->scale = labelreq->scale;
-	get_theme()->render_window(window);
 	
 	return (WindowServerElementUpdateResponse) { element->elementID };
 }
@@ -197,7 +194,6 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 			button->y = buttonreq->y;
 			button->width = buttonreq->width;
 			button->height = buttonreq->height;
-			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
 		}
@@ -246,7 +242,6 @@ WindowServerElementUpdateResponse update_element_rectangle_handler(unsigned send
 	element->width = rectanglereq->width;
 	element->height = rectanglereq->height;
 	element->background = rectanglereq->background;
-	get_theme()->render_window(window);
 	
 	return (WindowServerElementUpdateResponse) { element->elementID };
 }
@@ -283,7 +278,6 @@ WindowServerElementUpdateResponse create_element_rectangle_handler(unsigned send
 			rectangle->y = rectanglereq->y;
 			rectangle->width = rectanglereq->width;
 			rectangle->height = rectanglereq->height;
-			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
 		}
@@ -330,7 +324,6 @@ WindowServerElementUpdateResponse create_element_image_handler(unsigned sender, 
 			image->y = imagereq->y;
 			image->width = imagereq->width;
 			image->height = imagereq->height;
-			get_theme()->render_window(window);
 
 			return (WindowServerElementUpdateResponse) { i };
 		}
@@ -462,6 +455,27 @@ void load_image_handler(unsigned sender, ImageLoadRequest* req) {
 	send_ipc_message(sender, &res, sizeof(ImageLoadResponse));
 }
 
+void render_window_handler(unsigned sender, WindowRenderRequest* req) {
+	InternalWindow** windows = get_windows();
+
+	if (req->window >= WINDOWS_CAPACITY) {
+		debugf("Invalid window ID\n");
+		return;
+	}
+	InternalWindow* window = windows[req->window];
+	if (!window) {
+		debugf("Window does not exist\n");
+		return;
+	}
+
+	if (window->creatorpid != sender) {
+		debugf("Invalid permissions for window\n");
+		return;
+	}
+
+	get_theme()->render_window(window);
+} 
+
 void handle_request(unsigned action, unsigned sender, void* raw) {
 	switch (action) {
 		case WSCreateWindow: {
@@ -483,6 +497,10 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 		}
 		case WSLoadImage: {
 			load_image_handler(sender, (ImageLoadRequest*) raw);
+			return;
+		}
+		case WSRenderWindow: {
+			render_window_handler(sender, (WindowRenderRequest*) raw);
 			return;
 		}
 		default: {

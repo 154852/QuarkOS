@@ -32,7 +32,8 @@ typedef enum {
 	SC_Exec = 0x0e,
 	SC_MMap = 0x0f,
 	SC_ReadDir = 0x10,
-	SC_TEST = 0x11
+	SC_GetTime = 0x11,
+	SC_GetFullTime = 0x12
 } Syscall;
 
 #define FILE_FLAG_R (1)
@@ -40,6 +41,21 @@ typedef enum {
 #define FILE_FLAG_SOCK (1 << 2)
 
 unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsigned long v3);
+
+typedef struct {
+	unsigned int year;
+	unsigned int month;
+	unsigned int date;
+
+	unsigned int hour;
+	unsigned int minute;
+	unsigned int second;
+
+	unsigned int weekday;
+} FullTime;
+
+void get_time(unsigned long long* time);
+void get_full_time(FullTime* time);
 
 // TODO: Ideally this would be a size in bytes
 void mmap(void* addr, unsigned long pages);

@@ -13,6 +13,14 @@ unsigned int syscall(unsigned int type, unsigned long v1, unsigned long v2, unsi
 	return ret;
 }
 
+void get_time(unsigned long long* time) {
+	syscall(SC_GetTime, (unsigned long) time, 0, 0);
+}
+
+void get_full_time(FullTime* time) {
+	syscall(SC_GetFullTime, (unsigned long) time, 0, 0);
+}
+
 void mmap(void* addr, unsigned long pages) {
 	syscall(SC_MMap, (unsigned long) addr, pages, 0);
 }

@@ -278,6 +278,7 @@ void oncalcbuttonclick(int buttonIdx) {
 	}
 
 	update_label(windowhandle, textField, text, 0, (gridsize * 0.2), (gridsize * 0.1));
+	render_window(windowhandle);
 }
 
 #define TEXT_FIELD_HEIGHT 22

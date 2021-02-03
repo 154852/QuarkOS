@@ -259,6 +259,8 @@ extern "C" void kernel_main(void) {
     syscall_table[SC_Exec] = sys_exec;
     syscall_table[SC_MMap] = sys_mmap;
     syscall_table[SC_ReadDir] = sys_readdir;
+    syscall_table[SC_GetTime] = sys_gettime;
+    syscall_table[SC_GetFullTime] = sys_getfulltime;
 
     PCI::load_hardware();
     kdebugf("[Core] Initialised PCI\n");
@@ -285,6 +287,7 @@ extern "C" void kernel_main(void) {
     PIC::irq_clear_mask(1); // Keyboard
     PIC::irq_clear_mask(12);
     PIT::attempt_to_set_frequency(400);
+    PIT::initialise_timer();
 
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
     MultiProcess::tss_set_stack(0x10, stack_top);

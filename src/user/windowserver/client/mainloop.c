@@ -1,3 +1,4 @@
+#include "windowserver/client.h"
 #include <windowserver/mainloop.h>
 #include <syscall.h>
 #include <stdio.h>
@@ -13,6 +14,8 @@ void set_should_close(char should_close_) {
 }
 
 void mainloop(WindowHandle windowhandle) {
+	render_window(windowhandle);
+
 	WindowStatusResponse res;
 	res = query_status(windowhandle);
 	while (res.present && !should_close) {

@@ -9,7 +9,7 @@ void initialise_mouse();
 void initialise_keyboard();
 
 char window_contains(InternalWindow* window, int x, int y);
-void window_resolve_click(InternalWindow* window, int x, int y);
+char window_resolve_click(InternalWindow* window, int x, int y);
 void resolve_click(int x, int y);
 void update_cursor();
 

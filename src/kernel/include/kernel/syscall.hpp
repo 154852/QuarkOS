@@ -20,5 +20,7 @@ void sys_read_ipc_message(IRQ::CSITRegisters2* frame);
 void sys_find_proc_by_id(IRQ::CSITRegisters2* frame);
 void sys_mmap(IRQ::CSITRegisters2* frame);
 void sys_readdir(IRQ::CSITRegisters2* frame);
+void sys_gettime(IRQ::CSITRegisters2* frame);
+void sys_getfulltime(IRQ::CSITRegisters2* frame);
 
 #endif
