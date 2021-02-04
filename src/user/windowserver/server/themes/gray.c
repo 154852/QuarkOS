@@ -8,6 +8,7 @@
 #include <windowserver/fontchars.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assertions.h>
 #include <string.h>
 
 #define DESKTOP_BACKGROUND pixel_from_rgb(0xff, 0xff, 0xff)
@@ -173,21 +174,21 @@ void themegray_render_desktop_background() {
 	// }
 }
 
-void themegray_render_cursor_to_swapbuffer() {
-	int x0 = clamp(get_mouse_x(), 1, SUPPORTED_WIDTH - 2);
-	int y0 = clamp(get_mouse_y(), 1, SUPPORTED_HEIGHT - 2);
+Bitmap* cursor;
 
-	Pixel* swapbuffer = get_swapbuffer();
-	
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
-			int idx = idx_for_xy(x0 + x, y0 + y);
-			swapbuffer[idx] = (x == 0 && y == 0)? COLOR_LIGHTGREY:COLOR_BLACK;
-		}
-	}
+void themegray_render_cursor_to_swapbuffer() {
+	int x0 = get_mouse_x() - 8;
+	x0 = clamp(x0, 0, SUPPORTED_WIDTH);
+	int y0 = get_mouse_y() - 5;
+	y0 = clamp(y0, 0, SUPPORTED_HEIGHT - 3);
+
+	copy_image_limited(x0, y0, (Pixel*) cursor->data, cursor->width, cursor->height, 0.5, 0, get_swapbuffer(), cursor->width, 0, SUPPORTED_WIDTH - 1, 0, SUPPORTED_HEIGHT - 1);
 }
 
 Theme create_gray_theme() {
+	cursor = load_bmp("system/cursor.bmp");
+	assert(cursor && cursor->data);
+
 	return (Theme) {
 		.render_desktop_background = themegray_render_desktop_background,
 		.render_window = themegray_render_window,

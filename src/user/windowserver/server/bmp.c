@@ -57,7 +57,11 @@ Bitmap* load_bmp(const char* path) {
 	bitmap->width = width;
 	bitmap->height = height;
 	bitmap->data = malloc(bitmap_size);
-	memcpy(bitmap->data, full_file + bitmap_start, bitmap_size);
+
+	// Scanlines are reversed:
+	for (int y = 0; y < bitmap->height; y++) {
+		memcpy(bitmap->data + (y * bitmap->width * 4), (full_file + bitmap_start) + ((bitmap->height - 1 - y) * bitmap->width * 4), bitmap->width * 4);
+	}
 	
 	free_sized(full_file, file_size);
 	debugf("[WindowServer] Image %s loaded\n", path);

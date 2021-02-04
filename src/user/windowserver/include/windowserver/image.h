@@ -14,6 +14,7 @@ typedef struct {
 #define idx_for_xyw(x, y, w) (((int) (y) * (int) (w)) + (int) (x))
 
 void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color, Pixel* out, int memw);
+void copy_image_limited(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color, Pixel* out, int memw, int minx, int maxx, int miny, int maxy);
 void antialias(Pixel* image, int w, int h, int x, int y, int memw, int memh);
 
 Bitmap* load_bmp(const char* path);

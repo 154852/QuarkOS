@@ -14,6 +14,7 @@
 WindowHandle windowhandle;
 
 #define TIMEPADDING 10
+const int width = SUPPORTED_WIDTH/2;
 
 int string_width(float scale, const char* str) {
 	int width = 0;
@@ -36,12 +37,10 @@ void to2digits(unsigned value, char* str) {
 	}
 }
 
-int main() {
-	int width = SUPPORTED_WIDTH/2;
-	windowhandle = create_window_detailed("TimeDisp", width, SUPPORTED_HEIGHT/3, SUPPORTED_WIDTH/2, 0, 0, pixel_from_rgba(0, 0, 0, 0));
 
-	FullTime timeraw; get_full_time(&timeraw);
-	
+ElementID timelabel = -1;
+ElementID datelabel = -1;
+void render_time(FullTime timeraw) {
 	char time[6];
 	to2digits(timeraw.hour, time);
 	time[2] = ':';
@@ -92,12 +91,36 @@ int main() {
 	date[9] = '/';
 	itoa(timeraw.year, date + 10, 10);
 	date[14] = 0;
-	
-	update_label_detailed(windowhandle, -1, time, &pixel_from_rgb(0xff, 0xff, 0xff), width - TIMEPADDING - string_width(1.7, time), 0, 1.7);
-	update_label_detailed(windowhandle, -1, date, &pixel_from_rgb(0xff, 0xff, 0xff), width - TIMEPADDING - string_width(0.45, date) - 5, string_height(1.7), 0.45);
-	
 
-	mainloop(windowhandle);
+	timelabel = update_label_detailed(windowhandle, timelabel, time, &pixel_from_rgb(0xff, 0xff, 0xff), width - TIMEPADDING - string_width(1.7, time), 0, 1.7);
+	datelabel = update_label_detailed(windowhandle, datelabel, date, &pixel_from_rgb(0xff, 0xff, 0xff), width - TIMEPADDING - string_width(0.45, date) - 5, string_height(1.7), 0.45);
+}
+
+int main() {
+	windowhandle = create_window_detailed("TimeDisp", width, SUPPORTED_HEIGHT/3, SUPPORTED_WIDTH/2, 0, 0, pixel_from_rgba(0, 0, 0, 0));
+
+	FullTime timeraw;
+	get_full_time(&timeraw);
+	FullTime nextraw;
+
+	render_time(timeraw);
+	render_window(windowhandle);
+
+	WindowStatusResponse res;
+	res = query_status(windowhandle);
+	while (res.present) {
+		get_full_time(&nextraw);
+		
+		if (nextraw.minute != timeraw.minute || nextraw.hour != timeraw.hour) {
+			render_time(nextraw);
+			render_window(windowhandle);
+			timeraw = nextraw;
+		}
+
+		res = query_status(windowhandle);
+	}
+	
+	destroy_window(windowhandle);
 
 	return 0;
 }

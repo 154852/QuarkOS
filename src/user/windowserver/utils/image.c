@@ -33,6 +33,42 @@ void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const 
 	}
 }
 
+void copy_image_limited(int x0, int y0, Pixel* image, int w, int h, double scale, const Pixel* color, Pixel* out, int memw, int minx, int maxx, int miny, int maxy) {
+	int xs = w * scale;
+	int ys = h * scale;
+
+	float invscale = 1.0 / scale;
+
+	for (int x = 0; x < xs; x++) {
+		if (x + x0 < minx) continue;
+		if (x + x0 > maxx) continue;
+
+		for (int y = 0; y < ys; y++) {
+			if (y + y0 < miny) continue;
+			if (y + y0 > maxy) continue;
+
+			int framebuffer_idx = idx_for_xy(x + x0, y + y0);
+			int imx = x * invscale;
+			int imy = y * invscale;
+
+			int image_idx = idx_for_xyw(imx, imy, memw);
+
+			Pixel pixel = image[image_idx];
+			if (color != 0) pixel = *color;
+
+			if (image[image_idx].a == 0xff) {
+				out[framebuffer_idx] = pixel;
+			} else if (image[image_idx].a != 0) {
+				unsigned char a = image[image_idx].a;
+				out[framebuffer_idx].r = mixi(mixi(pixel.r, out[framebuffer_idx].r, out[framebuffer_idx].a), pixel.r, a);
+				out[framebuffer_idx].g = mixi(mixi(pixel.g, out[framebuffer_idx].g, out[framebuffer_idx].a), pixel.g, a);
+				out[framebuffer_idx].b = mixi(mixi(pixel.b, out[framebuffer_idx].b, out[framebuffer_idx].a), pixel.b, a);
+				out[framebuffer_idx].a = out[framebuffer_idx].a + ((0xff - out[framebuffer_idx].a) * a)/0xff;
+			}
+		}
+	}
+}
+
 void blur(Pixel* image, int w, int h, int x0, int y0, int square_diameter, int memw, int memh) {
 	(void) memh;
 	for (int x = 0; x < w; x++) {
