@@ -166,21 +166,15 @@ void themegray_render_window(InternalWindow* window) {
 	}
 }
 
-void themegray_render_desktop_background() {
-	// Pixel* swapbuffer = get_swapbuffer();
-	
-	// for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
-	// 	swapbuffer[idx] = DESKTOP_BACKGROUND;
-	// }
-}
+void themegray_render_desktop_background() {}
 
 Bitmap* cursor;
 
 void themegray_render_cursor_to_swapbuffer() {
-	int x0 = get_mouse_x() - 8;
-	x0 = clamp(x0, 0, SUPPORTED_WIDTH);
-	int y0 = get_mouse_y() - 5;
-	y0 = clamp(y0, 0, SUPPORTED_HEIGHT - 3);
+	int x0 = get_mouse_x();
+	x0 = clamp(x0, 0, SUPPORTED_WIDTH - 1) - 5;
+	int y0 = get_mouse_y();
+	y0 = clamp(y0, 0, SUPPORTED_HEIGHT - 1) - 5;
 
 	copy_image_limited(x0, y0, (Pixel*) cursor->data, cursor->width, cursor->height, 0.5, 0, get_swapbuffer(), cursor->width, 0, SUPPORTED_WIDTH - 1, 0, SUPPORTED_HEIGHT - 1);
 }
