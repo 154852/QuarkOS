@@ -17,6 +17,8 @@ typedef union {
 #define clamp(x, a, b) min(max(x, a), b)
 #define mix(a, b, frac) ((((float) (b) - (float) (a)) * (float) (frac)) + (float) (a))
 
+unsigned char mixi(int a, int b, int frac);
+
 Pixel pixel_from_hex(unsigned hex);
 
 #define pixel_from_rgb(_r, _g, _b) (Pixel) { .r = _r, .g = _g, .b = _b, .a = 0xff }

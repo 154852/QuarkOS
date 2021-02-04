@@ -35,7 +35,7 @@ void themegray_render_button(InternalWindow* window, InternalButtonElement* butt
 
 	int y0 = window_title_bar_height(window) + button->y;
 	int y1 = y0 + button->height;
-	float frac = (float) button->background.a / (float) 0xff;
+	unsigned char frac = button->background.a;
 	
 	for (int y = y0; y < y1; y++) {
 		for (int x = x0; x < x1; x++) {
@@ -43,9 +43,9 @@ void themegray_render_button(InternalWindow* window, InternalButtonElement* butt
 			if (button->background.a == 0xff) {
 				*out = button->background;
 			} else if (button->background.a != 0) {
-				out->r = mix(out->r, button->background.r, frac);
-				out->g = mix(out->g, button->background.g, frac);
-				out->b = mix(out->b, button->background.b, frac);
+				out->r = mixi(out->r, button->background.r, frac);
+				out->g = mixi(out->g, button->background.g, frac);
+				out->b = mixi(out->b, button->background.b, frac);
 				out->a = 0xff;
 			}
 		}
@@ -58,7 +58,7 @@ void themegray_render_rectangle(InternalWindow* window, InternalRectangleElement
 
 	int y0 = window_title_bar_height(window) + button->y;
 	int y1 = y0 + button->height;
-	float frac = (float) button->background.a / (float) 0xff;
+	unsigned char frac = button->background.a;
 	
 	for (int y = y0; y < y1; y++) {
 		for (int x = x0; x < x1; x++) {
@@ -66,9 +66,9 @@ void themegray_render_rectangle(InternalWindow* window, InternalRectangleElement
 			if (button->background.a == 0xff) {
 				*out = button->background;
 			} else if (button->background.a != 0) {
-				out->r = mix(out->r, button->background.r, frac);
-				out->g = mix(out->g, button->background.g, frac);
-				out->b = mix(out->b, button->background.b, frac);
+				out->r = mixi(out->r, button->background.r, frac);
+				out->g = mixi(out->g, button->background.g, frac);
+				out->b = mixi(out->b, button->background.b, frac);
 				out->a = 0xff;
 			}
 		}
@@ -98,10 +98,10 @@ void themegray_render_image(InternalWindow* window, InternalImageElement* image)
 			if (pixel.a == 0xff) {
 				window->raster[framebuffer_idx] = pixel;
 			} else if (pixel.a != 0) {
-				float frac = (float) pixel.a / (float) 0xff;
-				window->raster[framebuffer_idx].r = mix(window->raster[framebuffer_idx].r, pixel.r, frac);
-				window->raster[framebuffer_idx].g = mix(window->raster[framebuffer_idx].g, pixel.g, frac);
-				window->raster[framebuffer_idx].b = mix(window->raster[framebuffer_idx].b, pixel.b, frac);
+				unsigned char frac = pixel.a;
+				window->raster[framebuffer_idx].r = mixi(window->raster[framebuffer_idx].r, pixel.r, frac);
+				window->raster[framebuffer_idx].g = mixi(window->raster[framebuffer_idx].g, pixel.g, frac);
+				window->raster[framebuffer_idx].b = mixi(window->raster[framebuffer_idx].b, pixel.b, frac);
 			}
 			window->raster[framebuffer_idx].a = 0xff;
 		}

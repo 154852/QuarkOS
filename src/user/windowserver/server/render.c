@@ -18,11 +18,6 @@ Theme* get_theme() {
 	return &theme;
 }
 
-unsigned char mixi(int a, int b, int frac) {
-	int v = ((((b - a) * frac) / 0xff) + a);
-	return (unsigned char) clamp(v, 0, 0xff);
-}
-
 void render_window_to_swapbuffer(InternalWindow* window) {
 	Pixel* swapbuffer = get_swapbuffer();
 

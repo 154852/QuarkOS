@@ -1,5 +1,10 @@
 #include <windowserver/color.h>
 
+unsigned char mixi(int a, int b, int frac) {
+	int v = ((((b - a) * frac) / 0xff) + a);
+	return (unsigned char) clamp(v, 0, 0xff);
+}
+
 Pixel pixel_from_hex(unsigned hex) {
 	if (hex > 0xffffff) {
 		return (Pixel) {
