@@ -2,6 +2,7 @@
 
 A simple 32 bit graphical OS written in C++.
 
+![Image of QuarkOS](/images/screenshot.png)
 
 ## Building
 1. Install python3, make
