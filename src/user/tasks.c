@@ -33,8 +33,6 @@ char* state_string(ProcessStateSC state) {
 int main() {
 	windowhandle = create_window("Tasks", WINWIDTH, 400, 100, 100, 1);
 
-	memcpy(entries[0].name, "name", 5);
-
 	int count = read_dir("/dev/proc/", entries, 256);
 	if (count == -EFILENOTFOUND) {
 		debugf("File not found\n");
