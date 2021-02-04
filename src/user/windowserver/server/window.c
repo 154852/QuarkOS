@@ -33,6 +33,10 @@ void destroy_internal_window(InternalWindow* window) {
 					free_sized(window->elements[i], sizeof(InternalRectangleElement));
 					break;
 				}
+				case WSImageElement: {
+					free_sized(window->elements[i], sizeof(InternalImageElement));
+					break;
+				}
 				default: {
 					debugf("Unknown element type in window destroy %d\n", window->elements[i]->type);
 				}

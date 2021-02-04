@@ -28,7 +28,7 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 
 	int x = createwindow->x;
 	int y = createwindow->y;
-	find_xy(&x, &y);
+	if (createwindow->has_title_bar) find_xy(&x, &y);
 	
 	CreateWindowResponse res;
 	for (int i = 0; i < WINDOWS_CAPACITY; i++) {

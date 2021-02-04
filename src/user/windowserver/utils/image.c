@@ -24,9 +24,10 @@ void copy_image(int x0, int y0, Pixel* image, int w, int h, double scale, const 
 				out[framebuffer_idx] = pixel;
 			} else if (image[image_idx].a != 0) {
 				unsigned char a = image[image_idx].a;
-				out[framebuffer_idx].r = mixi(out[framebuffer_idx].r, pixel.r, a);
-				out[framebuffer_idx].g = mixi(out[framebuffer_idx].g, pixel.g, a);
-				out[framebuffer_idx].b = mixi(out[framebuffer_idx].b, pixel.b, a);
+				out[framebuffer_idx].r = mixi(mixi(pixel.r, out[framebuffer_idx].r, out[framebuffer_idx].a), pixel.r, a);
+				out[framebuffer_idx].g = mixi(mixi(pixel.g, out[framebuffer_idx].g, out[framebuffer_idx].a), pixel.g, a);
+				out[framebuffer_idx].b = mixi(mixi(pixel.b, out[framebuffer_idx].b, out[framebuffer_idx].a), pixel.b, a);
+				out[framebuffer_idx].a = out[framebuffer_idx].a + ((0xff - out[framebuffer_idx].a) * a)/0xff;
 			}
 		}
 	}

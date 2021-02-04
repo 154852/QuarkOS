@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 OnClickListener onclicklisteners[ONCLICK_LISTENERS_CAPACITY];
-
 OnKeyPressListener onkeypresslisteners[ONKEYPRESS_LISTENERS_CAPACITY];
 
 static char should_close;

@@ -32,7 +32,9 @@ hello.o \
 shell.o \
 ps.o \
 guiapp.o \
-desktop.o \
+wallpaper.o \
+timedisp.o \
+appdisp.o \
 calc.o \
 font.o \
 tasks.o
@@ -56,7 +58,13 @@ ps: ps.o
 guiapp: guiapp.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
-desktop: desktop.o
+wallpaper: wallpaper.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
+
+timedisp: timedisp.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
+
+appdisp: appdisp.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 calc: calc.o

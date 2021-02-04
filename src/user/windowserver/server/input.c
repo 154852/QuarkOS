@@ -69,7 +69,6 @@ char window_resolve_click(InternalWindow* window, int x, int y) {
 				assert(event);
 				event->element = button->elementID;
 				event->type = WSEvButtonClick;
-				set_focused(window);
 				return 1;
 			}
 		}

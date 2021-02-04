@@ -40,13 +40,13 @@ void themegray_render_button(InternalWindow* window, InternalButtonElement* butt
 	for (int y = y0; y < y1; y++) {
 		for (int x = x0; x < x1; x++) {
 			Pixel* out = &window->raster[idx_for_xy(x, y)];
-			if (button->background.a == 0xff) {
+			if (button->background.a == 0xff || out->a == 0) {
 				*out = button->background;
 			} else if (button->background.a != 0) {
 				out->r = mixi(out->r, button->background.r, frac);
 				out->g = mixi(out->g, button->background.g, frac);
 				out->b = mixi(out->b, button->background.b, frac);
-				out->a = 0xff;
+				out->a = out->a + ((0xff - out->a) * frac)/0xff;
 			}
 		}
 	}
@@ -63,13 +63,13 @@ void themegray_render_rectangle(InternalWindow* window, InternalRectangleElement
 	for (int y = y0; y < y1; y++) {
 		for (int x = x0; x < x1; x++) {
 			Pixel* out = &window->raster[idx_for_xy(x, y)];
-			if (button->background.a == 0xff) {
+			if (button->background.a == 0xff || out->a == 0) {
 				*out = button->background;
 			} else if (button->background.a != 0) {
-				out->r = mixi(out->r, button->background.r, frac);
-				out->g = mixi(out->g, button->background.g, frac);
-				out->b = mixi(out->b, button->background.b, frac);
-				out->a = 0xff;
+				out->r = mixi(mixi(button->background.r, out->r, out->a), button->background.r, frac);
+				out->g = mixi(mixi(button->background.g, out->g, out->a), button->background.g, frac);
+				out->b = mixi(mixi(button->background.b, out->b, out->a), button->background.b, frac);
+				out->a = out->a + ((0xff - out->a) * frac)/0xff;
 			}
 		}
 	}
@@ -95,15 +95,15 @@ void themegray_render_image(InternalWindow* window, InternalImageElement* image)
 
 			Pixel pixel = ((Pixel*) bitmap->data)[image_idx];
 
-			if (pixel.a == 0xff) {
+			if (pixel.a == 0xff || window->raster[framebuffer_idx].a == 0) {
 				window->raster[framebuffer_idx] = pixel;
 			} else if (pixel.a != 0) {
 				unsigned char frac = pixel.a;
 				window->raster[framebuffer_idx].r = mixi(window->raster[framebuffer_idx].r, pixel.r, frac);
 				window->raster[framebuffer_idx].g = mixi(window->raster[framebuffer_idx].g, pixel.g, frac);
 				window->raster[framebuffer_idx].b = mixi(window->raster[framebuffer_idx].b, pixel.b, frac);
+				window->raster[framebuffer_idx].a = window->raster[framebuffer_idx].a + ((0xff - window->raster[framebuffer_idx].a) * frac)/0xff;
 			}
-			window->raster[framebuffer_idx].a = 0xff;
 		}
 	}
 }

@@ -45,7 +45,9 @@ int main() {
 	
 	render();
 
-	exec("/usr/bin/desktop");
+	exec("/usr/bin/wallpaper");
+	exec("/usr/bin/timedisp");
+	exec("/usr/bin/appdisp");
 
 	recieve_messages();
 
