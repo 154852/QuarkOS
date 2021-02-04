@@ -1,6 +1,7 @@
 #include "render.h"
 #include <windowserver/config.h>
 #include <windowserver/image.h>
+#include "assertions.h"
 #include "buffer.h"
 #include "window.h"
 #include "input.h"
@@ -17,6 +18,11 @@ Theme* get_theme() {
 	return &theme;
 }
 
+unsigned char mixi(int a, int b, int frac) {
+	int v = ((((b - a) * frac) / 0xff) + a);
+	return (unsigned char) clamp(v, 0, 0xff);
+}
+
 void render_window_to_swapbuffer(InternalWindow* window) {
 	Pixel* swapbuffer = get_swapbuffer();
 
@@ -31,10 +37,11 @@ void render_window_to_swapbuffer(InternalWindow* window) {
 			if (window->raster[offset + x].a == 0xff) {
 				swapbuffer[outoffset + x] = window->raster[offset + x];
 			} else if (window->raster[offset + x].a != 0) {
-				float frac = (float) window->raster[offset + x].a / (float) 0xff;
-				swapbuffer[outoffset + x].r = mix(swapbuffer[outoffset + x].r, window->raster[offset + x].r, frac);
-				swapbuffer[outoffset + x].g = mix(swapbuffer[outoffset + x].g, window->raster[offset + x].g, frac);
-				swapbuffer[outoffset + x].b = mix(swapbuffer[outoffset + x].b, window->raster[offset + x].b, frac);
+				unsigned char a = window->raster[offset + x].a;
+
+				swapbuffer[outoffset + x].r = mixi(swapbuffer[outoffset + x].r, window->raster[offset + x].r, a);
+				swapbuffer[outoffset + x].g = mixi(swapbuffer[outoffset + x].g, window->raster[offset + x].g, a);
+				swapbuffer[outoffset + x].b = mixi(swapbuffer[outoffset + x].b, window->raster[offset + x].b, a);
 			}
 		}
 	}
