@@ -1,3 +1,12 @@
+# To build everything, run `make build`
+# To clean all object files and the sysroot.img, run `make clean`
+# To build only libc/kernel/user/etc run `make <project e.g. libc> && make sysroot` - note: some projects are dependencies for others, e.g. user/windowserver, for user. In this case, if user/windowserver is built, user should also be rebuilt
+# To run the kernel in qemu, run `./cmds/run.sh`
+# Examples:
+#	Rebuild everything, run, then clean: `make build && ./cmds/run.sh && make clean`
+# 	Rebuild the kernel, run, then clean: `make kernel && ./cmds/run.sh && make clean`
+# 	Rebuild the windowsever: `make user/windowserver && make user`
+
 MAKE=make
 HOST=$(shell ./cmds/default-host.sh)
  
@@ -18,32 +27,31 @@ export SYSROOT="$(shell pwd)/src/sysroot"
 export CC=$(HOST)-gcc --sysroot=$(SYSROOT) -isystem=$(INCLUDEDIR)
 
 build: headers libc kernel user/windowserver user sysroot
-	
-run:
-	qemu-system-i386 -kernel src/sysroot/boot/quarkos.kernel -serial stdio -drive file=src/sysroot.img,format=raw -no-reboot -rtc base=utc,clock=host -vga std
 
 clean:
 	cd src/kernel && $(MAKE) clean -s
 	cd src/libc && $(MAKE) clean -s
 	cd src/user/windowserver && $(MAKE) clean -s
 	cd src/user && $(MAKE) clean -s
-	rm -rf src/sysroot
+	rm -rf src/sysroot.img
 
 headers:
 	cd src/kernel && DESTDIR=$(SYSROOT) $(MAKE) install-headers -s
 	cd src/libc && DESTDIR=$(SYSROOT) $(MAKE) install-headers -s
 	cd src/user/windowserver && DESTDIR=$(SYSROOT) $(MAKE) install-headers -s
 
-libc:
+# dependency for everything
+libc: headers
 	cd src/libc && DESTDIR=$(SYSROOT) $(MAKE) install
 
-kernel:
+kernel: headers
 	cd src/kernel && DESTDIR=$(SYSROOT) $(MAKE) install
 
-user/windowserver:
+# dependency for user
+user/windowserver: headers
 	cd src/user/windowserver && DESTDIR=$(SYSROOT) $(MAKE) install
 
-user:
+user: headers
 	cd src/user && DESTDIR=$(SYSROOT) $(MAKE) install
 
 sysroot:
