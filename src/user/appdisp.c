@@ -47,8 +47,8 @@ int main() {
 	windowhandle = create_window_detailed("App Disp", SUPPORTED_WIDTH, height, 0, (SUPPORTED_HEIGHT*3)/4, 0, pixel_from_rgba(0, 0, 0, 0));
 
 	dockApps[0] = (DockApp) {
-		.name="Font Viewer",
-		.path="/usr/bin/font",
+		.name="Shell",
+		.path="/usr/bin/shell",
 	};
 
 	dockApps[1] = (DockApp) {

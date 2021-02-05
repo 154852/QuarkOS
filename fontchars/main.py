@@ -53,7 +53,7 @@ switch_values = []
 h2 = lambda x: ("0" + hex(x)[2:])[-2:]
 
 alpha = "".join([chr(a + ord('a')) for a in range(26)])
-alpha = alpha + alpha.upper() + "".join([chr(a + ord('0')) for a in range(10)]) + "-+=*/\\?()[]{}'\"<>,.#!:"
+alpha = alpha + alpha.upper() + "".join([chr(a + ord('0')) for a in range(10)]) + "-+=*/\\?()[]{}'\"<>,.#!:$%"
 print(alpha)
 
 FONT_SIZE = 32

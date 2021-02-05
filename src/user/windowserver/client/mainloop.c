@@ -13,6 +13,10 @@ void set_should_close(char should_close_) {
 }
 
 void mainloop(WindowHandle windowhandle) {
+	mainloop_cb(windowhandle, 0);
+}
+
+void mainloop_cb(WindowHandle windowhandle, void(*cb)()) {
 	render_window(windowhandle);
 
 	WindowStatusResponse res;
@@ -44,6 +48,8 @@ void mainloop(WindowHandle windowhandle) {
 				}
 			}
 		}
+
+		if (cb != 0) cb();
 	}
 
 	if (res.present) {

@@ -50,7 +50,7 @@ hello: hello.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 shell: shell.o
-	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 ps: ps.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)

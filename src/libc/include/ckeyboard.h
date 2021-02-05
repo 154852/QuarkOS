@@ -12,6 +12,11 @@ typedef enum {
 	KEY_UNKNOWN,
 } KeyName;
 
+#define KEY_UP KEY_KEYPAD_2
+#define KEY_LEFT KEY_KEYPAD_5
+#define KEY_RIGHT KEY_KEYPAD_7
+#define KEY_DOWN KEY_KEYPAD_0
+
 typedef enum {
 	KEY_PRESS,
 	KEY_RELEASE,

@@ -6,15 +6,14 @@ A simple 32 bit graphical OS written in C++.
 
 ## Building
 1. Install python3, make
-2. You will need to build a i686-elf-gcc cross compiler. There are not fixed requirements for it, so long as the commands `i686-elf-gcc`, `i686-elf-ar`, `qemu-system-i386` are in the `PATH`
-See [this page](https://wiki.osdev.org/GCC_Cross-Compiler) on how to do that.
-3. `cd src`
-4. Run `./build.sh` to build, `./qemu.sh` to build and run or `./start.sh` to just run
+2. You will need to build a i686-elf-gcc cross compiler. There are not fixed requirements for it, so long as the commands `i686-elf-gcc`, `i686-elf-ar`, `qemu-system-i386` are in the `PATH`. See [this page](https://wiki.osdev.org/GCC_Cross-Compiler) on how to do that.
+3. To start the kernel, run `make build && ./cmds/run.sh`
 
 ## Note
 The system is by no means well tested, it works on my machine and that's about as much as I can guarantee :) It also comes originally from [here](https://wiki.osdev.org/Meaty_Skeleton), which may be of interest if something does not make perfect sense, as I may not have written it.
 
 ## Structure
+_(this is out of date)_
 ```
 src - The root of all source code
  kernel
@@ -41,6 +40,7 @@ src - The root of all source code
 ```
 
 ## Code Walkthrough
+_(this is out of date)_
 1. After building, you should see a folder (in the src directory) called sysroot, and a file named sysroot.img. Sysroot is effectively the root filesystem - it was populated by various programs, headers and any other files by the build process (`make install*`). [buildtar.py](/src/buildtar.py) then created a [tar](https://wiki.osdev.org/USTAR) file of this (and removes the `sysroot` root directory name).
 2. QEMU will start the kernel in sysroot/boot/quarkos.kernel
 3. The very first line of kernel code is in [kernel/arch/i386/boot.S](/src/kernel/arch/i386/boot.S), which pretty much immediately calls `kernel_main`, defined in [kernel/kernel/kernel.cpp](/src/kernel/kernel/kernel.cpp). This is the kernel entry point.

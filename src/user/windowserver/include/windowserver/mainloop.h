@@ -20,6 +20,7 @@ typedef struct {
 } OnKeyPressListener;
 
 void mainloop(WindowHandle windowhandle);
+void mainloop_cb(WindowHandle windowhandle, void(*cb)());
 void set_should_close(char should_close);
 
 void onkeydown(void(*cb)(KeyEvent* event));
