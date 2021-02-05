@@ -215,8 +215,6 @@ float evaluate(const char* string, char* error) {
 			return 0;
 		}
 	}
-
-	return 0.0;
 }
 
 void str_putchar(char chr) {
@@ -249,7 +247,7 @@ void oncalcbuttonclick(int buttonIdx) {
 		memcpy(text, "0.0", 3);
 		textneedsclear = 1;
 	} else if (btn->text[0] == '=') {
-		char err;
+		char err = 0;
 		float value = evaluate(text, &err);
 		memset(text, 0, TEXT_SIZE);
 		textIdx = 0;
