@@ -54,17 +54,6 @@ void destroy_internal_window(InternalWindow* window) {
 	free_sized(window, sizeof(InternalWindow));
 }
 
-WindowServerEvent* allocate_event(InternalWindow* window) {
-	for (int i = 0; i < WINDOW_EVENTS_CAPACITY; i++) {
-		if (!window->events[i].present) {
-			window->events[i].present = 1;
-			return &window->events[i];
-		}
-	}
-	
-	return 0;
-}
-
 static InternalWindow* focused_window = 0;
 
 InternalWindow* get_focused() {

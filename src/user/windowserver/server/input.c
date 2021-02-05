@@ -22,8 +22,6 @@ InternalWindow* dragging;
 
 void initialise_keyboard() {
 	keyboard_socket = open("/dev/keyboard", FILE_FLAG_R | FILE_FLAG_SOCK);
-
-	assert(sizeof(WindowServerKeyboardEvent) == sizeof(WindowServerEvent));
 }
 
 void update_keyboard() {
@@ -32,11 +30,11 @@ void update_keyboard() {
 		KeyEvent* state = (KeyEvent*) keydata;
 
 		if (get_focused() != 0) {
-			WindowServerKeyboardEvent* event = (WindowServerKeyboardEvent*) allocate_event(get_focused());
-			assert(event);
-			event->element = 0;
-			event->type = WSEvKeyPress;
-			event->event = *state;
+			WindowServerKeyboardEvent event;
+			event.event = *state;
+			event.type = WSEvKeyPress;
+			event.windowid = get_focused()->handle;
+			send_ipc_message(get_focused()->creatorpid, &event, sizeof(event));
 		}
 
 		len = read(keyboard_socket, keydata, sizeof(KeyEvent));
@@ -53,6 +51,11 @@ char window_resolve_click(InternalWindow* window, int x, int y) {
 	// X button
 	if (window->has_title_bar && rect_contains((TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT - WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, (TITLE_BAR_HEIGHT + WINDOW_BUTTON_SIZE) / 2, x, y)) {
 		destroy_internal_window(window);
+		
+		WindowServerDestroyWindowEvent event;
+		event.windowid = window->handle;
+		event.type = WSEvDestroy;
+		send_ipc_message(window->creatorpid, &event, sizeof(event));
 		return 1;
 	}
 
@@ -65,10 +68,11 @@ char window_resolve_click(InternalWindow* window, int x, int y) {
 		if (window->elements[i] && window->elements[i]->type == WSButtonElement) {
 			InternalButtonElement* button = (InternalButtonElement*) window->elements[i];
 			if (rect_contains(button->x, button->y + window_title_bar_height(window), (int) button->width, (int) button->height, x, y)) {
-				WindowServerEvent* event = allocate_event(window);
-				assert(event);
-				event->element = button->elementID;
-				event->type = WSEvButtonClick;
+				WindowServerButtonClickEvent event;
+				event.windowid = window->handle;
+				event.element = button->elementID;
+				event.type = WSEvButtonClick;
+				send_ipc_message(window->creatorpid, &event, sizeof(event));
 				return 1;
 			}
 		}

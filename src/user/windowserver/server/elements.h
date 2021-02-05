@@ -71,8 +71,6 @@ typedef struct {
 	int x;
 	int y;
 
-	WindowServerEvent events[WINDOW_EVENTS_CAPACITY];
-
 	Pixel background;
 	Pixel raster[SUPPORTED_SIZE];
 

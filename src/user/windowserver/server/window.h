@@ -10,8 +10,6 @@ void destroy_internal_window(InternalWindow* window);
 
 InternalWindow** get_windows();
 
-WindowServerEvent* allocate_event(InternalWindow* window);
-
 InternalWindow* get_focused();
 void set_focused(InternalWindow* window);
 

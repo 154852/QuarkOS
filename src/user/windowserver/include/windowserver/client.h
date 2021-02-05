@@ -13,8 +13,6 @@ WindowHandle create_window_detailed(char* title, unsigned width, unsigned height
 void destroy_window(WindowHandle handle);
 void render_window(WindowHandle handle);
 
-WindowStatusResponse query_status(WindowHandle handle);
-
 ElementID update_label(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y);
 ElementID update_label_detailed(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y, float scale);
 ElementID create_label(unsigned windowid, const char* content, Pixel* color, int x, int y);

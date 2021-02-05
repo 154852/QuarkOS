@@ -1,15 +1,7 @@
-#include "windowserver/color.h"
-#include "windowserver/fontchars.h"
-#include "windowserver/themes/color-active.h"
-#include "windowserver/config.h"
+#include <windowserver/fontchars.h>
 #include <string.h>
 #include <syscall.h>
-#include <stdio.h>
-#include <assertions.h>
-#include <windowserver/wsmsg.h>
 #include <windowserver/client.h>
-#include <windowserver/mainloop.h>
-#include <ckeyboard.h>
 
 WindowHandle windowhandle;
 
@@ -106,21 +98,17 @@ int main() {
 	render_time(timeraw);
 	render_window(windowhandle);
 
-	WindowStatusResponse res;
-	res = query_status(windowhandle);
-	while (res.present) {
+	while (1) {
 		get_full_time(&nextraw);
-		
+	
 		if (nextraw.minute != timeraw.minute || nextraw.hour != timeraw.hour) {
 			render_time(nextraw);
 			render_window(windowhandle);
 			timeraw = nextraw;
 		}
 
-		res = query_status(windowhandle);
+		yield();
 	}
-	
-	destroy_window(windowhandle);
 
 	return 0;
 }

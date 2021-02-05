@@ -3,6 +3,7 @@
 #include <windowserver/image.h>
 #include "assertions.h"
 #include "buffer.h"
+#include "syscall.h"
 #include "window.h"
 #include "input.h"
 #include "windowserver/color.h"
@@ -42,7 +43,34 @@ void render_window_to_swapbuffer(InternalWindow* window) {
 	}
 }
 
+#define TIME_MAX (24 * 60 * 60)
+#define TIME_STOP 10
+
+int start = -1;
+char ignore_time = 0;
+int frames = 0;
 void render() {
+	if (!ignore_time && frames % 3 == 0) {
+		FullTime now; 
+		get_full_time(&now);
+
+		if (start == -1) {
+			start = now.hour * 3600 + now.minute * 60 + now.second;
+		} else {
+			int stamp = now.hour * 3600 + now.minute * 60 + now.second;
+			int diff = 0;
+			if (stamp < start) diff = (TIME_MAX - start) + stamp;
+			else diff = stamp - start;
+
+			if (diff > TIME_STOP) {
+				// ignore_time = 1;
+				debugf("[WindowServer] Rendered %d frames in %d seconds (%ffps)\n", frames, diff, (float) frames / (float) diff);
+				frames = 0;
+				start = stamp;
+			}
+		}
+	}
+
 	InternalWindow** windows = get_windows();
 
 	Pixel* swapbuffer = get_swapbuffer();
@@ -64,4 +92,6 @@ void render() {
 	for (int idx = 0; idx < SUPPORTED_WIDTH * SUPPORTED_HEIGHT; idx++) {
 		framebuffer[idx] = swapbuffer[idx];
 	}
+
+	frames++;
 }

@@ -19,7 +19,10 @@ int main() {
 	ImageLoadResponse image = load_image(windowhandle, "system/wallpaper.bmp");
 	create_image(windowhandle, 0, 0, image.width, image.height, image.id);
 
-	mainloop(windowhandle);
+	render_window(windowhandle);
+	while (1) {
+		yield();
+	}
 
 	return 0;
 }

@@ -9,7 +9,6 @@ typedef enum {
 	WSCreateWindow,
 	WSDestroyWindow,
 	WSUpdateElement,
-	WSWindowStatus,
 	WSLoadImage,
 	WSRenderWindow
 } WindowServerAction;
@@ -43,44 +42,37 @@ typedef struct {
 	unsigned window;
 } WindowRenderRequest;
 
-typedef struct {
-	WindowServerAction action;
-	unsigned window;
-} WindowStatusRequest;
-
 typedef enum {
 	WSEvButtonClick,
-	WSEvKeyPress
+	WSEvKeyPress,
+	WSEvDestroy
 } WindowServerEventType;
 
 #define EVENT_DATA_SIZE 32
 
 typedef struct {
-	char present;
-	unsigned element;
+	unsigned windowid;
 	WindowServerEventType type;
-	char zero[EVENT_DATA_SIZE];
 } WindowServerEvent;
 
 typedef struct {
-	char present;
+	unsigned windowid;
+	WindowServerEventType type;
+	
 	unsigned element;
+} WindowServerButtonClickEvent;
+
+typedef struct {
+	unsigned windowid;
 	WindowServerEventType type;
 
 	KeyEvent event;
-	char zero[EVENT_DATA_SIZE - sizeof(KeyEvent)];
 } WindowServerKeyboardEvent;
 
 typedef struct {
-	char present;
-
-	WindowServerEvent last_event;
-
-	int x;
-	int y;
-	unsigned width;
-	unsigned height;
-} WindowStatusResponse;
+	unsigned windowid;
+	WindowServerEventType type;
+} WindowServerDestroyWindowEvent;
 
 typedef struct {
 	WindowServerAction action;

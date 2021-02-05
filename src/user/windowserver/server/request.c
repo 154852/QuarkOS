@@ -44,6 +44,7 @@ void create_window_handler(unsigned sender, CreateWindowRequest* createwindow) {
 			memcpy(win->title, createwindow->title, 64);
 			win->width = createwindow->width;
 			win->height = createwindow->height;
+			debugf("[WindowServer] Create window %s, w=%dpx, h=%dpx\n", win->title, win->width, win->height);
 			win->x = x;
 			win->y = y;
 			win->background = createwindow->background;
@@ -119,38 +120,38 @@ WindowServerElementUpdateResponse create_element_label_handler(unsigned sender, 
 	return (WindowServerElementUpdateResponse) { -1 };
 }
 
-WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
+void update_element_label_handler(unsigned sender, WindowServerLabelUpdateRequest* labelreq) {
 	InternalWindow** windows = get_windows();
 
 	if (labelreq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 	InternalWindow* window = windows[labelreq->window];
 	if (!window) {
 		debugf("Window does not exist\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	if (window->creatorpid != sender) {
 		debugf("Invalid permissions for window\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	if (labelreq->elementId >= WINDOW_ELEMENTS_CAPACITY) {
 		debugf("Invalid element ID (does not exist)\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 	
 	InternalLabelElement* element = (InternalLabelElement*) window->elements[labelreq->elementId];
 	if (element->type != WSLabelElement) {
 		debugf("Not a label\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	if (!element) {
 		debugf("Invalid element ID (not present)\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	memcpy(element->content, labelreq->content, 256);
@@ -158,8 +159,6 @@ WindowServerElementUpdateResponse update_element_label_handler(unsigned sender, 
 	element->x = labelreq->x;
 	element->y = labelreq->y;
 	element->scale = labelreq->scale;
-	
-	return (WindowServerElementUpdateResponse) { element->elementID };
 }
 
 WindowServerElementUpdateResponse create_element_button_handler(unsigned sender, WindowServerButtonUpdateRequest* buttonreq) {
@@ -203,38 +202,38 @@ WindowServerElementUpdateResponse create_element_button_handler(unsigned sender,
 	return (WindowServerElementUpdateResponse) { -1 };
 }
 
-WindowServerElementUpdateResponse update_element_rectangle_handler(unsigned sender, WindowServerRectangleUpdateRequest* rectanglereq) {
+void update_element_rectangle_handler(unsigned sender, WindowServerRectangleUpdateRequest* rectanglereq) {
 	InternalWindow** windows = get_windows();
 
 	if (rectanglereq->window >= WINDOWS_CAPACITY) {
 		debugf("Invalid window ID\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 	InternalWindow* window = windows[rectanglereq->window];
 	if (!window) {
 		debugf("Window does not exist\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	if (window->creatorpid != sender) {
 		debugf("Invalid permissions for window\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	if (rectanglereq->elementId >= WINDOW_ELEMENTS_CAPACITY) {
 		debugf("Invalid element ID (does not exist)\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 	
 	InternalRectangleElement* element = (InternalRectangleElement*) window->elements[rectanglereq->elementId];
 	if (element->type != WSRectangle) {
 		debugf("Not a rectangle\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	if (!element) {
 		debugf("Invalid element ID (not present)\n");
-		return (WindowServerElementUpdateResponse) { -1 };
+		return;
 	}
 
 	element->x = rectanglereq->x;
@@ -242,8 +241,6 @@ WindowServerElementUpdateResponse update_element_rectangle_handler(unsigned send
 	element->width = rectanglereq->width;
 	element->height = rectanglereq->height;
 	element->background = rectanglereq->background;
-	
-	return (WindowServerElementUpdateResponse) { element->elementID };
 }
 
 WindowServerElementUpdateResponse create_element_rectangle_handler(unsigned sender, WindowServerRectangleUpdateRequest* rectanglereq) {
@@ -333,82 +330,50 @@ WindowServerElementUpdateResponse create_element_image_handler(unsigned sender, 
 	return (WindowServerElementUpdateResponse) { -1 };
 }
 
-WindowServerElementUpdateResponse update_element_handler(unsigned sender, WindowServerElementUpdateRequest* req) {
+void update_element_handler(unsigned sender, WindowServerElementUpdateRequest* req) {
 	if ((int) req->elementId == -1) {
+		WindowServerElementUpdateResponse res; 
+
 		switch (req->elementType) {
 			case WSLabelElement: {
-				return create_element_label_handler(sender, (WindowServerLabelUpdateRequest*) req);
+				res = create_element_label_handler(sender, (WindowServerLabelUpdateRequest*) req);
+				break;
 			}
 			case WSButtonElement: {
-				return create_element_button_handler(sender, (WindowServerButtonUpdateRequest*) req);
+				res = create_element_button_handler(sender, (WindowServerButtonUpdateRequest*) req);
+				break;
 			}
 			case WSRectangle: {
-				return create_element_rectangle_handler(sender, (WindowServerRectangleUpdateRequest*) req);
+				res = create_element_rectangle_handler(sender, (WindowServerRectangleUpdateRequest*) req);
+				break;
 			}
 			case WSImageElement: {
-				return create_element_image_handler(sender, (WindowServerImageUpdateRequest*) req);
+				res = create_element_image_handler(sender, (WindowServerImageUpdateRequest*) req);
+				break;
 			}
 			default: {
 				debugf("Unknown element type 0x%.8x\n", req->elementType);
-				return (WindowServerElementUpdateResponse) { -1 };
+				res = (WindowServerElementUpdateResponse) { -1 };
 			}
 		}
+
+		send_ipc_message(sender, &res, sizeof(WindowServerElementUpdateResponse));
 	} else {
 		switch (req->elementType) {
 			case WSLabelElement: {
-				return update_element_label_handler(sender, (WindowServerLabelUpdateRequest*) req);
+				update_element_label_handler(sender, (WindowServerLabelUpdateRequest*) req);
+				return;
 			}
 			case WSRectangle: {
-				return update_element_rectangle_handler(sender, (WindowServerRectangleUpdateRequest*) req);
+				update_element_rectangle_handler(sender, (WindowServerRectangleUpdateRequest*) req);
+				return;
 			}
 			default: {
 				debugf("Unknown element type 0x%.8x\n", req->elementType);
-				return (WindowServerElementUpdateResponse) { -1 };
+				return;
 			}
 		}
 	}
-}
-
-void window_status_handler(unsigned sender, WindowStatusRequest* req) {
-	InternalWindow** windows = get_windows();
-	WindowStatusResponse res;
-	memset(&res, 0, sizeof(res));
-			
-	if (req->window >= WINDOWS_CAPACITY) {
-		res.present = 0;
-		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
-		return;
-	}
-	InternalWindow* window = windows[req->window];
-
-	if (!window) {
-		res.present = 0;
-		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
-		return;
-	}
-	res.present = 1;
-
-	if (window->creatorpid != sender) {
-		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
-		return;
-	}
-	
-	res.present = 1;
-	res.x = window->x;
-	res.y = window->y;
-	res.width = window->width;
-	res.height = window->height;
-
-	res.last_event.present = 0;
-	for (int i = WINDOW_EVENTS_CAPACITY - 1; i >= 0; i--) {
-		if (window->events[i].present) {
-			res.last_event = window->events[i];
-			memset(&window->events[i], 0, sizeof(WindowServerEvent));
-			break;
-		}
-	}
-
-	send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
 }
 
 void load_image_handler(unsigned sender, ImageLoadRequest* req) {
@@ -418,7 +383,7 @@ void load_image_handler(unsigned sender, ImageLoadRequest* req) {
 			
 	if (req->window >= WINDOWS_CAPACITY) {
 		res.success = 0;
-		send_ipc_message(sender, &res, sizeof(WindowStatusResponse));
+		send_ipc_message(sender, &res, sizeof(ImageLoadResponse));
 		return;
 	}
 	InternalWindow* window = windows[req->window];
@@ -487,12 +452,7 @@ void handle_request(unsigned action, unsigned sender, void* raw) {
 			return;
 		}
 		case WSUpdateElement: {
-			WindowServerElementUpdateResponse res = update_element_handler(sender, (WindowServerElementUpdateRequest*) raw);
-			send_ipc_message(sender, &res, sizeof(WindowServerElementUpdateResponse));
-			return;
-		}
-		case WSWindowStatus: {
-			window_status_handler(sender, (WindowStatusRequest*) raw);
+			update_element_handler(sender, (WindowServerElementUpdateRequest*) raw);
 			return;
 		}
 		case WSLoadImage: {

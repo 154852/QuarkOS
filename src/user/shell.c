@@ -64,12 +64,12 @@ int caret_y() {
 char tmpString[256];
 
 void execute_command(char* start, int clength) {
-	if (memcmp(start, "exit", clength) == 0) {
+	if (strcmp(start, "exit") == 0) {
 		set_should_close(1);
 		return;
 	}
 
-	if (memcmp(start, "pwd", clength) == 0) {
+	if (strcmp(start, "pwd") == 0) {
 		int len = strlen(path);
 		memcpy(buffer + length, path, len);
 		length += len;

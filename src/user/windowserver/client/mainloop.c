@@ -1,5 +1,6 @@
 #include "windowserver/client.h"
 #include <windowserver/mainloop.h>
+#include <assertions.h>
 #include <syscall.h>
 #include <stdio.h>
 
@@ -7,6 +8,8 @@ OnClickListener onclicklisteners[ONCLICK_LISTENERS_CAPACITY];
 OnKeyPressListener onkeypresslisteners[ONKEYPRESS_LISTENERS_CAPACITY];
 
 static char should_close;
+
+char windowservereventmsg[1024];
 
 void set_should_close(char should_close_) {
 	should_close = should_close_;
@@ -18,43 +21,54 @@ void mainloop(WindowHandle windowhandle) {
 
 void mainloop_cb(WindowHandle windowhandle, void(*cb)()) {
 	render_window(windowhandle);
+	
+	unsigned sender;
+	while (!should_close) {
+		int status = read_ipc_message(windowservereventmsg, sizeof(windowservereventmsg), &sender);
+		while (status > 0) {
+			WindowServerEvent* rawevent = (WindowServerEvent*) windowservereventmsg;
+			assert(rawevent->windowid == windowhandle);
+			assert(sender == get_windowserver_pid());
 
-	WindowStatusResponse res;
-	res = query_status(windowhandle);
-	while (res.present && !should_close) {
-		res = query_status(windowhandle);
-
-		if (res.last_event.present) {
-			switch (res.last_event.type) {
+			switch (rawevent->type) {
 				case WSEvButtonClick: {
+					WindowServerButtonClickEvent* event = (WindowServerButtonClickEvent*) windowservereventmsg;
+
 					for (int i = 0; i < ONCLICK_LISTENERS_CAPACITY; i++) {
-						if (onclicklisteners[i].present && onclicklisteners[i].buttonID == res.last_event.element) {
+						if (onclicklisteners[i].present && onclicklisteners[i].buttonID == event->element) {
 							onclicklisteners[i].cb(onclicklisteners[i].id);
 						}
 					}
 					break;
 				}
 				case WSEvKeyPress: {
+					WindowServerKeyboardEvent* event = (WindowServerKeyboardEvent*) windowservereventmsg;
+
 					for (int i = 0; i < ONKEYPRESS_LISTENERS_CAPACITY; i++) {
 						if (onkeypresslisteners[i].present) {
-							onkeypresslisteners[i].cb(&((WindowServerKeyboardEvent*) &res.last_event)->event);
+							onkeypresslisteners[i].cb(&event->event);
 						}
 					}
 					break;
 				}
+				case WSEvDestroy: {
+					return;
+				}
 				default: {
-					debugf("Unknown event type: %d\n", res.last_event.type);
+					debugf("Unknown event type: %d\n", rawevent->type);
 					break;
 				}
 			}
+
+			status = read_ipc_message(windowservereventmsg, sizeof(windowservereventmsg), &sender);
 		}
 
 		if (cb != 0) cb();
+
+		yield();
 	}
 
-	if (res.present) {
-		destroy_window(windowhandle);
-	}
+	destroy_window(windowhandle);
 }
 
 void onkeydown(void(*cb)(KeyEvent* event)) {

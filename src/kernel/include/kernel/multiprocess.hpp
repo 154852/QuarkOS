@@ -45,6 +45,8 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
         Socket::Socket stderr;
 
         Socket::Socket* handle;
+
+        bool definitely_has_noipcmsg;
         
         char ring;
     };
