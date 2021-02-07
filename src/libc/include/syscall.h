@@ -108,7 +108,7 @@ unsigned read_ipc_message(void* raw, unsigned length, unsigned* sender);
 unsigned get_pid();
 unsigned find_proc_pid(char* name);
 
-unsigned int exec(const char *path);
+unsigned int exec(const char *path, const char** argv, int argc);
 void yield();
 void __attribute__((noreturn)) exit(unsigned char code);
 

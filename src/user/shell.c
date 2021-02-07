@@ -6,6 +6,7 @@
 #include <windowserver/color.h>
 #include <windowserver/mainloop.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assertions.h>
 #include <string.h>
 
@@ -63,20 +64,7 @@ int caret_y() {
 
 char tmpString[256];
 
-void execute_command(char* start, int clength) {
-	if (strcmp(start, "exit") == 0) {
-		set_should_close(1);
-		return;
-	}
-
-	if (strcmp(start, "pwd") == 0) {
-		int len = strlen(path);
-		memcpy(buffer + length, path, len);
-		length += len;
-		buffer[length++] = '\n';
-		return;
-	}
-	
+void execute_command(char* start, int clength) {	
 	memset(tmpString, 0, sizeof(tmpString));
 
 	int off = 0;
@@ -86,17 +74,63 @@ void execute_command(char* start, int clength) {
 		off += pl;
 	}
 
-	memcpy(tmpString + off, start, clength);
-	off += clength;
-	
-	memcpy(history[historylength++], tmpString, clength);
+	int space0 = clength;
+	for (int i = 0; i < clength; i++) {
+		if (start[i] == ' ') {
+			space0 = i;
+			break;
+		}
+	}
+
+	memcpy(tmpString + off, start, space0);
+	off += space0;
+
+	if (strcmp(start, "exit\n") == 0) {
+		set_should_close(1);
+		return;
+	}
+
+	if (strcmp(start, "pwd\n") == 0) {
+		memcpy(history[historylength++], "pwd", 4);
+
+		int len = strlen(path);
+		memcpy(buffer + length, path, len);
+		length += len;
+		buffer[length++] = '\n';
+		return;
+	}
+
+	memcpy(history[historylength++], start, clength);
 	historyoff = 0;
 
-	pid = exec(tmpString);
+	int argc = 0;
+	for (int i = space0; i < clength; i++) {
+		if (start[i] == ' ') {
+			argc++;
+		}
+	}
+	char** argv = 0;
+	if (argc != 0) {
+		argv = (char**) malloc(sizeof(char*) * argc);
+		int lastspace = space0;
+		int argid = 0;
+		for (int i = space0 + 1; i < clength; i++) {
+			if (start[i] == ' ' || i == clength - 1) {
+				int len = i == clength - 1? (i - lastspace):(i - lastspace - 1);
+				char* arg = malloc(len + 1);
+				memcpy(arg, &start[lastspace] + 1, len);
+				arg[len] = 0;
+				argv[argid++] = arg;
+				lastspace = i;
+			}
+		}
+	}
+
+	pid = exec(tmpString, (const char**) argv, argc);
 	if (pid == -EFILENOTFOUND) {
 		int len = sizeof("File not found '") - 1;
 		memcpy(buffer + length, "File not found '", len); length += len;
-		memcpy(buffer + length, start, clength); length += clength;
+		memcpy(buffer + length, start, space0); length += space0;
 		buffer[length++] = '\'';
 		buffer[length++] = '\n';
 	}
@@ -121,6 +155,7 @@ void keydown(KeyEvent* state) {
 	if (pid != -1) return;
 
 	if (state->action == KEY_PRESS && state->name == KEY_BACKSPACE) {
+		if (length == cmdstart) return;
 		buffer[length - 1] = 0;
 		length--;
 	} else if (state->action == KEY_PRESS && state->name == KEY_UP) {

@@ -115,7 +115,7 @@ namespace ELF {
 		u8 entry_size[4];
 	};
 
-	MultiProcess::Process* load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process);
+	MultiProcess::Process* load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process, const char** argv, unsigned argc);
 };
 
 #endif

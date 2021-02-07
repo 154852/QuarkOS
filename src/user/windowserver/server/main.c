@@ -30,7 +30,10 @@ void recieve_messages() {
 	}
 }
 
-int main() {
+int main(int argc, char** argv) {
+	debugf("ARGC=%d\n", argc);
+	debugf("ARGV=%.8x ARGV[0]=%s\n", argv, argv[0]);
+
 	initialise_buffers();
 	initialise_mouse();
 	initialise_keyboard();
@@ -45,9 +48,9 @@ int main() {
 	
 	render();
 
-	exec("/usr/bin/wallpaper");
-	exec("/usr/bin/timedisp");
-	exec("/usr/bin/appdisp");
+	exec("/usr/bin/wallpaper", 0, 0);
+	exec("/usr/bin/timedisp", 0, 0);
+	exec("/usr/bin/appdisp", 0, 0);
 
 	recieve_messages();
 

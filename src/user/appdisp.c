@@ -26,11 +26,11 @@ WindowHandle windowhandle;
 
 void focus_app(int x) {
 	debugf("// TODO: Allow for window focusing\n");
-	exec(dockApps[x].path);
+	exec(dockApps[x].path, 0, 0);
 }
 
 void open_app(int x) {
-	exec(dockApps[x].path);
+	exec(dockApps[x].path, 0, 0);
 }
 
 #define APPBAR_HEIGHT 50

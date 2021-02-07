@@ -292,9 +292,10 @@ extern "C" void kernel_main(void) {
     kdebugf("[Core] Stack top = %.8x\n", stack_top);
     MultiProcess::tss_set_stack(0x10, stack_top);
 
-    USTAR::FileParsed* file = USTAR::lookup_parsed("/usr/bin/windowserver");
+    const char* name = "/usr/bin/windowserver";
+    USTAR::FileParsed* file = USTAR::lookup_parsed(name);
     assert(file);
-    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "/usr/bin/windowserver"));
+    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "/usr/bin/windowserver"), &name, 1);
     // TODO: There's probably a neater way to do this - maybe with some kind /dev/fb0 or something?
     MemoryManagement::identity_map_region(proc->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true, true);
     MultiProcess::append(proc);

@@ -15,7 +15,7 @@ u16 get_le_u16(const u8* le) {
 	return (u16) le[0] | ((u16) le[1] << 8);
 }
 
-MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process) {
+MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 length, MultiProcess::Process* process, const char** argv, unsigned argc) {
 	MemoryManagement::PageDirectory* old = MemoryManagement::get_active_page_dir();
 	MemoryManagement::save_kernel_page_dir();
 
@@ -74,8 +74,26 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 
     process->registers.ebp = EBP;
 	process->registers.esp = EBP + STACK_SIZE;
-	process->registers.esp -= 4; // leave 0 on the stack
 	MemoryManagement::load_page_dir(process->page_dir);
+	
+	int totallen = 0;
+	unsigned char* startesp = (unsigned char*) process->registers.esp;
+	for (int i = 0; i < argc; i++) totallen += strlen(argv[i]) + 1;
+	for (int i = 0; i < argc; i++) {
+		int len = strlen(argv[i]) + 1;
+		process->registers.esp -= len;
+		*(unsigned*) (startesp - totallen - (4 * (argc - i))) = process->registers.esp;
+		memcpy((void*) process->registers.esp, argv[i], len);
+	}
+	
+	process->registers.esp -= 4 * argc;
+
+	process->registers.esp -= 4;
+	*(unsigned*) process->registers.esp = process->registers.esp + 4;
+	
+	process->registers.esp -= 4;
+	*((unsigned*) process->registers.esp) = argc;
+
 	MemoryManagement::save_kernel_page_dir();
 
 	MemoryManagement::load_page_dir(old);

@@ -45,8 +45,8 @@ unsigned open(const char *string, unsigned flags) {
 	return syscall(SC_Open, (unsigned long) string, flags, 0);
 }
 
-unsigned int exec(const char* path) {
-	return syscall(SC_Exec, (unsigned long) path, 0, 0);
+unsigned int exec(const char *path, const char** argv, int argc) {
+	return syscall(SC_Exec, (unsigned long) path, (unsigned long) argv, argc);
 }
 
 int read_dir(char* path, DirEntry* entries, unsigned long count) {

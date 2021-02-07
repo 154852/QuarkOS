@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include <windowserver/config.h>
 #include <syscall.h>
+#include <string.h>
 #include <assertions.h>
 
 Pixel* framebuffer;
@@ -8,6 +9,7 @@ Pixel swapbuffer[SUPPORTED_SIZE];
 
 void initialise_buffers() {
 	FrameBufferInfo info;
+	memset(&info, 0, sizeof(info));
 	info.enabled = 1;
 	framebuffer_set_state(&info);
 

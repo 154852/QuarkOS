@@ -46,11 +46,15 @@ void render_window_to_swapbuffer(InternalWindow* window) {
 #define TIME_MAX (24 * 60 * 60)
 #define TIME_STOP 10
 
+#define DEBUG_FPS
+
+#ifdef DEBUG_FPS
 int start = -1;
-char ignore_time = 0;
 int frames = 0;
+#endif
 void render() {
-	if (!ignore_time && frames % 3 == 0) {
+#ifdef DEBUG_FPS
+	if (frames % 3 == 0) {
 		FullTime now; 
 		get_full_time(&now);
 
@@ -63,13 +67,14 @@ void render() {
 			else diff = stamp - start;
 
 			if (diff > TIME_STOP) {
-				// ignore_time = 1;
 				debugf("[WindowServer] Rendered %d frames in %d seconds (%ffps)\n", frames, diff, (float) frames / (float) diff);
 				frames = 0;
 				start = stamp;
 			}
 		}
 	}
+	frames++;
+#endif
 
 	InternalWindow** windows = get_windows();
 
@@ -93,5 +98,4 @@ void render() {
 		framebuffer[idx] = swapbuffer[idx];
 	}
 
-	frames++;
 }

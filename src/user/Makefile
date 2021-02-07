@@ -37,7 +37,8 @@ timedisp.o \
 appdisp.o \
 calc.o \
 font.o \
-tasks.o
+tasks.o \
+echo.o
 
 BINARIES=$(OBJS:.o=)
 
@@ -53,6 +54,9 @@ shell: shell.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST) -lwindowserver
 
 ps: ps.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+echo: echo.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 guiapp: guiapp.o

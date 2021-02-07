@@ -103,34 +103,6 @@ ImageLoadResponse load_image(unsigned windowid, const char* path) {
 	}
 }
 
-// WindowStatusResponse query_status(WindowHandle handle) {
-// 	WindowStatusRequest req;
-// 	memset(&req, 0, sizeof(req));
-// 	req.action = WSWindowStatus;
-// 	req.window = handle;
-
-// 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowStatusRequest));
-
-// 	WindowStatusResponse res;
-// 	unsigned senderpid;
-
-// 	while (1) {
-// 		int status = read_ipc_message((char*) &res, sizeof(WindowStatusResponse), &senderpid);
-
-// 		if (status < 0) {
-// 			yield();
-// 			continue;
-// 		}
-
-// 		if (senderpid != get_windowserver_pid()) {
-// 			debugf("Unexpected message from pid = %d\n", senderpid);
-// 			exit(1);
-// 		}
-		
-// 		return res;
-// 	}
-// }
-
 ElementID update_label_detailed(unsigned windowid, unsigned id, const char* content, Pixel* color, int x, int y, float scale) {
 	WindowServerLabelUpdateRequest req;
 	memset(&req, 0, sizeof(req));
@@ -147,7 +119,7 @@ ElementID update_label_detailed(unsigned windowid, unsigned id, const char* cont
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerLabelUpdateRequest));
 
-	if (id != -1) return id;
+	if ((int) id != -1) return id;
 
 	WindowServerElementUpdateResponse res;
 	unsigned senderpid;
@@ -192,7 +164,7 @@ ElementID update_button(unsigned windowid, unsigned id, int x, int y, unsigned w
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerButtonUpdateRequest));
 
-	if (id != -1) return id;
+	if ((int) id != -1) return id;
 
 	WindowServerElementUpdateResponse res;
 	unsigned senderpid;
@@ -233,7 +205,7 @@ ElementID update_rectangle(unsigned windowid, unsigned id, int x, int y, unsigne
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerRectangleUpdateRequest));
 
-	if (id != -1) return id;
+	if ((int) id != -1) return id;
 
 	WindowServerElementUpdateResponse res;
 	unsigned senderpid;
@@ -274,7 +246,7 @@ ElementID update_image(unsigned windowid, unsigned id, int x, int y, unsigned wi
 
 	send_ipc_message(get_windowserver_pid(), (char*) &req, sizeof(WindowServerImageUpdateRequest));
 
-	if (id != -1) return id;
+	if ((int) id != -1) return id;
 
 	WindowServerElementUpdateResponse res;
 	unsigned senderpid;
