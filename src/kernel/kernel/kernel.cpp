@@ -263,19 +263,20 @@ extern "C" void kernel_main(void) {
     syscall_table[SC_GetTime] = sys_gettime;
     syscall_table[SC_GetFullTime] = sys_getfulltime;
 
+    IRQ::enable_irq();
+    Disk::initialise();
+    kdebugf("[Core] Initiliased disk\n");
+    ext2::init();
+    Mouse::init_socket();
+    Keyboard::init_socket();
+    IRQ::disable_irq();
+
     PCI::load_hardware();
     kdebugf("[Core] Initialised PCI\n");
     BXVGA::initialise();
     kdebugf("[Core] Initialised BXVGA\n");
 
-    IRQ::enable_irq();
-    Disk::initialise();
-    kdebugf("[Core] Initiliased disk\n");
-    ext2::init();
-    IRQ::disable_irq();
-
     Mouse::init();
-    Keyboard::init();
     
     MemoryManagement::init_paging();
     kdebugf("[Core] Initiliased paging\n");
@@ -295,9 +296,10 @@ extern "C" void kernel_main(void) {
     MultiProcess::tss_set_stack(0x10, stack_top);
 
     const char* name = "/usr/bin/windowserver";
+    MultiProcess::Process* proc = MultiProcess::create(0, "/usr/bin/windowserver");
     ext2::INode* node = ext2::inode_from_root_path(name);
     assert(node);
-    MultiProcess::Process* proc = ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, MultiProcess::create(0, "/usr/bin/windowserver"), &name, 1);
+    ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, proc, &name, 1);
     // TODO: There's probably a neater way to do this - maybe with some kind /dev/fb0 or something?
     MemoryManagement::identity_map_region(proc->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true, true);
     MultiProcess::append(proc);

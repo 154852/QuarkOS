@@ -15,6 +15,7 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
 
     const char* dirname = reinterpret_cast<const char*>(frame->ebx);
     size_t len = strlen(dirname);
+    while (dirname[len - 1] == '/') len--;
 
     ext2::INode* dir = ext2::inode_from_root_path(dirname);
 
@@ -33,7 +34,9 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
         if (strcmp(ent->name, ".") == 0 || strcmp(ent->name, "..") == 0) continue;
 
         memset(entries[lastentry].name, 0, 64);
-        memcpy(entries[lastentry].name, ent->name, ent->name_len_low);
+        memcpy(entries[lastentry].name, dirname, len);
+        entries[lastentry].name[len] = '/';
+        memcpy(entries[lastentry].name + len + 1, ent->name, ent->name_len_low);
 
         switch (ent->type_or_name_len_high) {
             case DIRENT_TYPE_FILE: {
@@ -44,6 +47,10 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
                 entries[lastentry].type = FT_Directory;
                 break;
             }
+            case DIRENT_TYPE_SOCKET: {
+                entries[lastentry].type = FT_Socket;
+                break;
+            }
             default: {
                 entries[lastentry].type = FT_File;
                 break;
@@ -51,29 +58,6 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
         }
 
         lastentry++;
-    }
-
-    size_t length; Socket::Socket* sockets = Socket::all(&length);
-    
-    for (size_t i = 0; i < length; i++) {
-        if (sockets[i].present) {
-            char* name = sockets[i].name;
-            if (!memcmp(name, dirname, len)) { // Note the lack of strlen + 1
-                size_t filenamelen = strlen(name);
-
-                for (size_t j = len; j < filenamelen; j++) {
-                    if (name[j] == '/') {
-                        goto entry_end;
-                    }
-                }
-
-                memcpy(entries[lastentry].name, name, filenamelen);
-                entries[lastentry].type = FT_Socket;
-                lastentry++;
-
-                entry_end:;
-            }
-        }
     }
 
     frame->eax = lastentry;

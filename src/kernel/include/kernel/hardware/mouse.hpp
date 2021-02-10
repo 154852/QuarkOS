@@ -28,6 +28,7 @@ namespace Mouse {
 	};
 
 	void init();
+	void init_socket();
 	bool set_sample_rate(u8 sample_rate);
 	
 	void mouse_interrupt(struct IRQ::CSITRegisters*);

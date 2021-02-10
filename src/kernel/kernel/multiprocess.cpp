@@ -1,4 +1,7 @@
-#include "kernel/socket.hpp"
+#include "ext2/path.hpp"
+#include <ext2/init.hpp>
+#include <ext2/assist.hpp>
+#include <kernel/socket.hpp>
 #include <kernel/multiprocess.hpp>
 #include <kernel/kernel.hpp>
 #include <assertions.h>
@@ -118,22 +121,37 @@ void _idle_code() {
 
 static volatile u32 last_pid = 0;
 
-unsigned generate_process_info(void* id, void* data, unsigned length) {
-	MultiProcess::Process* proc = reinterpret_cast<MultiProcess::Process*>(id);
-	ProcessInfo info;
-	memset(&info, 0, sizeof(info));
-	
-	size_t nl = strlen(proc->name);
-	memcpy(info.name, proc->name, nl > 63? 63:nl);
-	info.pid = proc->pid;
+unsigned status_socket_exec(void* id, void* data, unsigned length) {
+	const char* str;
+	unsigned len;
 
-	if (proc->state == MultiProcess::Exitting) info.state = ProcessStateSC::PSSC_Exitting;
-	else if (proc->state == MultiProcess::Idle) info.state = ProcessStateSC::PSSC_Idle;
-	else info.state = ProcessStateSC::PSSC_Running;
+	switch (((MultiProcess::Process*) id)->state) {
+		case MultiProcess::ProcessState::Runnable:
+		case MultiProcess::ProcessState::Running: {
+			str = "running";
+			len = 7;
+			break;
+		};
+		case MultiProcess::ProcessState::Exitting: {
+			str = "exitting";
+			len = 8;
+			break;
+		};
+		case MultiProcess::ProcessState::Idle: {
+			str = "idle";
+			len = 4;
+			break;
+		};
+		default: {
+			str = "unknown";
+			len = 7;
+			break;
+		}
+	}
 
-	length = length > sizeof(ProcessInfo)? sizeof(ProcessInfo):length;
-	memcpy(data, &info, length);
-	return length;
+	len = len > length? length:len;
+	memcpy(data, str, len);
+	return len;
 }
 
 MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
@@ -151,20 +169,34 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 
 	proc->pid = last_pid++;
 
-	proc->stdin.present = true;
-	proc->stdout.present = true;
-	proc->stderr.present = true;
-
 	char pidstr[16];
 	itoa(proc->pid, pidstr, 10);
-	
-	char pathstr[64];
-	memcpy(pathstr, "/dev/proc/", sizeof("/dev/proc/") - 1);
-	memcpy(pathstr + sizeof("/dev/proc/") - 1, pidstr, strlen(pidstr));
-	proc->handle = Socket::new_socket(pathstr);
-	proc->handle->generate = generate_process_info;
-	proc->handle->generation_id = proc;
 
+	ext2::mkdir(ext2::inode_id_from_root_path("/proc"), pidstr);
+	char* path = ext2::path_join(2, "proc", pidstr);
+	unsigned parent = ext2::inode_id_from_root_path(path);
+
+	{
+		ext2::mkdir(parent, "fd");
+		char* fd = ext2::path_join(3, "proc", pidstr, "fd");
+		unsigned fdparent = ext2::inode_id_from_root_path(fd);
+		{
+			proc->fd0 = Socket::new_socket();
+			ext2::new_socket(fdparent, "0", proc->fd0->id);
+
+			proc->fd1 = Socket::new_socket();
+			ext2::new_socket(fdparent, "1", proc->fd1->id);
+			
+			proc->fd2 = Socket::new_socket();
+			ext2::new_socket(fdparent, "2", proc->fd2->id);
+		}
+
+		ext2::new_text_file(parent, "exe", name);
+
+		proc->status_sock = Socket::new_socket_with_gen(proc, status_socket_exec);
+		ext2::new_socket(parent, "status", proc->status_sock->id);
+	}
+	
 	return proc;
 }
 

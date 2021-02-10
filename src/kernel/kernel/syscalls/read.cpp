@@ -10,7 +10,7 @@
 
 void sys_read(IRQ::CSITRegisters2* frame) {
 	if (frame->ebx == FD_STDIN) {
-		frame->eax = Socket::read_socket(&MultiProcess::get_current_task()->stdin, frame->edx, reinterpret_cast<void*>(frame->ecx));
+		frame->eax = Socket::read_socket(MultiProcess::get_current_task()->fd0, frame->edx, reinterpret_cast<void*>(frame->ecx));
 	} else if ((frame->ebx & 0xff) == FD_SOCKET) {
 		unsigned id = frame->ebx >> 8;
 		frame->eax = Socket::read_socket(Socket::socket_from_id(id), frame->edx, reinterpret_cast<void*>(frame->ecx));

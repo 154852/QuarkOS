@@ -1,5 +1,8 @@
 #include <kernel/hardware/keyboard.hpp>
 #include <stdio.h>
+#include <ext2/assist.hpp>
+#include <ext2/init.hpp>
+#include <ext2/path.hpp>
 #include <string.h>
 #include <kernel/hardware/pic.hpp>
 #include <kernel/tty.hpp>
@@ -36,8 +39,9 @@ char* Keyboard::get_buffer() {
 
 Socket::Socket* socket;
 char write_buffer[sizeof(Keyboard::ScanCode) + sizeof(Keyboard::KeyboardState)];
-void Keyboard::init() {
-    socket = Socket::new_socket("/dev/keyboard");
+void Keyboard::init_socket() {
+    socket = Socket::new_socket();
+    ext2::new_socket(ext2::inode_id_from_root_path("dev"), "keyboard", socket->id);
 }
 
 __attribute__((interrupt)) void Keyboard::keyboard_interrupt(struct IRQ::CSITRegisters*) {

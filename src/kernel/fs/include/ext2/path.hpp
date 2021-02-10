@@ -11,6 +11,8 @@ namespace ext2 {
 	unsigned inode_id_from_path(const char* path, INode* start);
 	unsigned inode_id_from_relative_path(const char* path, INode* dir);
 	unsigned inode_id_from_root_path(const char* path);
+
+	char* path_join(int count, ...);
 };
 
 #endif

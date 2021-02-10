@@ -19,7 +19,7 @@ namespace Keyboard {
 	void push_to_buffer(char character);
 	u32 get_buffer_size();
 	char* get_buffer();
-	void init();
+	void init_socket();
 }
 
 #endif

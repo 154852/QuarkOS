@@ -40,11 +40,10 @@ Ring0SyncRequests is run as a callback before the next time slice of the process
         bool is_kernel;
         MemoryManagement::PageDirectory* page_dir;
 
-        Socket::Socket stdin;
-        Socket::Socket stdout;
-        Socket::Socket stderr;
-
-        Socket::Socket* handle;
+        Socket::Socket* fd0; // stdin
+        Socket::Socket* fd1; // stdout
+        Socket::Socket* fd2; // stderr
+        Socket::Socket* status_sock; // status
 
         bool definitely_has_noipcmsg;
         

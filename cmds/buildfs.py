@@ -19,7 +19,7 @@ def get_size(start_path):
 
     return total_size
 
-size = 10000
-cmd = f"genext2fs -b {size} -d src/sysroot/ src/sysroot.img"
+size = 20000
+cmd = f"genext2fs -b {size} -N 1000 -d src/sysroot/ src/sysroot.img"
 os.system(cmd)
 print(cmd)

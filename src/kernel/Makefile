@@ -29,8 +29,9 @@ LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
 LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 
 FS_OBJS=\
-fs/ext2/init.o\
-fs/ext2/path.o
+fs/ext2/init.o \
+fs/ext2/path.o \
+fs/ext2/assist.o
 
 FS_EXEC_OBJS=\
 fs/ext2/main.local.o

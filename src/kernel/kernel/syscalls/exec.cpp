@@ -11,12 +11,6 @@
 #include <string.h>
 
 void sys_exec(IRQ::CSITRegisters2* frame) {
-    ext2::INode* node = ext2::inode_from_root_path((const char*) frame->ebx);
-    if (node == 0) {
-        frame->eax = -EFILENOTFOUND;
-        return;
-    }
-
     int argc = frame->edx + 1;
     char** argvin = (char**) frame->ecx;
     char** argv = (char**) kmalloc(sizeof(char*) * argc);
@@ -32,7 +26,15 @@ void sys_exec(IRQ::CSITRegisters2* frame) {
         memcpy(arg, argvin[i], len);
     }
 
-    MultiProcess::Process* proc = ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, MultiProcess::create(0, argv[0]), (const char**) argv, argc);
+    MultiProcess::Process* proc = MultiProcess::create(0, argv[0]);
+
+    ext2::INode* node = ext2::inode_from_root_path((const char*) frame->ebx);
+    if (node == 0) {
+        frame->eax = -EFILENOTFOUND;
+        return;
+    }
+
+    ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, proc, (const char**) argv, argc);
     MultiProcess::append(proc);
 
     frame->eax = proc->pid;

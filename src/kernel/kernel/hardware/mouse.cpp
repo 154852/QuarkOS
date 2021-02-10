@@ -1,3 +1,5 @@
+#include <ext2/path.hpp>
+#include <ext2/assist.hpp>
 #include <kernel/hardware/mouse.hpp>
 #include <kernel/socket.hpp>
 #include <kernel/hardware/pic.hpp>
@@ -110,7 +112,12 @@ bool Mouse::set_sample_rate(u8 sample_rate) {
 	return true;
 }
 
-static Socket::Socket* mouse_socket = Socket::new_socket("/dev/mouse");
+static Socket::Socket* mouse_socket;
+
+void Mouse::init_socket() {
+	mouse_socket = Socket::new_socket();
+	ext2::new_socket(ext2::inode_id_from_root_path("dev"), "mouse", mouse_socket->id);
+}
 
 void Mouse::init() {
 	wait_then_write(I8042_STATUS, 0xad);

@@ -142,6 +142,7 @@ namespace ext2 {
 	void read_raw(unsigned addr, void* out, unsigned length);
 	void write_raw(unsigned addr, void* data, unsigned length);
 	void read_file_content(INode* node, unsigned off, void* out, unsigned length);
+	void write_file_content(unsigned nodeIdx, INode* node, unsigned off, void* data, unsigned length);
 	void* copy_file_to_kmem(INode* node);
 
 	BlockGroupDescriptor* block_group_descriptor_at(unsigned index);
@@ -156,6 +157,14 @@ namespace ext2 {
 	bool is_dir(INode* node);
 
 	unsigned allocate_block();
+	unsigned allocate_inode();
+	bool insert_dirent(DirectoryEntry* entry, INode* dir);
+
+	void init_dir_empty(unsigned inode, unsigned parent);
+	void init_file_empty(unsigned inode);
+	void init_socket(unsigned inode, unsigned id);
+	
+	void write_inode_at(unsigned index, INode* node);
 };
 
 #endif

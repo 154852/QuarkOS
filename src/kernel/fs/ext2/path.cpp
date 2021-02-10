@@ -1,6 +1,7 @@
 #include "ext2/init.hpp"
 #include <ext2/path.hpp>
 #include <string.h>
+#include <stdarg.h>
 
 ext2::INode* ext2::inode_from_path(const char* path, ext2::INode* start) {
 	unsigned inode = inode_id_from_path(path, start);
@@ -55,4 +56,25 @@ unsigned ext2::inode_id_from_relative_path(const char* path, INode* start) {
 
 unsigned ext2::inode_id_from_root_path(const char* path) {
 	return inode_id_from_path(path, get_tmp_root_inode());
+}
+
+char* ext2::path_join(int count, ...) {
+	va_list ap;
+	va_start(ap, count);
+
+	static char path[256];
+	size_t idx = 0;
+
+	memset(path, 0, sizeof(path));
+	for (int i = 1; i <= count; i++) {
+		char* name = va_arg(ap, char*);
+		size_t len = strlen(name);
+		memcpy(path + idx, name, len);
+		idx += len;
+
+		if (i != count) path[idx++] = '/';
+	}
+
+	va_end(ap);
+	return path;
 }

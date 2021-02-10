@@ -11,21 +11,17 @@ Socket::Socket* Socket::socket_from_id(unsigned id) {
 	return &sockets[id];
 }
 
-Socket::Socket* Socket::open_socket(char name[64]) {
-	for (int i = 0; i < SOCKETS_CAPACITY; i++) {
-		if (sockets[i].present && strcmp(name, sockets[i].name) == 0) {
-			return &sockets[i];
-		}
-	}
-	return 0;
+Socket::Socket* Socket::new_socket_with_gen(void* gen_id, unsigned(*generate)(void* id, void* data, unsigned length)) {
+	Socket* sock = new_socket();
+	sock->generate = generate;
+	sock->generation_id = gen_id;
+	return sock;
 }
 
-Socket::Socket* Socket::new_socket(const char name[64]) {
+Socket::Socket* Socket::new_socket() {
 	for (int i = 0; i < SOCKETS_CAPACITY; i++) {
 		if (!sockets[i].present) {
 			sockets[i].present = true;
-			size_t namelen = strlen(name);
-			memcpy(sockets[i].name, name, namelen > 64? 64:namelen);
 			sockets[i].length = 0;
 			sockets[i].data = 0;
 			sockets[i].id = i;
