@@ -1,5 +1,6 @@
 #include <kernel/hardware/disk.hpp>
 #include <kernel/hardware/pic.hpp>
+#include <kernel/kernel.hpp>
 #include <kernel/multiprocess.hpp>
 #include <kernel/kmalloc.hpp>
 #include <assertions.h>
@@ -24,20 +25,18 @@ inline void enable_disk_irq() {
 inline void await_interrupt() {
 	assert(!is_busy);
 	is_busy = true;
-	// bool is_kernel = MultiProcess::get_current_task()->is_kernel;
-	// if (!is_kernel) PIC::irq_clear_mask(0);
 	while (!has_interrupted);
 	is_busy = false;
-	// if (!is_kernel) PIC::irq_set_mask(0);
 }
 
 void Disk::initialise() {
-	disable_disk_irq();
 	has_interrupted = false;
+	enable_disk_irq();
 
  	while (inb(IDE0_STATUS) & BUSY);
 
 	outb(0x1F6, 0xA0);
+	outb(0x3F6, 0xA0);
 	outb(IDE0_COMMAND, IDENTIFY_DRIVE);
 
 	enable_disk_irq();
@@ -64,47 +63,118 @@ void Disk::initialise() {
 	drive[0].sectors_per_track = wbufbase[6];
 }
 
-static Disk::CHS lba2chs(u8 drive_index, u16 lba) {
-	Disk::IDEDrive d = drive[drive_index];
-	Disk::CHS chs;
-	chs.cylinder = lba / (d.sectors_per_track * d.heads);
-    chs.head = (lba / d.sectors_per_track) % d.heads;
-    chs.sector = (lba % d.sectors_per_track) + 1;
-	return chs;
-}
-
 void Disk::read_sectors(u32 start, u16 count, u8* result) {
+	assert(count <= 256);
+
 	disable_disk_irq();
 
-	CHS chs = lba2chs(IDE0_DISK0, start);
-	while (inb(IDE0_STATUS) & BUSY) {}
+	while (inb(IDE0_STATUS) & BUSY);
 
-	outb(0x1F2, count == 256? 0:LSB(count));
-	outb(0x1F3, chs.sector);
-	outb(0x1F4, LSB(chs.cylinder));
-	outb(0x1F5, MSB(chs.cylinder));
-	outb(0x1F6, 0xA0 | chs.head);
+	outb(0x1f2, count == 256? 0:LSB(count));
+	outb(0x1f3, start & 0xff);
+	outb(0x1f4, (start >> 8) & 0xff);
+	outb(0x1f5, (start >> 16) & 0xff);
+	outb(0x1f6, 0xe0 | ((start >> 24) & 0xf));
 
-	outb(0x3F6, 0x08);
-	while (!(inb(IDE0_STATUS) & DRDY)) {}
+	outb(0x3f6, 0x08);
+	while (!(inb(IDE0_STATUS) & DRDY));
 
 	outb(IDE0_COMMAND, READ_SECTORS);
-	has_interrupted = false;
-	enable_disk_irq();
-	await_interrupt();
 
-	u8 status = inb(0x1f7);
-	if (status & DRQ) {
-		for (u32 i = 0; i < (count * 512); i += 2) {
-			u16 w = inw(IDE0_DATA);
-			result[i] = LSB(w);
-			result[i + 1] = MSB(w);
+	for (int i = 0; i < count; i++) {
+		has_interrupted = false;
+		enable_disk_irq();
+		await_interrupt();
+		disable_disk_irq();
+
+		u8 status = inb(0x1f7);
+		assert(status & DRQ);
+
+		inw_many(IDE0_DATA, result + (512 * i), 256);
+	}
+}
+
+void Disk::read_sectors_limited(u32 start, u16 count, u8* result, u32 dstart, u32 dlength) {
+	assert(count <= 256);
+
+	disable_disk_irq();
+
+	while (inb(IDE0_STATUS) & BUSY);
+
+	outb(0x1f2, count == 256? 0:LSB(count));
+	outb(0x1f3, start & 0xff);
+	outb(0x1f4, (start >> 8) & 0xff);
+	outb(0x1f5, (start >> 16) & 0xff);
+	outb(0x1f6, 0xe0 | ((start >> 24) & 0xf));
+
+	outb(0x3f6, 0x08);
+	while (!(inb(IDE0_STATUS) & DRDY));
+
+	outb(IDE0_COMMAND, READ_SECTORS);
+
+	for (int i = 0; i < count; i++) {
+		has_interrupted = false;
+		enable_disk_irq();
+		await_interrupt();
+		disable_disk_irq();
+
+		u8 status = inb(0x1f7);
+		assert(status & DRQ);
+
+		for (int j = 0; j < 512; j += 2) {
+			u16 value = inw(IDE0_DATA);
+
+			int idx = (i * 512) + j - dstart;
+			if (idx >= 0 && idx < (int) dlength) result[idx] = LSB(value);
+			idx++;
+			if (idx >= 0 && idx < (int) dlength) result[idx] = MSB(value);
 		}
 	}
 }
 
 void Disk::disk_interrupt(void*) {
-	has_interrupted = true;
-	inb(0x1f7); // status
 	PIC::send_EOI(IRQ_FIXED_DISK);
+	char status = inb(0x1f7); // status
+	if (status & 1) { // ERR
+		u8 err = inb(0x1f1);
+		kdebugf("[Disk] Disk Error: %d\n", err);
+		hang;
+	}
+	has_interrupted = true;
+}
+
+void Disk::write_sectors(u32 start, u16 count, u8* data) {
+	assert(count <= 256);
+
+	disable_disk_irq();
+
+	outb(0x1f2, count == 256? 0:LSB(count));
+	outb(0x1f3, start & 0xff);
+	outb(0x1f4, (start >> 8) & 0xff);
+	outb(0x1f5, (start >> 16) & 0xff);
+	outb(0x1f6, 0xe0 | ((start >> 24) & 0xf));
+	
+	outb(0x3F6, 0x08);
+
+	outb(IDE0_COMMAND, WRITE_SECTORS);
+	while (!(inb(IDE0_STATUS) & DRQ));
+
+	u8 status = inb(0x1f7);
+	assert(status & DRQ);
+
+	for (int i = 0; i < count; i++) {
+		outw_many(IDE0_DATA, data + (i * 512), 256);
+
+		has_interrupted = false;
+		enable_disk_irq();
+		await_interrupt();
+		disable_disk_irq();
+	}
+
+	outb(IDE0_COMMAND, FLUSH_CACHE);
+	while (inb(IDE0_STATUS) & BUSY);
+	has_interrupted = false;
+
+	enable_disk_irq();
+	await_interrupt();
 }

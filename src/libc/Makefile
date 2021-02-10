@@ -56,7 +56,7 @@ $(HOSTEDOBJS)
  
 LIBK_OBJS=$(FREEOBJS:.o=.libk.o)
  
-BINARIES=libc.a libk.a libg.a # Not ready for libc yet.
+BINARIES=libc.a libk.a libg.a
  
 .PHONY: all clean install install-headers install-libs
 .SUFFIXES: .o .libk.o .c .S
@@ -94,7 +94,6 @@ install: install-headers install-libs
 install-headers:
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	cp -R include/. $(DESTDIR)$(INCLUDEDIR)/.
-	#-p timestamps 
  
 install-libs: $(BINARIES)
 	mkdir -p $(DESTDIR)$(LIBDIR)

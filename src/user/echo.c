@@ -6,4 +6,6 @@ int main(int argc, char** argv) {
 		if (i != argc - 1) debugf(" ");
 	}
 	debugf("\n");
+
+	return 0;
 }

@@ -1,4 +1,5 @@
-#include "kernel/ustar.hpp"
+#include "ext2/init.hpp"
+#include "ext2/path.hpp"
 #include <kernel/syscall.hpp>
 #include <kernel/socket.hpp>
 #include <kernel/multiprocess.hpp>
@@ -15,31 +16,38 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
     const char* dirname = reinterpret_cast<const char*>(frame->ebx);
     size_t len = strlen(dirname);
 
-    unsigned int* pointers = (unsigned int*) kmalloc(sizeof(unsigned int) * frame->edx);
-    int count = USTAR::list_dir(dirname, pointers, frame->edx);
+    ext2::INode* dir = ext2::inode_from_root_path(dirname);
 
-    if (count == -1) {
+    if (dir == 0 || !ext2::is_dir(dir)) {
         frame->eax = -EFILENOTFOUND;
         return;
     }
 
     DirEntry* entries = reinterpret_cast<DirEntry*>(frame->ecx);
 
+    int count = ext2::dir_entry_count(dir);
+
     int lastentry = 0;
     for (int i = 0; i < count; i++) {
-        USTAR::FileRaw* raw = USTAR::lookup_raw_from_raw_pointer(pointers[i]);
-        memcpy(entries[lastentry].name, raw->name, 64);
+        ext2::DirectoryEntry* ent = ext2::read_tmp_direntry(dir, i);
+        if (strcmp(ent->name, ".") == 0 || strcmp(ent->name, "..") == 0) continue;
 
-        switch (raw->typeflag) {
-            case FILE_TYPE_NORMAL: {
+        memset(entries[lastentry].name, 0, 64);
+        memcpy(entries[lastentry].name, ent->name, ent->name_len_low);
+
+        switch (ent->type_or_name_len_high) {
+            case DIRENT_TYPE_FILE: {
                 entries[lastentry].type = FT_File;
                 break;
             }
-            case FILE_TYPE_DIRECTORY: {
+            case DIRENT_TYPE_DIR: {
                 entries[lastentry].type = FT_Directory;
                 break;
             }
-            default: break;
+            default: {
+                entries[lastentry].type = FT_File;
+                break;
+            }
         }
 
         lastentry++;

@@ -8,7 +8,9 @@
 
 __attribute__((noreturn, always_inline)) inline void __assertion_fail(const char* message, unsigned int line, const char* file) {
 	debugf("%s at %s, line %u\n", message, file, line);
+	#ifndef __is_kernel
 	printf("%s at %s, line %u\n", message, file, line);
+	#endif
 	hang;
 }
 

@@ -14,7 +14,7 @@ BOOTDIR?=$(EXEC_PREFIX)/boot
 INCLUDEDIR?=$(PREFIX)/include
  
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -mgeneral-regs-only
-CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude
+CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude -Ifs/include
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
  
@@ -27,6 +27,13 @@ CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
 CPPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
 LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
+
+FS_OBJS=\
+fs/ext2/init.o\
+fs/ext2/path.o
+
+FS_EXEC_OBJS=\
+fs/ext2/main.local.o
  
 KERNEL_OBJS=\
 $(ARCHDIR)/boot.o \
@@ -44,7 +51,6 @@ kernel/hardware/pit.o \
 kernel/hardware/disk.o \
 kernel/tty.o \
 kernel/elf.o \
-kernel/ustar.o \
 kernel/hardware/pci.o \
 kernel/hardware/BXVGA.o \
 kernel/ipcmessaging.o \
@@ -66,6 +72,7 @@ kernel/syscalls/mmap.o \
 kernel/syscalls/readdir.o \
 kernel/syscalls/gettime.o \
 kernel/syscalls/getfulltime.o \
+$(FS_OBJS)
  
 OBJS=\
 $(ARCHDIR)/crti.o \
@@ -83,14 +90,16 @@ $(LIBS) \
 $(ARCHDIR)/crtend.o \
 $(ARCHDIR)/crtn.o \
  
-.PHONY: all clean install install-headers install-kernel
-.SUFFIXES: .o .c .S .cpp
+.PHONY: all clean install install-headers install-kernel install-ext2fs
+.SUFFIXES: .o .local.o .c .S .cpp
  
 all: quarkos.kernel
  
 quarkos.kernel: $(OBJS) $(ARCHDIR)/linker.ld
 	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
-	# grub-file --is-x86-multiboot quarkos.kernel
+
+ext2fs: $(FS_OBJS:.o=.local.o) $(FS_EXEC_OBJS)
+	$(LOCAL_CC) $(FS_OBJS:.o=.local.o) $(FS_EXEC_OBJS) -o $@
  
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
@@ -98,26 +107,39 @@ $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
 
+.c.local.o:
+	$(LOCAL_CC) -MD -c $< -o $@ -std=gnu11 -Iinclude -Ifs/include -D__is_local -D__is_kernel
+
+.cpp.local.o:
+	$(LOCAL_CC) -MD -c $< -o $@ -std=c++11 -Iinclude -Ifs/include -D__is_local -D__is_kernel
+
 .cpp.o:
 	$(CC) -MD -c $< -o $@ -std=c++11 $(CFLAGS) $(CPPFLAGS)
- 
+
 .S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
  
 clean:
 	rm -f quarkos.kernel
-	rm -f $(OBJS) *.o */*.o */*/*.o
-	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
+	rm -f $(OBJS)
+	rm -f $(OBJS:.o=.d)
+	rm -f $(FS_OBJS:.o=.local.o)
+	rm -f $(FS_OBJS:.o=.local.d)
+	rm -f $(FS_EXEC_OBJS)
+	rm -f $(FS_EXEC_OBJS:.o=.d)
+	rm -f ext2fs
  
-install: install-headers install-kernel
+install: install-headers install-kernel #install-ext2fs
  
 install-headers:
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	cp -R include/. $(DESTDIR)$(INCLUDEDIR)/.
-	#-p timestamps 
+	cp -R fs/include/. $(DESTDIR)$(INCLUDEDIR)/.
  
 install-kernel: quarkos.kernel
 	mkdir -p $(DESTDIR)$(BOOTDIR)
 	cp quarkos.kernel $(DESTDIR)$(BOOTDIR)
+
+install-ext2fs: ext2fs
  
 -include $(OBJS:.o=.d)

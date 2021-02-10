@@ -1,3 +1,4 @@
+#include <ext2/path.hpp>
 #include <assertions.h>
 #include <kernel/vga.hpp>
 #include <kernel/hardware/pic.hpp>
@@ -14,7 +15,6 @@
 #include <kernel/hardware/mouse.hpp>
 #include <kernel/hardware/disk.hpp>
 #include <kernel/multiprocess.hpp>
-#include <kernel/ustar.hpp>
 #include <stdio.h>
 #include <kernel/tty.hpp>
 #include <stdint2.h>
@@ -24,6 +24,7 @@
 #include <kernel/kernel.hpp>
 #include <kernel/socket.hpp>
 #include <kernel/syscall.hpp>
+#include <ext2/init.hpp>
 
 extern "C" u16 exception_code;
 asm(
@@ -270,6 +271,7 @@ extern "C" void kernel_main(void) {
     IRQ::enable_irq();
     Disk::initialise();
     kdebugf("[Core] Initiliased disk\n");
+    ext2::init();
     IRQ::disable_irq();
 
     Mouse::init();
@@ -293,9 +295,9 @@ extern "C" void kernel_main(void) {
     MultiProcess::tss_set_stack(0x10, stack_top);
 
     const char* name = "/usr/bin/windowserver";
-    USTAR::FileParsed* file = USTAR::lookup_parsed(name);
-    assert(file);
-    MultiProcess::Process* proc = ELF::load_static_source(file->content, file->length, MultiProcess::create(0, "/usr/bin/windowserver"), &name, 1);
+    ext2::INode* node = ext2::inode_from_root_path(name);
+    assert(node);
+    MultiProcess::Process* proc = ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, MultiProcess::create(0, "/usr/bin/windowserver"), &name, 1);
     // TODO: There's probably a neater way to do this - maybe with some kind /dev/fb0 or something?
     MemoryManagement::identity_map_region(proc->page_dir, (u32) BXVGA::framebuffer(), BXVGA::framebuffer_size(), false, true, true);
     MultiProcess::append(proc);

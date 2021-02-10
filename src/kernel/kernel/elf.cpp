@@ -78,14 +78,14 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	
 	int totallen = 0;
 	unsigned char* startesp = (unsigned char*) process->registers.esp;
-	for (int i = 0; i < argc; i++) totallen += strlen(argv[i]) + 1;
-	for (int i = 0; i < argc; i++) {
+	for (unsigned i = 0; i < argc; i++) totallen += strlen(argv[i]) + 1;
+	for (unsigned i = 0; i < argc; i++) {
 		int len = strlen(argv[i]) + 1;
 		process->registers.esp -= len;
 		*(unsigned*) (startesp - totallen - (4 * (argc - i))) = process->registers.esp;
 		memcpy((void*) process->registers.esp, argv[i], len);
 	}
-	
+
 	process->registers.esp -= 4 * argc;
 
 	process->registers.esp -= 4;

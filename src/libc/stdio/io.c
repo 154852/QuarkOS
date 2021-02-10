@@ -37,3 +37,11 @@ unsigned int indw(unsigned short port) {
 void outdw(unsigned short port, unsigned int value) {
     asm("outl %%eax, %%edx"::"d"(port), "a"(value));
 }
+
+void inw_many(unsigned short port, unsigned char* buffer, unsigned length) {
+     asm volatile("rep insw" : "+D"(buffer), "+c"(length) : "d"(port) : "memory");
+}
+
+void outw_many(unsigned short port, unsigned char* buffer, unsigned length) {
+    asm volatile("rep outsw" : "+S"(buffer), "+c"(length) : "d"(port));
+}

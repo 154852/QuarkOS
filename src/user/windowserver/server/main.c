@@ -30,10 +30,7 @@ void recieve_messages() {
 	}
 }
 
-int main(int argc, char** argv) {
-	debugf("ARGC=%d\n", argc);
-	debugf("ARGV=%.8x ARGV[0]=%s\n", argv, argv[0]);
-
+int main() {
 	initialise_buffers();
 	initialise_mouse();
 	initialise_keyboard();

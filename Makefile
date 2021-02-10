@@ -26,6 +26,8 @@ export CPPFLAGS=
 export SYSROOT="$(shell pwd)/src/sysroot"
 export CC=$(HOST)-gcc --sysroot=$(SYSROOT) -isystem=$(INCLUDEDIR)
 
+export LOCAL_CC=/usr/local/bin/gcc
+
 build: headers libc kernel user/windowserver user sysroot
 
 clean: clean-libc clean-kernel clean-user/windowserver clean-user clean-sysroot
@@ -63,7 +65,7 @@ clean-user:
 
 sysroot:
 	cp -r src/static/* src/sysroot
-	python3 cmds/buildtar.py
+	python3 cmds/buildfs.py
 
 clean-sysroot:
 	rm -rf src/sysroot.img

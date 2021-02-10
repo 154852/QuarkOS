@@ -1,6 +1,6 @@
+#include <ext2/path.hpp>
 #include <kernel/syscall.hpp>
 #include <kernel/socket.hpp>
-#include <kernel/ustar.hpp>
 #include <kernel/multiprocess.hpp>
 #include <kernel/hardware/keyboard.hpp>
 
@@ -16,9 +16,9 @@ void sys_read(IRQ::CSITRegisters2* frame) {
 		frame->eax = Socket::read_socket(Socket::socket_from_id(id), frame->edx, reinterpret_cast<void*>(frame->ecx));
 	} else if ((frame->ebx & 0xff) == FD_FILE) {
 		unsigned id = frame->ebx >> 8;
-		USTAR::FileParsed* file = USTAR::lookup_parsed_from_raw_pointer(id);
-		unsigned size = frame->edx > file->length? file->length:frame->edx;
-		memcpy((void*) frame->ecx, file->content, size);
+		ext2::INode* node = ext2::get_tmp_inode_at(id);
+		unsigned size = frame->edx > node->size_low? node->size_low:frame->edx;
+		ext2::read_file_content(node, 0, (void*) frame->ecx, size);
 		frame->eax = size;
 	} else {
 		assert(0);
