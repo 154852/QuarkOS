@@ -22,13 +22,13 @@ MultiProcess::Process* ELF::load_static_source(unsigned char* content, u32 lengt
 	assert(length > sizeof(Header));
 	Header* header = (Header*) content;
 
-	assert(memcmp(header->magic, ELF_MAGIC, 4) == 0);
-	assert(header->bits == ELF_32_BIT);
-	assert(header->endian == ELF_LITTLE_ENDIAN);
-	assert(header->header_version == 1);
-	assert(header->instruction_set[0] == ELF_INS_X86);
-	assert(memcmp(header->version, ELF_VERSION, 4) == 0);
-	assert(header->type[0] == 0x02); // executable
+	if (memcmp(header->magic, ELF_MAGIC, 4) != 0) return 0;
+	if (header->bits != ELF_32_BIT) return 0;
+	if (header->endian != ELF_LITTLE_ENDIAN) return 0;
+	if (header->header_version != 1) return 0;
+	if (header->instruction_set[0] != ELF_INS_X86) return 0;
+	if (memcmp(header->version, ELF_VERSION, 4) != 0) return 0;
+	if (header->type[0] != 0x02) return 0; // executable
 
 	if (process == nullptr) process = MultiProcess::create(0, "<unnamed elf loaded>");
 

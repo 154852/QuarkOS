@@ -1,9 +1,12 @@
-#include "ext2/init.hpp"
+#include <ext2/init.hpp>
 #include <ext2/path.hpp>
 #include <string.h>
+#include <stdio.h>
 #include <stdarg.h>
 
 ext2::INode* ext2::inode_from_path(const char* path, ext2::INode* start) {
+	if (strcmp(path, "/") == 0) return start;
+	
 	unsigned inode = inode_id_from_path(path, start);
 	if (inode == 0) return 0;
 	return ext2::get_tmp_inode_at(inode);
@@ -19,7 +22,7 @@ ext2::INode* ext2::inode_from_root_path(const char* path) {
 }
 
 unsigned ext2::inode_id_from_path(const char* path, ext2::INode* start) {
-	while (path[0] == '/') path++;
+	while (path[0] == '/' && path[1] != 0) path++;
 
 	unsigned id = 0;
 	ext2::INode* node = start;

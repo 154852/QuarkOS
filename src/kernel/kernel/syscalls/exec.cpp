@@ -34,7 +34,12 @@ void sys_exec(IRQ::CSITRegisters2* frame) {
         return;
     }
 
-    ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, proc, (const char**) argv, argc);
+    proc = ELF::load_static_source((u8*) ext2::copy_file_to_kmem(node), node->size_low, proc, (const char**) argv, argc);
+    if (proc == 0) {
+        frame->eax = -EINVALID;
+        return;
+    }
+    
     MultiProcess::append(proc);
 
     frame->eax = proc->pid;

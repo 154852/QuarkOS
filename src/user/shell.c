@@ -1,5 +1,6 @@
 #include "ckeyboard.h"
 #include "windowserver/fontchars.h"
+#include "windowserver/server/window.h"
 #include <syscall.h>
 #include <windowserver/client.h>
 #include <windowserver/themes/color-active.h>
@@ -12,6 +13,8 @@
 
 #define INIT_PATH "/usr/bin/"
 
+#define ROWS 20
+
 WindowHandle window;
 
 float textsize = 0.5;
@@ -22,7 +25,7 @@ int length = 0;
 int cmdstart;
 int pid = -1;
 
-ElementID labels[20];
+ElementID labels[ROWS];
 ElementID caret;
 
 char path[256];
@@ -30,6 +33,56 @@ char path[256];
 char history[256][20];
 int historylength = 0;
 int historyoff = 0;
+
+int rows() {
+	int y = 0;
+	for (int i = 0; i < length; i++) {
+		if (buffer[i] == '\n') y++;
+	}
+	return y;
+}
+
+int caret_x() {
+	int x = 0;
+	for (int i = 0; i < length; i++) {
+		if (buffer[i] == '\n') x = 0;
+		else x += (fontchar_for_char(buffer[i]).width * textsize) + 1;
+	}
+	return x;
+}
+
+int caret_y() {
+	return rows() * FONTCHAR_41_H * textsize;
+}
+
+void update_str() {
+	int diff = rows() - ROWS + 1;
+	if (diff > 0) {
+		int i;
+		for (i = 0; i < length; i++) {
+			if (buffer[i] == '\n') {
+				diff--;
+				if (diff != 0) continue;
+
+				i++;
+				break;
+			}
+		}
+
+		memmove(buffer, buffer + i, length - i);
+		memset(buffer + length - i, 0, i);
+		length -= i;
+		cmdstart -= i;
+	}
+}
+
+void append_strl(const char* string, int len) {
+	memcpy(buffer + length, string, len); length += len;
+}
+
+void append_str(const char* string) {
+	append_strl(string, strlen(string));
+}
 
 int write_shell_userpath(char* string) {
 	int len = 0;
@@ -45,24 +98,10 @@ int write_shell_userpath(char* string) {
 	return len;
 }
 
-int caret_x() {
-	int x = 0;
-	for (int i = 0; i < length; i++) {
-		if (buffer[i] == '\n') x = 0;
-		else x += (fontchar_for_char(buffer[i]).width * textsize) + 1;
-	}
-	return x;
-}
-
-int caret_y() {
-	int y = 0;
-	for (int i = 0; i < length; i++) {
-		if (buffer[i] == '\n') y += FONTCHAR_41_H;
-	}
-	return y * textsize;
-}
-
 char tmpString[256];
+unsigned stdoutfd;
+char existsname[32];
+char statusname[32];
 
 void execute_command(char* start, int clength) {	
 	memset(tmpString, 0, sizeof(tmpString));
@@ -87,6 +126,10 @@ void execute_command(char* start, int clength) {
 
 	if (strcmp(start, "exit\n") == 0) {
 		set_should_close(1);
+		return;
+	}
+
+	if (strcmp(start, "\n") == 0) {
 		return;
 	}
 
@@ -133,14 +176,42 @@ void execute_command(char* start, int clength) {
 		memcpy(buffer + length, start, space0); length += space0;
 		buffer[length++] = '\'';
 		buffer[length++] = '\n';
+		return;
+	} else if (pid == -EINVALID) {
+		int len = sizeof("Not executable '") - 1;
+		memcpy(buffer + length, "Not executable '", len); length += len;
+		memcpy(buffer + length, start, space0); length += space0;
+		buffer[length++] = '\'';
+		buffer[length++] = '\n';
+		return;
 	}
+
+	char stdoutfdname[32];
+	memset(stdoutfdname, 0, sizeof(stdoutfdname));
+	memset(existsname, 0, sizeof(existsname));
+	
+	memcpy(existsname, "/proc/", 6);
+	itoa(pid, existsname + 6, 10);
+
+	size_t len = strlen(existsname);
+
+	memcpy(stdoutfdname, existsname, sizeof(stdoutfdname));
+	memcpy(stdoutfdname + len, "/fd/1", 5);
+
+	stdoutfd = open(stdoutfdname, FILE_FLAG_R | FILE_FLAG_SOCK);
+
+	memcpy(statusname, existsname, sizeof(statusname));
+	memcpy(statusname + len, "/status", 7);
 }
 
 void render_text() {
+	update_str();
 	int start = 0;
 	int labelID = 0;
 	for (int i = 0; i < length; i++) {
 		if (buffer[i] == '\n' || i == length - 1) {
+			assert(labelID < ROWS);
+
 			memset(tmpString, 0, sizeof(tmpString));
 			memcpy(tmpString, buffer + start, i - start + 1);
 			labels[labelID] = update_label_detailed(window, labels[labelID], tmpString, 0, 5, (labelID * FONTCHAR_41_H * textsize) + 5, textsize);
@@ -198,27 +269,40 @@ void keydown(KeyEvent* state) {
 }
 
 ProcessInfo info;
+char stdoutbuffer[1024];
+char status[10];
 void tick() {
 	if (pid != -1) {
-		memset(tmpString, 0, sizeof(tmpString));
-		int len = sizeof("/dev/proc/") - 1;
-		memcpy(tmpString, "/dev/proc/", len);
-		itoa(pid, tmpString + len, 10);
-
-		int fd = open(tmpString, FILE_FLAG_R | FILE_FLAG_SOCK);
-		if (fd == -EFILENOTFOUND) {
-			pid = -1;
-		} else {
-			len = read(fd, &info, sizeof(info));
-			if (len != sizeof(info) || info.state != PSSC_Running) {
-				pid = -1;
-			}
+		memset(stdoutbuffer, 0, sizeof(stdoutbuffer));
+		read(stdoutfd, stdoutbuffer, sizeof(stdoutbuffer));
+		size_t len = strlen(stdoutbuffer);
+		if (len != 0) {
+			memcpy(buffer + length, stdoutbuffer, len); length += len;
 		}
 
-		if (pid == -1) {
+		if ((int) open(existsname, FILE_FLAG_R) == -EFILENOTFOUND) {
 			length += write_shell_userpath(buffer + length);
 			cmdstart = length;
 
+			render_text();
+			render_window(window);
+			pid = -1;
+			return;
+		}
+
+		memset(status, 0, sizeof(status));
+		read(open(statusname, FILE_FLAG_R | FILE_FLAG_SOCK), status, sizeof(status));
+		if (strcmp(status, "running") != 0) {
+			length += write_shell_userpath(buffer + length);
+			cmdstart = length;
+
+			render_text();
+			render_window(window);
+			pid = -1;
+			return;
+		}
+
+		if (len != 0) {
 			render_text();
 			render_window(window);
 		}
@@ -226,9 +310,9 @@ void tick() {
 }
 
 int main() {
-	window = create_window("Shell", 600, 400, 100, 100, 1);
+	window = create_window("Shell", 600, (ROWS * FONTCHAR_41_H * textsize) + TITLE_BAR_HEIGHT + 5, 100, 100, 1);
 
-	for (int i = 0; i < 20; i++) labels[i] = -1;
+	for (int i = 0; i < ROWS; i++) labels[i] = -1;
 	caret = -1;
 
 	memcpy(path, INIT_PATH, sizeof(INIT_PATH) - 1);

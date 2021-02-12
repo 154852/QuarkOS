@@ -10,6 +10,7 @@ extern "C" {
 #define EFILENOTFOUND 1
 #define ETOOSMALL 2
 #define ENOTFOUND 3
+#define EINVALID 4
 
 #define FD_STDIN 0x00
 #define FD_STDOUT 0x01

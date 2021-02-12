@@ -38,7 +38,9 @@ appdisp.o \
 calc.o \
 font.o \
 tasks.o \
-echo.o
+echo.o \
+ls.o \
+cat.o
 
 BINARIES=$(OBJS:.o=)
 
@@ -57,6 +59,12 @@ ps: ps.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 echo: echo.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+ls: ls.o
+	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
+
+cat: cat.o
 	$(CC) -o $@ $(CFLAGS) $< $(LINK_LIST)
 
 guiapp: guiapp.o

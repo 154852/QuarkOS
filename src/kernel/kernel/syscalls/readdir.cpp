@@ -15,7 +15,7 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
 
     const char* dirname = reinterpret_cast<const char*>(frame->ebx);
     size_t len = strlen(dirname);
-    while (dirname[len - 1] == '/') len--;
+    while (dirname[len - 1] == '/' && len != 1) len--;
 
     ext2::INode* dir = ext2::inode_from_root_path(dirname);
 
@@ -35,10 +35,10 @@ void sys_readdir(IRQ::CSITRegisters2* frame) {
 
         memset(entries[lastentry].name, 0, 64);
         memcpy(entries[lastentry].name, dirname, len);
-        entries[lastentry].name[len] = '/';
-        memcpy(entries[lastentry].name + len + 1, ent->name, ent->name_len_low);
+        if (dirname[len - 1] != '/') entries[lastentry].name[len] = '/';
+        memcpy(entries[lastentry].name + len + (dirname[len - 1] != '/'? 1:0), ent->name, ent->name_len_low);
 
-        switch (ent->type_or_name_len_high) {
+        switch (ent->type_or_name_len_high & 0xf) {
             case DIRENT_TYPE_FILE: {
                 entries[lastentry].type = FT_File;
                 break;

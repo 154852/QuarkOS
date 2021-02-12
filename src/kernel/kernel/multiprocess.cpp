@@ -44,6 +44,7 @@ MultiProcess::Process* find_next_task() {
 	return current_process;
 }
 
+int skipped = 0;
 extern "C" int update_process(IRQ::CSITRegisters2* registers) {
 	PIT::tick();
 	if (current_process->ring == 0 && !current_process->is_kernel) {
@@ -257,6 +258,8 @@ void MultiProcess::exit(Process* process, u32 exit_code) {
 	MemoryManagement::save_kernel_page_dir();
 	MemoryManagement::free_pages(process->page_dir);
 	kdebugf("[MultiProcess] Process %s quit with code: %d\n", process->name, exit_code);
+
+	// TODO: /proc/pid entry and close all sockets
 }
 
 MultiProcess::Process* MultiProcess::find_process_by_pid(u32 pid) {

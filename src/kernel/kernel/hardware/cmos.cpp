@@ -20,6 +20,17 @@ u32 bcd_to_binary(u8 value) {
 	return value;
 } 
 
+// #define HARDCODE_TIME
+
+#ifdef HARDCODE_TIME
+u32 CMOS::read_seconds() { return 0; }
+u32 CMOS::read_minutes() { return 0; }
+u32 CMOS::read_hours() { return 0; }
+u32 CMOS::read_day_of_month() { return 2; }
+u32 CMOS::read_month() { return 2; }
+u32 CMOS::read_years() { return 2001; }
+u32 CMOS::read_day_of_week() { return 2; }
+#else
 u32 CMOS::read_seconds() {
 	while (update_in_progress());
 	return bcd_to_binary(read(0x00));
@@ -64,18 +75,47 @@ u32 CMOS::read_day_of_week() {
 	while (update_in_progress());
 	return bcd_to_binary(read(0x06));
 }
+#endif
 
-// TODO: This is incredibly inaccurate
+u32 days_in_month(u32 month, u32 year) {
+	switch (month) {
+	case 1: return 31;
+	case 2: return year % 4 == 0? 29:28;
+	case 3: return 31;
+	case 4: return 30;
+	case 5: return 31;
+	case 6: return 30;
+	case 7: return 31;
+	case 8: return 31;
+	case 9: return 30;
+	case 10: return 31;
+	case 11: return 30;
+	case 12: return 31;
+	}
+
+	return 0;
+}
+
 u64 CMOS::secs_since_epoch() {
-	u32 year = CMOS::read_years();
-	u64 time = (365 * year) + (year / 4) - (year / 100) + (year / 400);
-
-	u32 month = CMOS::read_month();
-	time += (30 * month) + (3 * (month + 1) / 5) + CMOS::read_day_of_month();
-
-	time -= 719561;
-	time *= 86400;
+	int year = CMOS::read_years();
+	int month = CMOS::read_month();
+	u32 month_days = 0;
+	for (int i = 1; i < month; i++) {
+		month_days += days_in_month(i, year);
+	}
 	
-	time += (3600 * CMOS::read_hours()) + (60 * CMOS::read_minutes()) + CMOS::read_seconds();;
-	return time;
+	int year_days = 0;
+	for (int i = 2000; i < year; i++) {
+		for (int j = 1; j <= 12; j++) {
+			year_days += days_in_month(j, i);
+		}
+	}
+
+	return 
+		CMOS::read_seconds() +
+		(CMOS::read_minutes() * 60) + 
+		(CMOS::read_hours() * 60 * 60) +
+		((CMOS::read_day_of_month() - 1) * 24 * 60 * 60) + 
+		(month_days * 24 * 60 * 60) + 
+		(year_days * 24 * 60 * 60) + 946684800;
 }

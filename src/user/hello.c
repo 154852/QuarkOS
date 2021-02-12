@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 int main() {
-	debugf("What is your name? ");
+	printf("What is your name? ");
 
 	char name[10];
 	for (int i = 0; i < 9; i++) {
@@ -14,8 +14,8 @@ int main() {
 		printf("%c", next);
 		name[i] = next;
 	}
-	debugf("\n");
+	printf("\n");
 
-	debugf("Hello %s!\n", name);
+	printf("Hello %s!\n", name);
 	return 0;
 }

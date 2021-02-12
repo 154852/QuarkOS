@@ -8,7 +8,7 @@
 #define PIT_CHANNEL_2 2
 
 namespace PIT {
-	void set_reload_value(unsigned char channel, unsigned short reload_value);
+	void set_reload_value(unsigned short reload_value);
 	bool can_have_frequency(unsigned int frequency);
 	bool attempt_to_set_frequency(unsigned int frequency);
 

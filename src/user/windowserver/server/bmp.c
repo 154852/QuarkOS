@@ -3,6 +3,7 @@
 #include <windowserver/image.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assertions.h>
 #include <string.h>
 
 char header[54];
@@ -12,7 +13,7 @@ char header[54];
 
 Bitmap* load_bmp(const char* path) {
 	unsigned handle = open(path, FILE_FLAG_R);
-	if (handle == 0) {
+	if ((int) handle == -EFILENOTFOUND) {
 		debugf("Could not open file\n");
 		return 0;
 	}

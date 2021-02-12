@@ -289,7 +289,7 @@ extern "C" void kernel_main(void) {
 
     PIC::irq_clear_mask(1); // Keyboard
     PIC::irq_clear_mask(12);
-    PIT::attempt_to_set_frequency(400);
+    // PIT::attempt_to_set_frequency(250); // TODO: Does this change anything?
     PIT::initialise_timer();
 
     kdebugf("[Core] Stack top = %.8x\n", stack_top);

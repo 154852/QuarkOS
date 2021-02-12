@@ -134,6 +134,8 @@ ext2::BlockGroupDescriptor* ext2::block_group_descriptor_at(unsigned index) {
 }
 
 ext2::INode* ext2::get_tmp_inode_at(unsigned index) {
+	if (index == 0) return 0;
+	
 	BlockGroupDescriptor* block_group = block_group_descriptor_at(block_group_for(index));
 	size_t inode_table = block_group->inode_table_addr * superblock->block_size;
 	static ext2::INode inode;
@@ -308,7 +310,7 @@ unsigned ext2::dir_entry_count(INode *node) {
 }
 
 bool ext2::is_dir(INode* node) {
-	return (node->type_and_permissions & TYPE_DIRECTORY) != 0;
+	return ((node->type_and_permissions & 0x0000f000) == TYPE_DIRECTORY) != 0;
 }
 
 ext2::DirectoryEntry* ext2::find_tmp_direntry(INode* node, const char* name) {
