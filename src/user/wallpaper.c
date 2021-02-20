@@ -21,7 +21,7 @@ int main() {
 
 	render_window(windowhandle);
 	while (1) {
-		yield();
+		// yield();
 	}
 
 	return 0;

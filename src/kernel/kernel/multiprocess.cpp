@@ -21,7 +21,9 @@ MultiProcess::Process* MultiProcess::get_current_task() {
 	return current_process;
 }
 
-MultiProcess::Process* find_next_task() {
+#define KERNEL_STACK_SIZE (16 * KB)
+
+void find_next_task() {
 	if (current_process->state == MultiProcess::ProcessState::Running) current_process->state = MultiProcess::ProcessState::Runnable;
 	current_process = current_process->next;
 	// Move to the next thread
@@ -41,80 +43,136 @@ MultiProcess::Process* find_next_task() {
 	// TODO: Don't run the idle process unless we absolutely have to
 	// if (current_process->state == MultiProcess::Idle) current_process = current_process->next;
 
-	return current_process;
-}
-
-int skipped = 0;
-extern "C" int update_process(IRQ::CSITRegisters2* registers) {
-	PIT::tick();
-	if (current_process->ring == 0 && !current_process->is_kernel) {
-		// TODO: We need to allow context switches here
-		PIC::send_EOI(0);
-		return 0;
-	}
-
-	MultiProcess::yield(registers);
-	PIC::send_EOI(0);
-	return 0;
+	if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
 }
 
 void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
-	IRQ::CSITRegisters* original_registers = (IRQ::CSITRegisters*) ((unsigned char*) registers + 4);
-
-	if (current_process->state != MultiProcess::ProcessState::Exitting) {
-		memcpy(&current_process->registers, original_registers, sizeof(IRQ::CSITRegisters));
-	}
-	/* current_process = */ find_next_task();
-	if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
-	memcpy(original_registers, &current_process->registers, sizeof(IRQ::CSITRegisters));
-
-	MemoryManagement::load_page_dir(current_process->page_dir);
+	assert(false);
 }
 
+struct x86_regs {
+    u32
+    edi, esi, ebp, ebx, ecx, edx, eax,
+    eip, cs, eflags, esp, ss;
+};
+
+extern "C" void _multiprocess_tick(x86_regs* regs);
 asm (
 	".globl context_switch_interrupt_trigger\n"
 	"context_switch_interrupt_trigger:\n"
 		"cli\n"
-		"pushl %eax\n"
-		"pushl %ebx\n"
-		"pushl %ecx\n"
-		"pushl %edx\n"
-		"pushl %esi\n"
-		"pushl %edi\n"
-		"pushl %ebp\n"
-        
-		"movl $0x0, %eax\n"
-        "mov %ds, %ax\n"
-        "pushl %eax\n"
-        
-		"movl $0x0, %eax\n"
-        "mov $0x10, %ax\n"
-        "mov %ax, %ds\n"
-        "mov %ax, %es\n"
-        "mov %ax, %fs\n"
-        "mov %ax, %gs\n"
+
+		"push %eax\n"
+		"push %edx\n"
+		"push %ecx\n"
+		"push %ebx\n"
+		"push %ebp\n"
+		"push %esi\n"
+		"push %edi\n"
+
+		"push %esp\n"
+		"call _multiprocess_tick\n"
+		"pop %eax\n"
 		
-        "pushl %esp\n"
-		"call update_process\n"
-        "popl %esp\n"
-        
-        "popl %ebx\n"
-        "mov %bx, %ds\n"
-        "mov %bx, %es\n"
-        "mov %bx, %fs\n"
-        "mov %bx, %gs\n"
-        
-		"popl %ebp\n"
-		"popl %edi\n"
-		"popl %esi\n"
-		"popl %edx\n"
-		"popl %ecx\n"
-		"popl %ebx\n"
-		"popl %eax\n"
+		"pop %edi\n"
+		"pop %esi\n"
+		"pop %ebp\n"
+		"pop %ebx\n"
+		"pop %ecx\n"
+		"pop %edx\n"
+		"pop %eax\n"
+
 		"sti\n"
         
 		"iret\n"
 );
+
+extern "C" u32 read_eip();
+asm (
+	".globl read_eip\n"
+	"read_eip:\n"
+		"mov (%esp), %eax\n"
+		"ret\n"
+);
+
+extern "C" void x86_goto(u32 eip, u32 ebp, u32 esp);
+asm (
+	".global x86_goto\n"
+	"x86_goto:\n"
+	    "pop %ebx\n"    /* Caller return address */
+	    "pop %ebx\n"    /* eip */
+	    "pop %ebp\n"
+	    "pop %esp\n"
+	    "mov $-1, %eax\n" /* Return -1 -> Done switching */
+	    "jmp *%ebx\n"
+);
+
+extern "C" void x86_jump_user(u32 eax, u32 eip, u32 cs, u32 eflags, u32 esp, u32 ss);
+asm (
+	".global x86_jump_user\n"
+	"x86_jump_user:\n"  /* eax, eip, cs, eflags, esp, ss */
+	    "pop  %eax\n"   /* Caller return address */
+	    "mov  $0x20 | 0x3, %ax\n"
+	    "movw %ax, %ds\n"
+	    "movw %ax, %es\n"
+	    "movw %ax, %fs\n"
+	    "movw %ax, %gs\n"
+	    "pop  %eax\n"   /* eax for sys_fork return */
+	    "iret\n"
+);
+
+static void thread_switch() {
+    MemoryManagement::load_page_dir(current_process->page_dir);
+
+    kernel_tss.esp0 = (u32) current_process->kernel_esp;
+
+    x86_goto(current_process->eip, current_process->ebp, current_process->esp);
+}
+
+#define X86_SS (0x20 | 3)
+#define X86_CS (0x18 | 3)
+
+static void thread_spawn() {
+	MemoryManagement::load_page_dir(current_process->page_dir);
+	kernel_tss.esp0 = (u32) current_process->kernel_esp;
+	current_process->spawned = true;
+
+    x86_jump_user(current_process->registers.eax, current_process->registers.eip, X86_CS, current_process->registers.eflags, current_process->registers.esp, X86_SS);
+}
+
+static void schedule() {
+	find_next_task();
+
+    if (current_process->spawned) {
+        thread_switch();
+    } else {
+        thread_spawn();
+    }
+}
+
+void _multiprocess_tick(x86_regs* regs) {
+	PIC::send_EOI(0);
+	PIT::tick();
+
+	volatile unsigned eip;
+	volatile unsigned esp;
+	volatile unsigned ebp;
+
+	asm volatile("mov %%esp, %0":"=r"(esp));
+    asm volatile("mov %%ebp, %0":"=r"(ebp));
+
+    eip = read_eip();
+
+    if (eip == (unsigned) -1) {
+    	return;
+    }
+
+    current_process->eip = eip;
+    current_process->esp = esp;
+    current_process->ebp = ebp;
+
+    schedule();
+}
 
 void _idle_code() {
 	while (1);
@@ -158,15 +216,21 @@ unsigned status_socket_exec(void* id, void* data, unsigned length) {
 MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 	Process* proc = (Process*) kmalloc(sizeof(Process));
 	proc->page_dir = (MemoryManagement::PageDirectory*) kmalloc_aligned(sizeof(MemoryManagement::PageDirectory));
+	memset(proc->page_dir, 0, sizeof(MemoryManagement::PageDirectory));
 	proc->name = name;
 	proc->state = MultiProcess::ProcessState::Runnable;
 	proc->ring = 3;
+
+	proc->kernel_esp = (u8*) kmalloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE;
+	proc->spawned = false;
 
 	proc->registers.ss = 0x20 | 0x03;
 	// TODO: For now we will allow raised IOPL so we can use debugf from userspace programs
 	proc->registers.eflags = 0x0202;
 	proc->registers.cs = 0x18 | 0x03;
 	proc->registers.eip = (u32) entry;
+
+	proc->esp = 0;
 
 	proc->pid = last_pid++;
 
@@ -204,7 +268,7 @@ MultiProcess::Process* MultiProcess::create(void *entry, const char *name) {
 void MultiProcess::append(Process* proc) {
 	proc->next = current_process->next;
 	current_process->next = proc;
-	kdebugf("[MultiProcess] Process %s (pid=%d) linked to process chain and will execute next\n", proc->name, proc->pid);
+	kdebugf("[MultiProcess] Process %s (pid=%d) linked to process chain and will execute next (esp0=%.8x)\n", proc->name, proc->pid, proc->kernel_esp);
 }
 
 extern "C" void tss_flush();
@@ -259,7 +323,7 @@ void MultiProcess::exit(Process* process, u32 exit_code) {
 	MemoryManagement::free_pages(process->page_dir);
 	kdebugf("[MultiProcess] Process %s quit with code: %d\n", process->name, exit_code);
 
-	// TODO: /proc/pid entry and close all sockets
+	// TODO: rm /proc/pid entry and close all sockets
 }
 
 MultiProcess::Process* MultiProcess::find_process_by_pid(u32 pid) {

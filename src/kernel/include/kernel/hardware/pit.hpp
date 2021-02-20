@@ -15,6 +15,7 @@ namespace PIT {
 	void initialise_timer();
 	void tick();
 	u64 get_time();
+	u64 fractional_time();
 }
 
 #endif

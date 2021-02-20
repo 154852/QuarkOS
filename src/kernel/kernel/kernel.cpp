@@ -26,6 +26,8 @@
 #include <kernel/syscall.hpp>
 #include <ext2/init.hpp>
 
+u32 stack_top;
+
 extern "C" u16 exception_code;
 asm(
     ".globl exception_code\n"
@@ -125,7 +127,6 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
 
     assert(MultiProcess::get_current_task()->ring == 3);
 
-    PIC::irq_set_mask(0);
     asm("sti");
 
     MultiProcess::get_current_task()->ring = 0;
@@ -133,7 +134,6 @@ extern "C" int syscall_handle(IRQ::CSITRegisters2* frame) {
     MultiProcess::get_current_task()->ring = 3;
 
     asm("cli");
-    PIC::irq_clear_mask(0);
     return 0;
 }
 full_state_dump_interrupt(syscall);
@@ -179,6 +179,19 @@ extern "C" void general_protection_fault_handle(IRQ::CSITRegisters regs) {
 }
 full_state_dump_interrupt_with_code(general_protection_fault);
 
+extern "C" void invalid_opcode_handle(IRQ::CSITRegisters regs) {
+    IRQ::disable_irq();
+
+    debugf("Invalid Opcode in : %s\n", MultiProcess::get_current_task()->name);
+
+    debugf("exception code: %i\n", exception_code);
+    debugf("pc=%x:%x\n", regs.cs, regs.eip);
+    debugf("eax=%x ebx=%x ecx=%x edx=%x\n", regs.eax, regs.ebx, regs.ecx, regs.edx);
+    debugf("ebp=%x esp=%x esi=%x edi=%x\n", regs.ebp, regs.esp, regs.esi, regs.edi);
+    hang;
+}
+full_state_dump_interrupt_with_code(invalid_opcode);
+
 extern "C" void double_fault_handle() {
     IRQ::disable_irq();
     kdebugf("Double Fault\n");
@@ -193,7 +206,6 @@ QUICK_INTERRUPT(debug_exception);
 QUICK_INTERRUPT(unknown_error);
 QUICK_INTERRUPT(breakpoint);
 QUICK_INTERRUPT(overflow);
-QUICK_INTERRUPT(invalid_opcode);
 QUICK_INTERRUPT(coprocess_not_available);
 QUICK_INTERRUPT(coprocessor_segment_overrun);
 QUICK_INTERRUPT(invalid_tss);
@@ -203,8 +215,6 @@ QUICK_INTERRUPT(unknown_error2);
 QUICK_INTERRUPT(coprocessor_error);
 
 void* specific_interrupt_handlers[256];
-
-u32 stack_top;
 
 extern "C" void kernel_main(void) {
     asm volatile("mov %%esp, %0" : "=m"(stack_top));
@@ -226,7 +236,7 @@ extern "C" void kernel_main(void) {
     specific_interrupt_handlers[0x03] = (void*) breakpoint;
     specific_interrupt_handlers[0x04] = (void*) overflow;
     specific_interrupt_handlers[0x05] = (void*) bounds_check_interrupt_trigger;
-    specific_interrupt_handlers[0x06] = (void*) invalid_opcode;
+    specific_interrupt_handlers[0x06] = (void*) invalid_opcode_interrupt_trigger;
     specific_interrupt_handlers[0x07] = (void*) coprocess_not_available;
     specific_interrupt_handlers[0x08] = (void*) double_fault_interrupt_trigger;
     specific_interrupt_handlers[0x09] = (void*) coprocessor_segment_overrun;

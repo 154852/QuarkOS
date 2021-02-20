@@ -19,7 +19,11 @@ void PIT::initialise_timer() {
 	time = CMOS::secs_since_epoch();
 	kdebugf("[PIT] Startup time = %d\n", time);
 	outb(0x43, TIMER0_SELECT | WRITE_WORD | MODE_SQUARE_WAVE);
-	attempt_to_set_frequency(250);
+	attempt_to_set_frequency(100);
+}
+
+u64 PIT::fractional_time() {
+	return ticks;
 }
 
 void PIT::tick() {

@@ -65,7 +65,7 @@ Bitmap* load_bmp(const char* path) {
 	}
 	
 	free_sized(full_file, file_size);
-	debugf("[WindowServer] Image %s loaded\n", path);
+	debugf("[WindowServer] Image %s loaded (%d bytes)\n", path, file_size);
 
 	return bitmap;
 }

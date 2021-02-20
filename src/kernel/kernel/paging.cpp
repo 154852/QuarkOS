@@ -1,4 +1,5 @@
 #include <kernel/paging.hpp>
+#include <kernel/multiprocess.hpp>
 #include <kernel/kmalloc.hpp>
 #include <string.h>
 #include <assertions.h>
@@ -72,6 +73,8 @@ namespace MemoryManagement {
 	PageTableEntry* allocate_page(PageDirectory* dir, u32 vaddr, u32 frame, bool __attribute__((unused)) is_kernel, bool __attribute__((unused)) is_writable, bool global) {
 		assert(dir);
 
+		assert(frame != 0 || (frame == vaddr));
+
 		u32 page_dir_idx = pagedir_index(vaddr);
 		u32 page_tbl_idx = pagetable_index(vaddr);
 
@@ -101,6 +104,7 @@ namespace MemoryManagement {
 			table->pages[page_tbl_idx].avail = global? 1:0;
 		} else {
 			// TODO: We ought to properly prevent remapping memory
+			kdebugf("[Memory] Attempt by %s to remap existing page: vaddr=%.8x, with existing frame=%.8x to frame at %.8x,\n", MultiProcess::get_current_task()->name, vaddr, table->pages[page_tbl_idx].page_addr << 12, frame);
 			assert(false);
 		}
 

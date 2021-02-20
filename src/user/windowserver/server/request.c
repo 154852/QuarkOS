@@ -1,7 +1,6 @@
 #include "request.h"
 #include "render.h"
 #include "window.h"
-#include "windowserver/client.h"
 #include "windowserver/config.h"
 #include "windowserver/image.h"
 #include <stdlib.h>
