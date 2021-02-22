@@ -65,7 +65,7 @@ void mainloop_cb(WindowHandle windowhandle, void(*cb)()) {
 
 		if (cb != 0) cb();
 
-		// yield();
+		yield();
 	}
 
 	destroy_window(windowhandle);

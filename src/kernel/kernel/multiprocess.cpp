@@ -46,10 +46,6 @@ void find_next_task() {
 	if (current_process->state == MultiProcess::ProcessState::Runnable) current_process->state = MultiProcess::ProcessState::Running;
 }
 
-void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
-	assert(false);
-}
-
 struct x86_regs {
     u32
     edi, esi, ebp, ebx, ecx, edx, eax,
@@ -154,6 +150,27 @@ void _multiprocess_tick(x86_regs* regs) {
 	PIC::send_EOI(0);
 	PIT::tick();
 
+	volatile unsigned eip;
+	volatile unsigned esp;
+	volatile unsigned ebp;
+
+	asm volatile("mov %%esp, %0":"=r"(esp));
+    asm volatile("mov %%ebp, %0":"=r"(ebp));
+
+    eip = read_eip();
+
+    if (eip == (unsigned) -1) {
+    	return;
+    }
+
+    current_process->eip = eip;
+    current_process->esp = esp;
+    current_process->ebp = ebp;
+
+    schedule();
+}
+
+void MultiProcess::yield(IRQ::CSITRegisters2* registers) {
 	volatile unsigned eip;
 	volatile unsigned esp;
 	volatile unsigned ebp;
